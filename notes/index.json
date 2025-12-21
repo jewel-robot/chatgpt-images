@@ -3,7 +3,7 @@
     {
       "id": 1766322375461,
       "created": "2025/12/21 21:06:17",
-      "title": "æ¥æ¾æ­£ç¡®ç«¯å£",
+      "title": "Ã¦ÂÂ¥Ã¦ÂÂ¾Ã¦Â­Â£Ã§Â¡Â®Ã§Â«Â¯Ã¥ÂÂ£",
       "count": 8,
       "hasImages": true,
       "imageInfos": [
@@ -15,23 +15,7 @@
       ],
       "updatedAt": 1766322377989,
       "noteSha": "bc6ae316541e065e99662a12f3bcec6d42d0ae0e"
-    },
-    {
-      "id": 1766322485481,
-      "created": "2025/12/21 21:08:07",
-      "title": "搭建个人网站指南",
-      "count": 4,
-      "hasImages": true,
-      "imageInfos": [
-        {
-          "path": "images/note_1766322485481_img_0_1766322485507.png",
-          "sha": "767e07fb224421f6b9aaa64218001af502f1a392",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766322485481_img_0_1766322485507.png"
-        }
-      ],
-      "updatedAt": 1766322487786,
-      "noteSha": "cbb23ebf23e5496bf5fd1e0dc831984ed9469cab"
     }
   ],
-  "updated": 1766322490047
+  "updated": 1766322550140
 }
