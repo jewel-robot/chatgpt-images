@@ -1,0 +1,152 @@
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="47">好嘞 👍，我们来系统梳理一下 <strong data-start="16" data-end="26">RFCOMM</strong>，它是经典蓝牙里最常用的通信方式之一。</p>
+<hr data-start="49" data-end="52">
+<h1 data-start="54" data-end="70">🔹 RFCOMM 是什么？</h1>
+<ul data-start="71" data-end="304">
+<li data-start="71" data-end="152">
+<p data-start="73" data-end="152"><strong data-start="73" data-end="114">RFCOMM（Radio Frequency Communication）</strong> 是经典蓝牙（Bluetooth Classic）协议栈中的一个协议层。</p>
+</li>
+<li data-start="153" data-end="207">
+<p data-start="155" data-end="207">它的核心作用是：<strong data-start="163" data-end="190">在蓝牙链路上模拟串口（Serial Port）</strong>，让应用像用串口一样收发数据。</p>
+</li>
+<li data-start="208" data-end="304">
+<p data-start="210" data-end="218">可以理解为：</p>
+<ul data-start="221" data-end="304">
+<li data-start="221" data-end="261">
+<p data-start="223" data-end="261">TCP/IP 里有 <strong data-start="233" data-end="247">TCP socket</strong> → 提供可靠的字节流。</p>
+</li>
+<li data-start="264" data-end="304">
+<p data-start="266" data-end="304">蓝牙里有 <strong data-start="271" data-end="281">RFCOMM</strong> → 提供可靠的字节流（但基于蓝牙链路）。</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="306" data-end="309">
+<h1 data-start="311" data-end="330">🔹 RFCOMM 在协议栈的位置</h1>
+<p data-start="331" data-end="350">经典蓝牙协议栈大概是这样（自上而下）：</p>
+<pre class="overflow-visible!" data-start="352" data-end="495"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">arduino</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre!"><span><span>应用层 (Profiles, e.g. </span><span><span class="hljs-built_in">Serial</span></span><span> Port Profile, OBEX, etc.)
+↑
+RFCOMM （串口仿真，字节流通信）
+↑
+L2CAP （逻辑链路控制与适配，分片/重组/多路复用）
+↑
+Baseband + HCI （物理层和主机控制接口）
+</span></span></code></div></div></pre>
+<p data-start="497" data-end="543">👉 RFCOMM 跑在 <strong data-start="510" data-end="519">L2CAP</strong> 之上，为应用提供“可靠、面向连接的串口通信”。</p>
+<hr data-start="545" data-end="548">
+<h1 data-start="550" data-end="567">🔹 RFCOMM 的主要特性</h1>
+<ol data-start="568" data-end="1050">
+<li data-start="568" data-end="659">
+<p data-start="571" data-end="581"><strong data-start="571" data-end="579">串口仿真</strong></p>
+<ul data-start="585" data-end="659">
+<li data-start="585" data-end="627">
+<p data-start="587" data-end="627">模拟 RS-232 串口，包括信号线（如 RTS/CTS、DTR/DSR）。</p>
+</li>
+<li data-start="631" data-end="659">
+<p data-start="633" data-end="659">应用不需要关心蓝牙底层，只要会用串口通信就能用。</p>
+</li>
+</ul>
+</li>
+<li data-start="661" data-end="741">
+<p data-start="664" data-end="675"><strong data-start="664" data-end="673">点对点通信</strong></p>
+<ul data-start="679" data-end="741">
+<li data-start="679" data-end="704">
+<p data-start="681" data-end="704">一般是一对一的连接（比如手机 ↔ 模块）。</p>
+</li>
+<li data-start="708" data-end="741">
+<p data-start="710" data-end="741">一个设备可以有多个 RFCOMM 通道（Channel）。</p>
+</li>
+</ul>
+</li>
+<li data-start="743" data-end="818">
+<p data-start="746" data-end="756"><strong data-start="746" data-end="754">可靠传输</strong></p>
+<ul data-start="760" data-end="818">
+<li data-start="760" data-end="792">
+<p data-start="762" data-end="792">基于 L2CAP，支持<strong data-start="773" data-end="789">错误检测、重传、流量控制</strong>。</p>
+</li>
+<li data-start="796" data-end="818">
+<p data-start="798" data-end="818">类似 TCP，保证数据不丢、不乱序。</p>
+</li>
+</ul>
+</li>
+<li data-start="820" data-end="905">
+<p data-start="823" data-end="831"><strong data-start="823" data-end="829">速率</strong></p>
+<ul data-start="835" data-end="905">
+<li data-start="835" data-end="870">
+<p data-start="837" data-end="870">理论上可达几百 kbps ~ 1 Mbps（取决于蓝牙版本）。</p>
+</li>
+<li data-start="874" data-end="905">
+<p data-start="876" data-end="905">足够支撑持续的 JSON 字符串传输、甚至小文件传输。</p>
+</li>
+</ul>
+</li>
+<li data-start="907" data-end="1050">
+<p data-start="910" data-end="920"><strong data-start="910" data-end="918">协议支持</strong></p>
+<ul data-start="924" data-end="1050">
+<li data-start="924" data-end="1050">
+<p data-start="926" data-end="1050">很多 Profile（配置文件）是基于 RFCOMM 实现的，比如 <strong data-start="960" data-end="989">Serial Port Profile (SPP)</strong>、<strong data-start="990" data-end="1018">Dial-up Networking (DUN)</strong>、<strong data-start="1019" data-end="1045">OBEX (Object Exchange)</strong> 等。</p>
+</li>
+</ul>
+</li>
+</ol>
+<hr data-start="1052" data-end="1055">
+<h1 data-start="1057" data-end="1074">🔹 RFCOMM 的典型应用</h1>
+<ul data-start="1075" data-end="1297">
+<li data-start="1075" data-end="1146">
+<p data-start="1077" data-end="1146"><strong data-start="1077" data-end="1087">串口透传模块</strong>（最常见）：<br data-start="1093" data-end="1096">
+比如 HC-05、HC-06 蓝牙模块，用的就是 RFCOMM/ SPP，把蓝牙当无线串口。</p>
+</li>
+<li data-start="1147" data-end="1195">
+<p data-start="1149" data-end="1195"><strong data-start="1149" data-end="1163">蓝牙 GPS 接收器</strong>：<br data-start="1164" data-end="1167">
+把 NMEA 数据通过 RFCOMM 传到手机。</p>
+</li>
+<li data-start="1196" data-end="1227">
+<p data-start="1198" data-end="1227"><strong data-start="1198" data-end="1207">蓝牙打印机</strong>：<br data-start="1208" data-end="1211">
+用串口协议收发打印命令。</p>
+</li>
+<li data-start="1228" data-end="1297">
+<p data-start="1230" data-end="1297"><strong data-start="1230" data-end="1243">PC ↔ 设备调试</strong>：<br data-start="1244" data-end="1247">
+Windows/Linux 上把蓝牙设备映射成一个虚拟 COM 口，直接用串口工具收发数据。</p>
+</li>
+</ul>
+<hr data-start="1299" data-end="1302">
+<h1 data-start="1304" data-end="1321">🔹 RFCOMM 的使用方式</h1>
+<ul data-start="1322" data-end="1536">
+<li data-start="1322" data-end="1425">
+<p data-start="1324" data-end="1341"><strong data-start="1324" data-end="1339">服务端（Server）</strong></p>
+<ul data-start="1344" data-end="1425">
+<li data-start="1344" data-end="1372">
+<p data-start="1346" data-end="1372">打开一个 RFCOMM 通道（Channel）。</p>
+</li>
+<li data-start="1375" data-end="1425">
+<p data-start="1377" data-end="1425">注册 SDP（Service Discovery Protocol），让别人能发现它的服务。</p>
+</li>
+</ul>
+</li>
+<li data-start="1426" data-end="1489">
+<p data-start="1428" data-end="1445"><strong data-start="1428" data-end="1443">客户端（Client）</strong></p>
+<ul data-start="1448" data-end="1489">
+<li data-start="1448" data-end="1466">
+<p data-start="1450" data-end="1466">搜索到对方的设备 &amp; 服务。</p>
+</li>
+<li data-start="1469" data-end="1489">
+<p data-start="1471" data-end="1489">连接到对应 RFCOMM 通道。</p>
+</li>
+</ul>
+</li>
+<li data-start="1490" data-end="1536">
+<p data-start="1492" data-end="1498">连接后：</p>
+<ul data-start="1501" data-end="1536">
+<li data-start="1501" data-end="1536">
+<p data-start="1503" data-end="1536">就像串口一样收发数据，<code data-start="1514" data-end="1522">send()</code> / <code data-start="1525" data-end="1533">recv()</code>。</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="1538" data-end="1541">
+<h1 data-start="1543" data-end="1557">🔹 和 BLE 的区别</h1>
+<div class="_tableContainer_1rjym_1"><div tabindex="-1" class="group _tableWrapper_1rjym_13 flex w-fit flex-col-reverse"><table data-start="1558" data-end="1827" class="w-fit min-w-(--thread-content-width)"><thead data-start="1558" data-end="1589"><tr data-start="1558" data-end="1589"><th data-start="1558" data-end="1563" data-col-size="sm">特性</th><th data-start="1563" data-end="1577" data-col-size="sm">经典蓝牙 RFCOMM</th><th data-start="1577" data-end="1589" data-col-size="sm">BLE GATT</th></tr></thead><tbody data-start="1627" data-end="1827"><tr data-start="1627" data-end="1668"><td data-start="1627" data-end="1632" data-col-size="sm">模型</td><td data-start="1632" data-end="1648" data-col-size="sm">字节流（像 TCP/串口）</td><td data-start="1648" data-end="1668" data-col-size="sm">报文（特征值读写，MTU 限制）</td></tr><tr data-start="1669" data-end="1711"><td data-start="1669" data-end="1675" data-col-size="sm">吞吐量</td><td data-start="1675" data-end="1696" data-col-size="sm">高（百 kbps ~ 1 Mbps）</td><td data-start="1696" data-end="1711" data-col-size="sm">中等（几十 kbps）</td></tr><tr data-start="1712" data-end="1739"><td data-start="1712" data-end="1719" data-col-size="sm">通信模式</td><td data-start="1719" data-end="1728" data-col-size="sm">持续流式通信</td><td data-start="1728" data-end="1739" data-col-size="sm">分包、属性读写</td></tr><tr data-start="1740" data-end="1780"><td data-start="1740" data-end="1747" data-col-size="sm">开发难度</td><td data-start="1747" data-end="1759" data-col-size="sm">低（读写串口即可）</td><td data-start="1759" data-end="1780" data-col-size="sm">高（要管理 GATT/分片/重组）</td></tr><tr data-start="1781" data-end="1827"><td data-start="1781" data-end="1786" data-col-size="sm">应用</td><td data-start="1786" data-end="1799" data-col-size="sm">串口替代、持续数据流</td><td data-start="1799" data-end="1827" data-col-size="sm">IoT、小数据传感器、Web Bluetooth</td></tr></tbody></table><div class="sticky h-0 select-none end-(--thread-content-margin) self-end"><div class="absolute end-0 flex items-end" style="height: 32.875px;"><span class="" data-state="closed"><button aria-label="复制表格" class="hover:bg-token-bg-tertiary text-token-text-secondary my-1 rounded-sm p-1 transition-opacity group-[:not(:hover):not(:focus-within)]:pointer-events-none group-[:not(:hover):not(:focus-within)]:opacity-0"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg></button></span></div></div></div></div>
+<hr data-start="1829" data-end="1832">
+<p data-start="1834" data-end="1891">👉 总结一句话：<br data-start="1843" data-end="1846">
+<strong data-start="1846" data-end="1888">RFCOMM 就是“蓝牙版 TCP/串口”，适合长时间、稳定的点对点数据通信</strong>。</p>
+<hr data-start="1893" data-end="1896">
+<p data-start="1898" data-end="1965" data-is-last-node="" data-is-only-node="">要不要我接下来给你写一个 <strong data-start="1911" data-end="1930">RFCOMM 通信的流程示意图</strong>（客户端 ↔ 服务器，包含 SDP 服务发现、通道建立、数据流传输）？</p></div>
