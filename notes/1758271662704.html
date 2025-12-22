@@ -1,0 +1,765 @@
+<div style="margin-bottom:16px;"><strong>用户:</strong><br>我如今有一个设备iwalk和imop，它们将进行蓝牙通信，但是为了方便设备控制，需要给出mqtt接口，所以也就是需要一个桥接程序。
+目前iwalk会通过mqtt与本地1883进行通信（iwalk算法部分），imop中的算法部分也是通过本地1883进行mqtt通信。但由于iwalk还需控制imop，所以需要将iwalk与本地1884通信部分，通过桥接程序，变成与imop本地1883通信。</div>
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="25">你的架构图我理解了，目前需求可以总结成三部分：</p>
+<ol data-start="27" data-end="424">
+<li data-start="27" data-end="195">
+<p data-start="30" data-end="42"><strong data-start="30" data-end="40">现有通信关系</strong></p>
+<ul data-start="46" data-end="195">
+<li data-start="46" data-end="116">
+<p data-start="48" data-end="116"><strong data-start="48" data-end="58">i-walk</strong>：本地运行 MQTT broker (<code data-start="77" data-end="93">localhost:1884</code>)，算法部分通过本地 <code data-start="104" data-end="110">1883</code> 通信。</p>
+</li>
+<li data-start="120" data-end="155">
+<p data-start="122" data-end="155"><strong data-start="122" data-end="131">i-mop</strong>：同样算法部分通过本地 <code data-start="143" data-end="149">1883</code> 通信。</p>
+</li>
+<li data-start="159" data-end="195">
+<p data-start="161" data-end="195">两个设备间通过蓝牙串口 (<code data-start="174" data-end="188">/dev/rfcomm0</code>) 互通。</p>
+</li>
+</ul>
+</li>
+<li data-start="197" data-end="303">
+<p data-start="200" data-end="208"><strong data-start="200" data-end="206">问题</strong></p>
+<ul data-start="212" data-end="303">
+<li data-start="212" data-end="256">
+<p data-start="214" data-end="256">i-walk 想控制 i-mop，但是它默认只会往自己的 <code data-start="243" data-end="249">1884</code> 发消息。</p>
+</li>
+<li data-start="260" data-end="303">
+<p data-start="262" data-end="303">i-mop 算法只监听本地 <code data-start="276" data-end="282">1883</code>，无法直接收到 i-walk 的消息。</p>
+</li>
+</ul>
+</li>
+<li data-start="305" data-end="424">
+<p data-start="308" data-end="424"><strong data-start="308" data-end="321">解决思路：桥接程序</strong><br data-start="321" data-end="324">
+需要一个 <strong data-start="332" data-end="351">MQTT bridge/转发器</strong>，把 i-walk 的 <code data-start="363" data-end="369">1884</code> 上的 topic 转发到 i-mop 的 <code data-start="391" data-end="397">1883</code>。这样就像在两个 broker 之间打通一条隧道。</p>
+</li>
+</ol>
+<hr data-start="426" data-end="429">
+<h3 data-start="431" data-end="465">实现方式一：使用现成的 MQTT Broker 桥接功能</h3>
+<p data-start="466" data-end="517">如果你用的是 <strong data-start="473" data-end="486">Mosquitto</strong>，它自带 bridge 功能，可以直接在配置文件中加一段：</p>
+<pre class="overflow-visible!" data-start="519" data-end="759"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">conf</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-conf"><span># 在 i-walk 设备的 mosquitto.conf
+connection imop-bridge
+address localhost:1883      # 目标 broker 地址（这里指向 imop 的 1883）
+topic # both 0              # 转发所有 topic（也可以按需限制 topic）
+start_type automatic
+cleansession true
+notifications false
+</span></code></div></div></pre>
+<p data-start="761" data-end="808">这样 i-walk 的 broker（1884）会自动把消息同步到 i-mop 的 1883。</p>
+<hr data-start="810" data-end="813">
+<h3 data-start="815" data-end="836">实现方式二：写一个轻量桥接程序</h3>
+<p data-start="837" data-end="874">用 Python + <code data-start="848" data-end="859">paho-mqtt</code> 可以自己写一个桥接程序：</p>
+<pre class="overflow-visible!" data-start="876" data-end="1523"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-keyword">import</span></span><span> paho.mqtt.client </span><span><span class="hljs-keyword">as</span></span><span> mqtt
+
+</span><span><span class="hljs-comment"># 源 broker (i-walk 1884)</span></span><span>
+SRC_HOST = </span><span><span class="hljs-string">"localhost"</span></span><span>
+SRC_PORT = </span><span><span class="hljs-number">1884</span></span><span>
+
+</span><span><span class="hljs-comment"># 目标 broker (i-mop 1883)</span></span><span>
+DST_HOST = </span><span><span class="hljs-string">"localhost"</span></span><span>
+DST_PORT = </span><span><span class="hljs-number">1883</span></span><span>
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">on_message</span></span><span>(</span><span><span class="hljs-params">client, userdata, msg</span></span><span>):
+    </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">f"Bridge: <span class="hljs-subst">{msg.topic}</span></span></span><span> -&gt; </span><span><span class="hljs-subst">{DST_HOST}</span></span><span>:</span><span><span class="hljs-subst">{DST_PORT}</span></span><span>")
+    dst_client.publish(msg.topic, msg.payload, qos=</span><span><span class="hljs-number">0</span></span><span>, retain=</span><span><span class="hljs-literal">False</span></span><span>)
+
+</span><span><span class="hljs-comment"># 源客户端</span></span><span>
+src_client = mqtt.Client()
+src_client.on_message = on_message
+src_client.connect(SRC_HOST, SRC_PORT)
+src_client.subscribe(</span><span><span class="hljs-string">"#"</span></span><span>)  </span><span><span class="hljs-comment"># 订阅所有 topic</span></span><span>
+
+</span><span><span class="hljs-comment"># 目标客户端</span></span><span>
+dst_client = mqtt.Client()
+dst_client.connect(DST_HOST, DST_PORT)
+
+</span><span><span class="hljs-comment"># 并行 loop</span></span><span>
+src_client.loop_start()
+dst_client.loop_start()
+
+</span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+    </span><span><span class="hljs-keyword">pass</span></span><span>
+</span></span></code></div></div></pre>
+<p data-start="1525" data-end="1572">这个小程序会监听 i-walk 的 1884 上的消息，然后转发到 i-mop 的 1883。</p>
+<hr data-start="1574" data-end="1577">
+<h3 data-start="1579" data-end="1585">建议</h3>
+<ul data-start="1586" data-end="1752">
+<li data-start="1586" data-end="1642">
+<p data-start="1588" data-end="1642">如果只是单向（i-walk 控制 i-mop），可以只订阅和转发需要的控制 topic，而不是 <code data-start="1636" data-end="1639">#</code>。</p>
+</li>
+<li data-start="1643" data-end="1687">
+<p data-start="1645" data-end="1687">如果需要双向（imop 回复 iwalk），也可以让 bridge 做双向转发。</p>
+</li>
+<li data-start="1688" data-end="1752">
+<p data-start="1690" data-end="1752">如果蓝牙链路 <code data-start="1697" data-end="1711">/dev/rfcomm0</code> 需要参与，可以在 bridge 中封装读写串口的逻辑，转成 MQTT 消息。</p>
+</li>
+</ul>
+<hr data-start="1754" data-end="1757">
+<p data-start="1759" data-end="1828" data-is-last-node="" data-is-only-node="">要不要我帮你写一个 <strong data-start="1769" data-end="1788">双向桥接的 Python 程序</strong>（把 <code data-start="1791" data-end="1806">1884 &lt;-&gt; 1883</code> 的所有消息都同步），这样你直接运行就能用？</p></div>
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="45">你说得对。我刚才把重点放到 “TCP-over-串口” 上，偏离了你<strong data-start="34" data-end="42">原始需求</strong>：</p>
+<blockquote data-start="46" data-end="182">
+<p data-start="48" data-end="182"><strong data-start="48" data-end="123">把 i-walk 连接到其本地 MQTT（1884）的消息，经蓝牙 /dev/rfcomm0 转发到 i-mop 的本地 MQTT（1883）</strong>（必要时再把 i-mop 的回执转回 i-walk）。<br data-start="150" data-end="153">
+两台设备之间<strong data-start="161" data-end="173">没有 IP 网络</strong>，只能走蓝牙串口。</p>
+</blockquote>
+<p data-start="184" data-end="235">为这个需求，最稳妥的是：<strong data-start="196" data-end="209">不用 TCP 隧道</strong>，而是写一对<strong data-start="215" data-end="230">应用层 MQTT 桥接</strong>程序：</p>
+<ul data-start="236" data-end="395">
+<li data-start="236" data-end="295">
+<p data-start="238" data-end="295">在 i-walk 上：连接本地 <code data-start="254" data-end="260">1884</code> 订阅你关心的主题 → 打包后写入 <code data-start="278" data-end="292">/dev/rfcomm0</code>。</p>
+</li>
+<li data-start="296" data-end="395">
+<p data-start="298" data-end="395">在 i-mop 上：从 <code data-start="310" data-end="324">/dev/rfcomm0</code> 读出 → 发布到本地 <code data-start="336" data-end="342">1883</code>。<br data-start="343" data-end="346">
+-（可选）再配置回程主题，把 i-mop 的状态/回执经串口发回 i-walk 的 <code data-start="388" data-end="394">1884</code>。</p>
+</li>
+</ul>
+<p data-start="397" data-end="470">下面给出<strong data-start="401" data-end="410">可直接运行</strong>的双端脚本（Python，健壮的长度前缀帧格式，支持二进制载荷、QoS、retain，双向可选）。你只需改几行配置即可。</p>
+<hr data-start="472" data-end="475">
+<h1 data-start="477" data-end="481">依赖</h1>
+<pre class="overflow-visible!" data-start="482" data-end="524"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">bash</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>pip install paho-mqtt pyserial
+</span></span></code></div></div></pre>
+<hr data-start="526" data-end="529">
+<h1 data-start="531" data-end="573">i-walk 端（连接本地 1884，发送到串口；可选接收回程再发到 1884）</h1>
+<p data-start="574" data-end="593"><strong data-start="574" data-end="593">iwalk_bridge.py</strong></p>
+<pre class="overflow-visible!" data-start="594" data-end="4101"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-comment">#!/usr/bin/env python3</span></span><span>
+</span><span><span class="hljs-keyword">import</span></span><span> base64, json, queue, struct, threading, time
+</span><span><span class="hljs-keyword">import</span></span><span> serial
+</span><span><span class="hljs-keyword">import</span></span><span> paho.mqtt.client </span><span><span class="hljs-keyword">as</span></span><span> mqtt
+
+</span><span><span class="hljs-comment"># === 配置区 ===</span></span><span>
+SERIAL_DEV = </span><span><span class="hljs-string">"/dev/rfcomm0"</span></span><span>
+SERIAL_BAUD = </span><span><span class="hljs-number">115200</span></span><span>
+
+MQTT_HOST = </span><span><span class="hljs-string">"127.0.0.1"</span></span><span>
+MQTT_PORT = </span><span><span class="hljs-number">1884</span></span><span>
+
+</span><span><span class="hljs-comment"># iwalk -&gt; imop：要转发的主题（支持通配符）</span></span><span>
+FORWARD_OUT = [</span><span><span class="hljs-string">"iwalk/ctrl/#"</span></span><span>]          </span><span><span class="hljs-comment"># 例：控制指令</span></span><span>
+</span><span><span class="hljs-comment"># imop -&gt; iwalk：要接收回填的主题（可选；不需要回程可留空）</span></span><span>
+FORWARD_IN  = [</span><span><span class="hljs-string">"imop/state/#"</span></span><span>]          </span><span><span class="hljs-comment"># 例：状态/回执</span></span><span>
+
+CLIENT_ID_OUT = </span><span><span class="hljs-string">"iwalk-out-bridge"</span></span><span>
+CLIENT_ID_IN  = </span><span><span class="hljs-string">"iwalk-in-bridge"</span></span><span>
+
+</span><span><span class="hljs-comment"># 帧格式：MAGIC(2) + LEN(4,BE) + PAYLOAD(JSON bytes)</span></span><span>
+MAGIC = </span><span><span class="hljs-string">b"\xAA\x55"</span></span><span>
+
+</span><span><span class="hljs-comment"># === 串口发送队列 ===</span></span><span>
+txq = queue.Queue()
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">pack_frame</span></span><span>(</span><span><span class="hljs-params">obj: <span class="hljs-built_in">dict</span></span></span><span>) -&gt; </span><span><span class="hljs-built_in">bytes</span></span><span>:
+    data = json.dumps(obj, separators=(</span><span><span class="hljs-string">','</span></span><span>, </span><span><span class="hljs-string">':'</span></span><span>)).encode(</span><span><span class="hljs-string">'utf-8'</span></span><span>)
+    </span><span><span class="hljs-keyword">return</span></span><span> MAGIC + struct.pack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, </span><span><span class="hljs-built_in">len</span></span><span>(data)) + data
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_writer</span></span><span>(</span><span><span class="hljs-params">ser: serial.Serial</span></span><span>):
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        obj = txq.get()
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            ser.write(pack_frame(obj))
+            ser.flush()
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL WRITE ERR:"</span></span><span>, e)
+            time.sleep(</span><span><span class="hljs-number">0.5</span></span><span>)
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_reader</span></span><span>(</span><span><span class="hljs-params">ser: serial.Serial, mqtt_in: mqtt.Client</span></span><span>):
+    buf = </span><span><span class="hljs-built_in">bytearray</span></span><span>()
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        chunk = ser.read(</span><span><span class="hljs-number">1024</span></span><span>)
+        </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-keyword">not</span></span><span> chunk:
+            time.sleep(</span><span><span class="hljs-number">0.01</span></span><span>); </span><span><span class="hljs-keyword">continue</span></span><span>
+        buf += chunk
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+            </span><span><span class="hljs-comment"># 寻找 MAGIC</span></span><span>
+            mpos = buf.find(MAGIC)
+            </span><span><span class="hljs-keyword">if</span></span><span> mpos &lt; </span><span><span class="hljs-number">0</span></span><span>:
+                </span><span><span class="hljs-comment"># 没看到帧头，清理过长缓冲</span></span><span>
+                </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &gt; </span><span><span class="hljs-number">65536</span></span><span>: buf.clear()
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span>:
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            ln = struct.unpack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, buf[mpos+</span><span><span class="hljs-number">2</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>])[</span><span><span class="hljs-number">0</span></span><span>]
+            </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span> + ln:
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            payload = </span><span><span class="hljs-built_in">bytes</span></span><span>(buf[mpos+</span><span><span class="hljs-number">6</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln])
+            </span><span><span class="hljs-keyword">del</span></span><span> buf[:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln]
+            </span><span><span class="hljs-keyword">try</span></span><span>:
+                obj = json.loads(payload.decode(</span><span><span class="hljs-string">'utf-8'</span></span><span>))
+                </span><span><span class="hljs-comment"># 只处理类型为 "pub" 的消息</span></span><span>
+                </span><span><span class="hljs-keyword">if</span></span><span> obj.get(</span><span><span class="hljs-string">"type"</span></span><span>) == </span><span><span class="hljs-string">"pub"</span></span><span>:
+                    topic = obj[</span><span><span class="hljs-string">"topic"</span></span><span>]
+                    qos = </span><span><span class="hljs-built_in">int</span></span><span>(obj.get(</span><span><span class="hljs-string">"qos"</span></span><span>, </span><span><span class="hljs-number">0</span></span><span>))
+                    retain = </span><span><span class="hljs-built_in">bool</span></span><span>(obj.get(</span><span><span class="hljs-string">"retain"</span></span><span>, </span><span><span class="hljs-literal">False</span></span><span>))
+                    pl = base64.b64decode(obj.get(</span><span><span class="hljs-string">"payload_b64"</span></span><span>, </span><span><span class="hljs-string">""</span></span><span>))
+                    </span><span><span class="hljs-comment"># 发布到 i-walk 本地 MQTT（回程）</span></span><span>
+                    mqtt_in.publish(topic, pl, qos=qos, retain=retain)
+            </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+                </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL FRAME ERR:"</span></span><span>, e)
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">on_message_out</span></span><span>(</span><span><span class="hljs-params">client, userdata, msg</span></span><span>):
+    </span><span><span class="hljs-comment"># 把 iwalk-&gt;imop 的消息装包，放入串口发送队列</span></span><span>
+    txq.put({
+        </span><span><span class="hljs-string">"type"</span></span><span>: </span><span><span class="hljs-string">"pub"</span></span><span>,
+        </span><span><span class="hljs-string">"topic"</span></span><span>: msg.topic,
+        </span><span><span class="hljs-string">"qos"</span></span><span>: </span><span><span class="hljs-built_in">int</span></span><span>(msg.qos),
+        </span><span><span class="hljs-string">"retain"</span></span><span>: </span><span><span class="hljs-built_in">bool</span></span><span>(msg.retain),
+        </span><span><span class="hljs-string">"payload_b64"</span></span><span>: base64.b64encode(msg.payload).decode(</span><span><span class="hljs-string">'ascii'</span></span><span>),
+    })
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">main</span></span><span>():
+    ser = serial.Serial(SERIAL_DEV, SERIAL_BAUD, timeout=</span><span><span class="hljs-number">0.05</span></span><span>)
+    </span><span><span class="hljs-comment"># 本地 MQTT（1884）— OUT：订阅 iwalk/ctrl/# 并通过串口发送到 imop</span></span><span>
+    mqtt_out = mqtt.Client(client_id=CLIENT_ID_OUT, clean_session=</span><span><span class="hljs-literal">True</span></span><span>)
+    mqtt_out.connect(MQTT_HOST, MQTT_PORT, keepalive=</span><span><span class="hljs-number">30</span></span><span>)
+    </span><span><span class="hljs-keyword">for</span></span><span> t </span><span><span class="hljs-keyword">in</span></span><span> FORWARD_OUT:
+        mqtt_out.subscribe(t, qos=</span><span><span class="hljs-number">0</span></span><span>)
+    mqtt_out.on_message = on_message_out
+    mqtt_out.loop_start()
+
+    </span><span><span class="hljs-comment"># 本地 MQTT（1884）— IN：接收从串口来的回程消息并发布</span></span><span>
+    mqtt_in = mqtt.Client(client_id=CLIENT_ID_IN, clean_session=</span><span><span class="hljs-literal">True</span></span><span>)
+    mqtt_in.connect(MQTT_HOST, MQTT_PORT, keepalive=</span><span><span class="hljs-number">30</span></span><span>)
+    mqtt_in.loop_start()
+
+    </span><span><span class="hljs-comment"># 串口线程</span></span><span>
+    threading.Thread(target=serial_writer, args=(ser,), daemon=</span><span><span class="hljs-literal">True</span></span><span>).start()
+    threading.Thread(target=serial_reader, args=(ser, mqtt_in), daemon=</span><span><span class="hljs-literal">True</span></span><span>).start()
+
+    </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"iwalk bridge running. -&gt;"</span></span><span>, FORWARD_OUT, </span><span><span class="hljs-string">"| &lt;-"</span></span><span>, FORWARD_IN </span><span><span class="hljs-keyword">or</span></span><span> </span><span><span class="hljs-string">"disabled"</span></span><span>)
+    </span><span><span class="hljs-keyword">try</span></span><span>:
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>: time.sleep(</span><span><span class="hljs-number">1</span></span><span>)
+    </span><span><span class="hljs-keyword">except</span></span><span> KeyboardInterrupt:
+        </span><span><span class="hljs-keyword">pass</span></span><span>
+
+</span><span><span class="hljs-keyword">if</span></span><span> __name__ == </span><span><span class="hljs-string">"__main__"</span></span><span>:
+    main()
+</span></span></code></div></div></pre>
+<hr data-start="4103" data-end="4106">
+<h1 data-start="4108" data-end="4148">i-mop 端（从串口读，发布到本地 1883；可选订阅回程主题再写回串口）</h1>
+<p data-start="4149" data-end="4167"><strong data-start="4149" data-end="4167">imop_bridge.py</strong></p>
+<pre class="overflow-visible!" data-start="4168" data-end="7478"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-comment">#!/usr/bin/env python3</span></span><span>
+</span><span><span class="hljs-keyword">import</span></span><span> base64, json, queue, struct, threading, time
+</span><span><span class="hljs-keyword">import</span></span><span> serial
+</span><span><span class="hljs-keyword">import</span></span><span> paho.mqtt.client </span><span><span class="hljs-keyword">as</span></span><span> mqtt
+
+</span><span><span class="hljs-comment"># === 配置区 ===</span></span><span>
+SERIAL_DEV = </span><span><span class="hljs-string">"/dev/rfcomm0"</span></span><span>
+SERIAL_BAUD = </span><span><span class="hljs-number">115200</span></span><span>
+
+MQTT_HOST = </span><span><span class="hljs-string">"127.0.0.1"</span></span><span>
+MQTT_PORT = </span><span><span class="hljs-number">1883</span></span><span>
+
+</span><span><span class="hljs-comment"># iwalk -&gt; imop：从串口收到后，发布到这些主题（无需列出；任何主题都会按原样发布）</span></span><span>
+</span><span><span class="hljs-comment"># imop -&gt; iwalk：如果需要把状态/回执发回 i-walk，请在此订阅主题</span></span><span>
+FORWARD_BACK = [</span><span><span class="hljs-string">"imop/state/#"</span></span><span>]        </span><span><span class="hljs-comment"># 不需要回程请设为 []</span></span><span>
+
+CLIENT_ID_PUB = </span><span><span class="hljs-string">"imop-pub-bridge"</span></span><span>
+CLIENT_ID_SUB = </span><span><span class="hljs-string">"imop-sub-bridge"</span></span><span>
+
+MAGIC = </span><span><span class="hljs-string">b"\xAA\x55"</span></span><span>
+
+txq = queue.Queue()
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">pack_frame</span></span><span>(</span><span><span class="hljs-params">obj: <span class="hljs-built_in">dict</span></span></span><span>) -&gt; </span><span><span class="hljs-built_in">bytes</span></span><span>:
+    data = json.dumps(obj, separators=(</span><span><span class="hljs-string">','</span></span><span>, </span><span><span class="hljs-string">':'</span></span><span>)).encode(</span><span><span class="hljs-string">'utf-8'</span></span><span>)
+    </span><span><span class="hljs-keyword">return</span></span><span> MAGIC + struct.pack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, </span><span><span class="hljs-built_in">len</span></span><span>(data)) + data
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_writer</span></span><span>(</span><span><span class="hljs-params">ser: serial.Serial</span></span><span>):
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        obj = txq.get()
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            ser.write(pack_frame(obj))
+            ser.flush()
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL WRITE ERR:"</span></span><span>, e)
+            time.sleep(</span><span><span class="hljs-number">0.5</span></span><span>)
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_reader</span></span><span>(</span><span><span class="hljs-params">ser: serial.Serial, mqtt_pub: mqtt.Client</span></span><span>):
+    buf = </span><span><span class="hljs-built_in">bytearray</span></span><span>()
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        chunk = ser.read(</span><span><span class="hljs-number">1024</span></span><span>)
+        </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-keyword">not</span></span><span> chunk:
+            time.sleep(</span><span><span class="hljs-number">0.01</span></span><span>); </span><span><span class="hljs-keyword">continue</span></span><span>
+        buf += chunk
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+            mpos = buf.find(MAGIC)
+            </span><span><span class="hljs-keyword">if</span></span><span> mpos &lt; </span><span><span class="hljs-number">0</span></span><span>:
+                </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &gt; </span><span><span class="hljs-number">65536</span></span><span>: buf.clear()
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span>:
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            ln = struct.unpack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, buf[mpos+</span><span><span class="hljs-number">2</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>])[</span><span><span class="hljs-number">0</span></span><span>]
+            </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span> + ln:
+                </span><span><span class="hljs-keyword">break</span></span><span>
+            payload = </span><span><span class="hljs-built_in">bytes</span></span><span>(buf[mpos+</span><span><span class="hljs-number">6</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln])
+            </span><span><span class="hljs-keyword">del</span></span><span> buf[:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln]
+            </span><span><span class="hljs-keyword">try</span></span><span>:
+                obj = json.loads(payload.decode(</span><span><span class="hljs-string">'utf-8'</span></span><span>))
+                </span><span><span class="hljs-keyword">if</span></span><span> obj.get(</span><span><span class="hljs-string">"type"</span></span><span>) == </span><span><span class="hljs-string">"pub"</span></span><span>:
+                    topic = obj[</span><span><span class="hljs-string">"topic"</span></span><span>]
+                    qos = </span><span><span class="hljs-built_in">int</span></span><span>(obj.get(</span><span><span class="hljs-string">"qos"</span></span><span>, </span><span><span class="hljs-number">0</span></span><span>))
+                    retain = </span><span><span class="hljs-built_in">bool</span></span><span>(obj.get(</span><span><span class="hljs-string">"retain"</span></span><span>, </span><span><span class="hljs-literal">False</span></span><span>))
+                    pl = base64.b64decode(obj.get(</span><span><span class="hljs-string">"payload_b64"</span></span><span>, </span><span><span class="hljs-string">""</span></span><span>))
+                    </span><span><span class="hljs-comment"># 发布到 i-mop 本地 MQTT（1883）</span></span><span>
+                    mqtt_pub.publish(topic, pl, qos=qos, retain=retain)
+            </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+                </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL FRAME ERR:"</span></span><span>, e)
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">on_message_back</span></span><span>(</span><span><span class="hljs-params">client, userdata, msg</span></span><span>):
+    </span><span><span class="hljs-comment"># 把 imop-&gt;iwalk 的回程消息装包，通过串口发回</span></span><span>
+    txq.put({
+        </span><span><span class="hljs-string">"type"</span></span><span>: </span><span><span class="hljs-string">"pub"</span></span><span>,
+        </span><span><span class="hljs-string">"topic"</span></span><span>: msg.topic,
+        </span><span><span class="hljs-string">"qos"</span></span><span>: </span><span><span class="hljs-built_in">int</span></span><span>(msg.qos),
+        </span><span><span class="hljs-string">"retain"</span></span><span>: </span><span><span class="hljs-built_in">bool</span></span><span>(msg.retain),
+        </span><span><span class="hljs-string">"payload_b64"</span></span><span>: base64.b64encode(msg.payload).decode(</span><span><span class="hljs-string">'ascii'</span></span><span>),
+    })
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">main</span></span><span>():
+    ser = serial.Serial(SERIAL_DEV, SERIAL_BAUD, timeout=</span><span><span class="hljs-number">0.05</span></span><span>)
+
+    </span><span><span class="hljs-comment"># 本地 MQTT（1883）— 发布端：把串口来的消息发布出去</span></span><span>
+    mqtt_pub = mqtt.Client(client_id=CLIENT_ID_PUB, clean_session=</span><span><span class="hljs-literal">True</span></span><span>)
+    mqtt_pub.connect(MQTT_HOST, MQTT_PORT, keepalive=</span><span><span class="hljs-number">30</span></span><span>)
+    mqtt_pub.loop_start()
+
+    </span><span><span class="hljs-comment"># （可选）回程：订阅 FORWARD_BACK，并把消息经串口发回 i-walk</span></span><span>
+    mqtt_sub = mqtt.Client(client_id=CLIENT_ID_SUB, clean_session=</span><span><span class="hljs-literal">True</span></span><span>)
+    mqtt_sub.connect(MQTT_HOST, MQTT_PORT, keepalive=</span><span><span class="hljs-number">30</span></span><span>)
+    mqtt_sub.on_message = on_message_back
+    </span><span><span class="hljs-keyword">for</span></span><span> t </span><span><span class="hljs-keyword">in</span></span><span> FORWARD_BACK:
+        mqtt_sub.subscribe(t, qos=</span><span><span class="hljs-number">0</span></span><span>)
+    mqtt_sub.loop_start()
+
+    threading.Thread(target=serial_writer, args=(ser,), daemon=</span><span><span class="hljs-literal">True</span></span><span>).start()
+    threading.Thread(target=serial_reader, args=(ser, mqtt_pub), daemon=</span><span><span class="hljs-literal">True</span></span><span>).start()
+
+    </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"imop bridge running. back_topics:"</span></span><span>, FORWARD_BACK </span><span><span class="hljs-keyword">or</span></span><span> </span><span><span class="hljs-string">"disabled"</span></span><span>)
+    </span><span><span class="hljs-keyword">try</span></span><span>:
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>: time.sleep(</span><span><span class="hljs-number">1</span></span><span>)
+    </span><span><span class="hljs-keyword">except</span></span><span> KeyboardInterrupt:
+        </span><span><span class="hljs-keyword">pass</span></span><span>
+
+</span><span><span class="hljs-keyword">if</span></span><span> __name__ == </span><span><span class="hljs-string">"__main__"</span></span><span>:
+    main()
+</span></span></code></div></div></pre>
+<hr data-start="7480" data-end="7483">
+<h2 data-start="7485" data-end="7499">使用步骤（严格按顺序）</h2>
+<ol data-start="7501" data-end="8046">
+<li data-start="7501" data-end="7644">
+<p data-start="7504" data-end="7516"><strong data-start="7504" data-end="7514">蓝牙串口就绪</strong></p>
+<ul data-start="7520" data-end="7644">
+<li data-start="7520" data-end="7586">
+<p data-start="7522" data-end="7586">两端 <code data-start="7525" data-end="7538">rfcomm bind</code> 成功，均存在 <code data-start="7546" data-end="7560">/dev/rfcomm0</code>，权限 OK（用户在 <code data-start="7571" data-end="7580">dialout</code> 组）。</p>
+</li>
+<li data-start="7590" data-end="7644">
+<p data-start="7592" data-end="7644"><code data-start="7592" data-end="7639">stty -F /dev/rfcomm0 115200 -echo -icanon raw</code>（可选）。</p>
+</li>
+</ul>
+</li>
+<li data-start="7646" data-end="7806">
+<p data-start="7649" data-end="7659"><strong data-start="7649" data-end="7657">启动顺序</strong></p>
+<ul data-start="7663" data-end="7806">
+<li data-start="7663" data-end="7725">
+<p data-start="7665" data-end="7725">先在 <strong data-start="7668" data-end="7677">i-mop</strong> 上启动 <code data-start="7682" data-end="7698">imop_bridge.py</code>（它会一直等串口数据并把它发布到 <code data-start="7715" data-end="7721">1883</code>）。</p>
+</li>
+<li data-start="7729" data-end="7806">
+<p data-start="7731" data-end="7806">再在 <strong data-start="7734" data-end="7744">i-walk</strong> 上启动 <code data-start="7749" data-end="7766">iwalk_bridge.py</code>（它订阅 <code data-start="7771" data-end="7777">1884</code> 的 <code data-start="7780" data-end="7794">iwalk/ctrl/#</code> 并通过串口发送）。</p>
+</li>
+</ul>
+</li>
+<li data-start="7808" data-end="8046">
+<p data-start="7811" data-end="7819"><strong data-start="7811" data-end="7817">验证</strong></p>
+<ul data-start="7823" data-end="8046">
+<li data-start="7823" data-end="7902">
+<p data-start="7825" data-end="7902">在 i-walk 上：<code data-start="7836" data-end="7900">mosquitto_pub -h 127.0.0.1 -p 1884 -t iwalk/ctrl/start -m "go"</code></p>
+</li>
+<li data-start="7906" data-end="7979">
+<p data-start="7908" data-end="7979">在 i-mop 上：<code data-start="7918" data-end="7970">mosquitto_sub -h 127.0.0.1 -p 1883 -t iwalk/ctrl/#</code> 应该能收到。</p>
+</li>
+<li data-start="7983" data-end="8046">
+<p data-start="7985" data-end="8046">需要回程的话，在 i-mop 上向 <code data-start="8003" data-end="8018">imop/state/ok</code> 发布一条，i-walk 的 <code data-start="8033" data-end="8039">1884</code> 应该能收到。</p>
+</li>
+</ul>
+</li>
+</ol>
+<hr data-start="8048" data-end="8051">
+<h2 data-start="8053" data-end="8068">为什么这套更贴合你的需求</h2>
+<ul data-start="8069" data-end="8270">
+<li data-start="8069" data-end="8118">
+<p data-start="8071" data-end="8118"><strong data-start="8071" data-end="8085">不依赖 IP/TCP</strong>：两端只是各自连本地 MQTT，设备间仅用蓝牙串口传自定义帧。</p>
+</li>
+<li data-start="8119" data-end="8176">
+<p data-start="8121" data-end="8176"><strong data-start="8121" data-end="8129">语义清晰</strong>：只转发你声明的主题（例：<code data-start="8142" data-end="8156">iwalk/ctrl/#</code>），不会误把其它本地业务流量混进去。</p>
+</li>
+<li data-start="8177" data-end="8231">
+<p data-start="8179" data-end="8231"><strong data-start="8179" data-end="8184">稳</strong>：长度前缀帧 + base64 载荷，避免串口分包/粘包问题，支持二进制 payload。</p>
+</li>
+<li data-start="8232" data-end="8270">
+<p data-start="8234" data-end="8270"><strong data-start="8234" data-end="8240">易控</strong>：想过滤、改写主题、限速、打日志、加校验/签名都很容易扩展。</p>
+</li>
+</ul>
+<p data-start="8272" data-end="8362" data-is-last-node="" data-is-only-node="">如果你把<strong data-start="8276" data-end="8289">需要转发的主题列表</strong>告诉我（控制与回执具体前缀），我可以把上面脚本里的默认值替换成你的真实主题，并给你两端的 <code data-start="8334" data-end="8343">systemd</code> 服务文件，开机自启动、掉线自动重连。</p></div>
+<div style="margin-bottom:16px;"><strong>用户:</strong><br>这样不就只能转发发往1884的单个主题的数据吗，如果想任意话题都能被桥接转发呢</div>
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="132">完全可以转发<strong data-start="6" data-end="14">任意主题</strong>，不必只配特定前缀。做法是：两端的桥都订阅 <code data-start="36" data-end="39">#</code>（全部主题），并用 <strong data-start="49" data-end="76">MQTT v5 的 <code data-start="61" data-end="71">no_local</code> 选项</strong>避免“自己发布的消息又被自己订阅到”，从根上消除回环；同时默认忽略 <code data-start="110" data-end="118">$SYS/#</code> 等系统主题，防止无谓流量。</p>
+<p data-start="134" data-end="220">下面给你一份<strong data-start="140" data-end="150">单文件对称桥</strong>（两端都用同一脚本），订阅 <code data-start="164" data-end="167">#</code>，把本地 MQTT 的任何消息经蓝牙串口发给对端；收到对端消息后再发布到本地 MQTT。默认双向、无回环。</p>
+<hr data-start="222" data-end="225">
+<h3 data-start="227" data-end="233">依赖</h3>
+<pre class="overflow-visible!" data-start="234" data-end="276"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">bash</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>pip install paho-mqtt pyserial
+</span></span></code></div></div></pre>
+<hr data-start="278" data-end="281">
+<h3 data-start="283" data-end="303">通用脚本（两端都用，改端口即可）</h3>
+<p data-start="304" data-end="335">把下面保存为 <code data-start="311" data-end="334">serial_mqtt_bridge.py</code>：</p>
+<pre class="overflow-visible!" data-start="337" data-end="4669"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-comment">#!/usr/bin/env python3</span></span><span>
+</span><span><span class="hljs-keyword">import</span></span><span> base64, json, struct, threading, time, re
+</span><span><span class="hljs-keyword">import</span></span><span> serial
+</span><span><span class="hljs-keyword">import</span></span><span> paho.mqtt.client </span><span><span class="hljs-keyword">as</span></span><span> mqtt
+
+</span><span><span class="hljs-comment"># ===== 配置：按设备修改 =====</span></span><span>
+SERIAL_DEV = </span><span><span class="hljs-string">"/dev/rfcomm0"</span></span><span>
+SERIAL_BAUD = </span><span><span class="hljs-number">115200</span></span><span>
+
+</span><span><span class="hljs-comment"># i-walk 这端填本地 1884；i-mop 这端填本地 1883</span></span><span>
+MQTT_HOST = </span><span><span class="hljs-string">"127.0.0.1"</span></span><span>
+MQTT_PORT = </span><span><span class="hljs-number">1884</span></span><span>          </span><span><span class="hljs-comment"># 在 i-mop 上改成 1883</span></span><span>
+
+CLIENT_ID = </span><span><span class="hljs-string">"bt-bridge"</span></span><span>
+
+</span><span><span class="hljs-comment"># 订阅模式：任意主题</span></span><span>
+SUB_PATTERNS = [</span><span><span class="hljs-string">"#"</span></span><span>]
+</span><span><span class="hljs-comment"># 排除模式：避免桥接系统主题 / 你不想转发的流</span></span><span>
+EXCLUDE_PATTERNS = [</span><span><span class="hljs-string">r"^\$SYS/"</span></span><span>]
+
+</span><span><span class="hljs-comment"># 串口帧格式</span></span><span>
+MAGIC = </span><span><span class="hljs-string">b"\xAA\x55"</span></span><span>
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">pack_frame</span></span><span>(</span><span><span class="hljs-params">topic: <span class="hljs-built_in">str</span></span></span><span>, payload: </span><span><span class="hljs-built_in">bytes</span></span><span>, qos: </span><span><span class="hljs-built_in">int</span></span><span>, retain: </span><span><span class="hljs-built_in">bool</span></span><span>) -&gt; </span><span><span class="hljs-built_in">bytes</span></span><span>:
+    obj = {
+        </span><span><span class="hljs-string">"type"</span></span><span>: </span><span><span class="hljs-string">"pub"</span></span><span>,
+        </span><span><span class="hljs-string">"topic"</span></span><span>: topic,
+        </span><span><span class="hljs-string">"qos"</span></span><span>: </span><span><span class="hljs-built_in">int</span></span><span>(qos),
+        </span><span><span class="hljs-string">"retain"</span></span><span>: </span><span><span class="hljs-built_in">bool</span></span><span>(retain),
+        </span><span><span class="hljs-string">"payload_b64"</span></span><span>: base64.b64encode(payload).decode(</span><span><span class="hljs-string">"ascii"</span></span><span>),
+    }
+    data = json.dumps(obj, separators=(</span><span><span class="hljs-string">","</span></span><span>, </span><span><span class="hljs-string">":"</span></span><span>)).encode(</span><span><span class="hljs-string">"utf-8"</span></span><span>)
+    </span><span><span class="hljs-keyword">return</span></span><span> MAGIC + struct.pack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, </span><span><span class="hljs-built_in">len</span></span><span>(data)) + data
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">iter_frames</span></span><span>(</span><span><span class="hljs-params">buf: <span class="hljs-built_in">bytearray</span></span></span><span>):
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        mpos = buf.find(MAGIC)
+        </span><span><span class="hljs-keyword">if</span></span><span> mpos &lt; </span><span><span class="hljs-number">0</span></span><span>:
+            </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &gt; </span><span><span class="hljs-number">65536</span></span><span>: buf.clear()
+            </span><span><span class="hljs-keyword">return</span></span><span>
+        </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span>:
+            </span><span><span class="hljs-keyword">return</span></span><span>
+        ln = struct.unpack(</span><span><span class="hljs-string">"&gt;I"</span></span><span>, buf[mpos+</span><span><span class="hljs-number">2</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>])[</span><span><span class="hljs-number">0</span></span><span>]
+        </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-built_in">len</span></span><span>(buf) &lt; mpos + </span><span><span class="hljs-number">6</span></span><span> + ln:
+            </span><span><span class="hljs-keyword">return</span></span><span>
+        payload = </span><span><span class="hljs-built_in">bytes</span></span><span>(buf[mpos+</span><span><span class="hljs-number">6</span></span><span>:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln])
+        </span><span><span class="hljs-keyword">del</span></span><span> buf[:mpos+</span><span><span class="hljs-number">6</span></span><span>+ln]
+        </span><span><span class="hljs-keyword">yield</span></span><span> payload
+
+</span><span><span class="hljs-keyword">class</span></span><span> </span><span><span class="hljs-title class_">Bridge</span></span><span>:
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">__init__</span></span><span>(</span><span><span class="hljs-params">self</span></span><span>):
+        self.ser = serial.Serial(SERIAL_DEV, SERIAL_BAUD, timeout=</span><span><span class="hljs-number">0.05</span></span><span>)
+        </span><span><span class="hljs-comment"># 用一个 MQTT v5 客户端：既订阅也发布，配 no_local 避免自回环</span></span><span>
+        self.cli = mqtt.Client(client_id=CLIENT_ID, clean_session=</span><span><span class="hljs-literal">True</span></span><span>, protocol=mqtt.MQTTv5)
+        self.cli.connect(MQTT_HOST, MQTT_PORT, keepalive=</span><span><span class="hljs-number">30</span></span><span>)
+        self.cli.on_message = self._on_message
+        self._compile_filters()
+        self._subscribe_all()
+        self.cli.loop_start()
+
+        threading.Thread(target=self._serial_reader, daemon=</span><span><span class="hljs-literal">True</span></span><span>).start()
+        </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">f"[bridge] up on mqtt <span class="hljs-subst">{MQTT_HOST}</span></span></span><span>:</span><span><span class="hljs-subst">{MQTT_PORT}</span></span><span>, serial </span><span><span class="hljs-subst">{SERIAL_DEV}</span></span><span>@</span><span><span class="hljs-subst">{SERIAL_BAUD}</span></span><span>")
+
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">_compile_filters</span></span><span>(</span><span><span class="hljs-params">self</span></span><span>):
+        self._ex_filters = [re.</span><span><span class="hljs-built_in">compile</span></span><span>(p) </span><span><span class="hljs-keyword">for</span></span><span> p </span><span><span class="hljs-keyword">in</span></span><span> EXCLUDE_PATTERNS]
+
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">_excluded</span></span><span>(</span><span><span class="hljs-params">self, topic: <span class="hljs-built_in">str</span></span></span><span>) -&gt; </span><span><span class="hljs-built_in">bool</span></span><span>:
+        </span><span><span class="hljs-keyword">return</span></span><span> </span><span><span class="hljs-built_in">any</span></span><span>(rx.search(topic) </span><span><span class="hljs-keyword">for</span></span><span> rx </span><span><span class="hljs-keyword">in</span></span><span> self._ex_filters)
+
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">_subscribe_all</span></span><span>(</span><span><span class="hljs-params">self</span></span><span>):
+        </span><span><span class="hljs-comment"># no_local=True：同一个客户端发布的消息不会被它自己订阅到 → 避免回环</span></span><span>
+        </span><span><span class="hljs-comment"># retainHandling=2：不拉取已有的 retained 消息，避免首次洪泛；如需同步历史，把 2 改 0/1</span></span><span>
+        opts = mqtt.SubscribeOptions(qos=</span><span><span class="hljs-number">0</span></span><span>, noLocal=</span><span><span class="hljs-literal">True</span></span><span>, retainAsPublished=</span><span><span class="hljs-literal">False</span></span><span>, retainHandling=</span><span><span class="hljs-number">2</span></span><span>)
+        </span><span><span class="hljs-keyword">for</span></span><span> pat </span><span><span class="hljs-keyword">in</span></span><span> SUB_PATTERNS:
+            self.cli.subscribe(pat, options=opts)
+        </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">f"[bridge] subscribed: <span class="hljs-subst">{SUB_PATTERNS}</span></span></span><span>, exclude: </span><span><span class="hljs-subst">{EXCLUDE_PATTERNS <span class="hljs-keyword">or</span></span></span><span> </span><span><span class="hljs-string">'none'</span></span><span>}")
+
+    </span><span><span class="hljs-comment"># 本地 MQTT → 串口 → 对端</span></span><span>
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">_on_message</span></span><span>(</span><span><span class="hljs-params">self, client, userdata, msg: mqtt.MQTTMessage</span></span><span>):
+        </span><span><span class="hljs-keyword">if</span></span><span> self._excluded(msg.topic):
+            </span><span><span class="hljs-keyword">return</span></span><span>
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            frame = pack_frame(msg.topic, msg.payload, msg.qos, msg.retain)
+            self.ser.write(frame)
+            self.ser.flush()
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"[bridge] serial write error:"</span></span><span>, e)
+
+    </span><span><span class="hljs-comment"># 串口 → 本地 MQTT（发布），因 no_local 不会再被自己订阅，避免回环</span></span><span>
+    </span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">_serial_reader</span></span><span>(</span><span><span class="hljs-params">self</span></span><span>):
+        buf = </span><span><span class="hljs-built_in">bytearray</span></span><span>()
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+            </span><span><span class="hljs-keyword">try</span></span><span>:
+                chunk = self.ser.read(</span><span><span class="hljs-number">1024</span></span><span>)
+                </span><span><span class="hljs-keyword">if</span></span><span> </span><span><span class="hljs-keyword">not</span></span><span> chunk:
+                    time.sleep(</span><span><span class="hljs-number">0.01</span></span><span>)
+                    </span><span><span class="hljs-keyword">continue</span></span><span>
+                buf += chunk
+                </span><span><span class="hljs-keyword">for</span></span><span> payload </span><span><span class="hljs-keyword">in</span></span><span> iter_frames(buf):
+                    </span><span><span class="hljs-keyword">try</span></span><span>:
+                        obj = json.loads(payload.decode(</span><span><span class="hljs-string">"utf-8"</span></span><span>))
+                        </span><span><span class="hljs-keyword">if</span></span><span> obj.get(</span><span><span class="hljs-string">"type"</span></span><span>) != </span><span><span class="hljs-string">"pub"</span></span><span>:
+                            </span><span><span class="hljs-keyword">continue</span></span><span>
+                        t = obj[</span><span><span class="hljs-string">"topic"</span></span><span>]
+                        </span><span><span class="hljs-keyword">if</span></span><span> self._excluded(t):
+                            </span><span><span class="hljs-keyword">continue</span></span><span>
+                        qos = </span><span><span class="hljs-built_in">int</span></span><span>(obj.get(</span><span><span class="hljs-string">"qos"</span></span><span>, </span><span><span class="hljs-number">0</span></span><span>))
+                        retain = </span><span><span class="hljs-built_in">bool</span></span><span>(obj.get(</span><span><span class="hljs-string">"retain"</span></span><span>, </span><span><span class="hljs-literal">False</span></span><span>))
+                        pl = base64.b64decode(obj.get(</span><span><span class="hljs-string">"payload_b64"</span></span><span>, </span><span><span class="hljs-string">""</span></span><span>))
+                        </span><span><span class="hljs-comment"># retainAsPublished：paho 会按 retain 标志转发；这里直接发布</span></span><span>
+                        self.cli.publish(t, pl, qos=qos, retain=retain, properties=mqtt.Properties(mqtt.PacketTypes.PUBLISH))
+                    </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+                        </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"[bridge] frame error:"</span></span><span>, e)
+            </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+                </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"[bridge] serial read error:"</span></span><span>, e)
+                time.sleep(</span><span><span class="hljs-number">0.5</span></span><span>)
+
+</span><span><span class="hljs-keyword">if</span></span><span> __name__ == </span><span><span class="hljs-string">"__main__"</span></span><span>:
+    Bridge()
+    </span><span><span class="hljs-keyword">try</span></span><span>:
+        </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>: time.sleep(</span><span><span class="hljs-number">3600</span></span><span>)
+    </span><span><span class="hljs-keyword">except</span></span><span> KeyboardInterrupt:
+        </span><span><span class="hljs-keyword">pass</span></span><span>
+</span></span></code></div></div></pre>
+<p data-start="4671" data-end="4679"><strong data-start="4671" data-end="4679">怎么用：</strong></p>
+<ul data-start="4680" data-end="4984">
+<li data-start="4680" data-end="4777">
+<p data-start="4682" data-end="4729">在 <strong data-start="4684" data-end="4694">i-walk</strong> 上把 <code data-start="4698" data-end="4709">MQTT_PORT</code> 设为 <code data-start="4713" data-end="4719">1884</code>（已是默认），运行：</p>
+<pre class="overflow-visible!" data-start="4732" data-end="4777"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">bash</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>python3 serial_mqtt_bridge.py
+</span></span></code></div></div></pre>
+</li>
+<li data-start="4778" data-end="4824">
+<p data-start="4780" data-end="4824">在 <strong data-start="4782" data-end="4791">i-mop</strong> 上把 <code data-start="4795" data-end="4806">MQTT_PORT</code> 改为 <code data-start="4810" data-end="4816">1883</code>，运行同一脚本。</p>
+</li>
+<li data-start="4825" data-end="4984">
+<p data-start="4827" data-end="4830">验证：</p>
+<ul data-start="4833" data-end="4984">
+<li data-start="4833" data-end="4899">
+<p data-start="4835" data-end="4899">在 i-walk：<code data-start="4844" data-end="4899">mosquitto_pub -h 127.0.0.1 -p 1884 -t any/topic -m hi</code></p>
+</li>
+<li data-start="4902" data-end="4974">
+<p data-start="4904" data-end="4974">在 i-mop：<code data-start="4912" data-end="4957">mosquitto_sub -h 127.0.0.1 -p 1883 -t any/#</code> 能收到 <code data-start="4962" data-end="4973">any/topic</code>。</p>
+</li>
+<li data-start="4977" data-end="4984">
+<p data-start="4979" data-end="4984">反向同理。</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="4986" data-end="4989">
+<h3 data-start="4991" data-end="5005">关键点 &amp; 常见问题</h3>
+<ul data-start="5006" data-end="5425">
+<li data-start="5006" data-end="5080">
+<p data-start="5008" data-end="5080"><strong data-start="5008" data-end="5016">任意主题</strong>：<code data-start="5017" data-end="5037">SUB_PATTERNS=["#"]</code> 即可全量桥接；<code data-start="5045" data-end="5063">EXCLUDE_PATTERNS</code> 用来排除 <code data-start="5069" data-end="5077">$SYS/#</code> 等。</p>
+</li>
+<li data-start="5081" data-end="5162">
+<p data-start="5083" data-end="5162"><strong data-start="5083" data-end="5090">无回环</strong>：同一客户端既订阅又发布，配 <strong data-start="5105" data-end="5124"><code data-start="5107" data-end="5122">no_local=True</code></strong>，发布的消息不会被它自身订阅回；对端也同理，所以不会 A→B→A 来回回声。</p>
+</li>
+<li data-start="5163" data-end="5241">
+<p data-start="5165" data-end="5241"><strong data-start="5165" data-end="5180">retained 洪泛</strong>：<code data-start="5181" data-end="5199">retainHandling=2</code> 默认不拉已存在的 retained 消息；如需同步历史，改为 <code data-start="5231" data-end="5234">0</code> 或 <code data-start="5237" data-end="5240">1</code>。</p>
+</li>
+<li data-start="5242" data-end="5371">
+<p data-start="5244" data-end="5371"><strong data-start="5244" data-end="5258">MQTT v5 要求</strong>：<code data-start="5259" data-end="5269">no_local</code> 需要 broker 支持 MQTT v5（Mosquitto≥1.6 支持）。<br data-start="5309" data-end="5312">
+如果你的 broker 很老（只支持 v3.1.1），告诉我，我给你一版 <strong data-start="5351" data-end="5358">去重表</strong> 的 v3 实现来防回环。</p>
+</li>
+<li data-start="5372" data-end="5425">
+<p data-start="5374" data-end="5425"><strong data-start="5374" data-end="5380">带宽</strong>：蓝牙串口是字节流，脚本已做帧化；如负载较大，可在帧里加压缩/速率限制——需要我可以加上。</p>
+</li>
+</ul>
+<p data-start="5427" data-end="5538" data-is-last-node="" data-is-only-node="">如果你希望“除了 <code data-start="5436" data-end="5444">$SYS/#</code> 之外全部转发”，上面的默认配置已经满足。你也可以把需要排除的内部主题加到 <code data-start="5482" data-end="5500">EXCLUDE_PATTERNS</code>。需要我帮你打包成两端的 <code data-start="5513" data-end="5522">systemd</code> 服务（开机自启、掉线重连）吗？</p></div>
+<div style="margin-bottom:16px;"><strong>用户:</strong><br>运行报错了</div>
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="212">看到了报错：<code data-start="6" data-end="58">ValueError: Clean session is not used for MQTT 5.0</code>。<br data-start="59" data-end="62">
+原因是我给你的脚本里用的是 <strong data-start="76" data-end="87">MQTT v5</strong> (<code data-start="89" data-end="111">protocol=mqtt.MQTTv5</code>)，但还传了 <code data-start="118" data-end="138">clean_session=True</code>。在 paho-mqtt 中，<code data-start="153" data-end="168">clean_session</code> 只对 <strong data-start="172" data-end="186">v3.1/3.1.1</strong> 有效，<strong data-start="190" data-end="200">v5 不允许</strong>这个参数，于是直接抛错。</p>
+<p data-start="214" data-end="277">下面给出<strong data-start="218" data-end="226">最小改动</strong>修复（并顺手消除“Callback API version 1 is deprecated”的警告）。</p>
+<hr data-start="279" data-end="282">
+<h2 data-start="284" data-end="303">修复方法（MQTT v5，推荐）</h2>
+<p data-start="305" data-end="358">把创建客户端的几行改成这样（删除 <code data-start="322" data-end="342">clean_session=True</code>，加上新的回调 API 版本）：</p>
+<pre class="overflow-visible!" data-start="360" data-end="654"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-keyword">from</span></span><span> paho.mqtt.client </span><span><span class="hljs-keyword">import</span></span><span> CallbackAPIVersion
+
+</span><span><span class="hljs-comment"># 原来：</span></span><span>
+</span><span><span class="hljs-comment"># self.cli = mqtt.Client(client_id=CLIENT_ID, clean_session=True, protocol=mqtt.MQTTv5)</span></span><span>
+
+</span><span><span class="hljs-comment"># 改成：</span></span><span>
+self.cli = mqtt.Client(
+    client_id=CLIENT_ID,
+    protocol=mqtt.MQTTv5,
+    callback_api_version=CallbackAPIVersion.VERSION2,
+)
+</span></span></code></div></div></pre>
+<p data-start="656" data-end="773">脚本里如果还有别的 <code data-start="666" data-end="726">mqtt.Client(..., clean_session=True, protocol=mqtt.MQTTv5)</code>，都按上面改。<br data-start="733" data-end="736">
+另外，<code data-start="739" data-end="750">publish()</code> 里不必传 <code data-start="756" data-end="769">properties=</code>，直接：</p>
+<pre class="overflow-visible!" data-start="774" data-end="835"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span>self.cli.publish(t, pl, qos=qos, retain=retain)
+</span></span></code></div></div></pre>
+<blockquote data-start="837" data-end="940">
+<p data-start="839" data-end="940">说明：我们用 v5 的 <code data-start="851" data-end="901">SubscribeOptions(noLocal=True, retainHandling=2)</code> 来避免回环，这依赖 v5。Mosquitto 1.6+ / 2.x 都支持。</p>
+</blockquote>
+<hr data-start="942" data-end="945">
+<h2 data-start="947" data-end="981">如果你的 broker 只支持 MQTT v3.1.1（备选）</h2>
+<p data-start="983" data-end="1076">把客户端改为 v311，并保留 <code data-start="999" data-end="1019">clean_session=True</code>（<strong data-start="1020" data-end="1051">注意：v311 下没有 noLocal，需要额外做去重</strong>，我可以再给你一版带去重缓存的 v311 代码）：</p>
+<pre class="overflow-visible!" data-start="1078" data-end="1248"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span>self.cli = mqtt.Client(
+    client_id=CLIENT_ID,
+    clean_session=</span><span><span class="hljs-literal">True</span></span><span>,
+    protocol=mqtt.MQTTv311,
+    callback_api_version=CallbackAPIVersion.VERSION2,
+)
+</span></span></code></div></div></pre>
+<hr data-start="1250" data-end="1253">
+<h2 data-start="1255" data-end="1261">小检查</h2>
+<ol data-start="1263" data-end="1427">
+<li data-start="1263" data-end="1364">
+<p data-start="1266" data-end="1364">仍然报错就确认 paho-mqtt 版本：<code data-start="1287" data-end="1352">python3 -c "import paho.mqtt.client as m; print(m.__version__)"</code>（建议 1.6+）。</p>
+</li>
+<li data-start="1365" data-end="1416">
+<p data-start="1368" data-end="1416">Mosquitto 是否支持 v5：<code data-start="1386" data-end="1400">mosquitto -h</code> 或看日志；新版本默认支持。</p>
+</li>
+<li data-start="1417" data-end="1427">
+<p data-start="1420" data-end="1427">订阅选项保持：</p>
+</li>
+</ol>
+<pre class="overflow-visible!" data-start="1428" data-end="1572"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span>opts = mqtt.SubscribeOptions(qos=</span><span><span class="hljs-number">0</span></span><span>, noLocal=</span><span><span class="hljs-literal">True</span></span><span>, retainAsPublished=</span><span><span class="hljs-literal">False</span></span><span>, retainHandling=</span><span><span class="hljs-number">2</span></span><span>)
+self.cli.subscribe(</span><span><span class="hljs-string">"#"</span></span><span>, options=opts)
+</span></span></code></div></div></pre>
+<hr data-start="1574" data-end="1577">
+<p data-start="1579" data-end="1617" data-is-last-node="" data-is-only-node="">需要的话我可以把你现有脚本中的相关行直接改好，贴一份完整、可直接替换的版本。</p></div>
+<div style="margin-bottom:16px;"><strong>用户:</strong><br>现在通信是可以的，但是有一个比较严重的问题：蓝牙如果在比较远的距离，就会断开，此时建立的refcomm0也会消失（因为我是使用终端命令来listen refcomm0和connect的），这样这句命令就退出了。即使后续蓝牙恢复，这个refcomm也无法开启。而且此时，我再手动输入命令时，端口无法打开，会显示被占用，需要我将iwalk和imop两端的桥接程序都关闭后，才能打开。</div>
+<div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="53">确实，这是典型的 <strong data-start="9" data-end="34">RFCOMM 掉线后设备节点消失 / 占用</strong> 问题。要把它做稳，需要“三层自愈”：</p>
+<ol data-start="55" data-end="196">
+<li data-start="55" data-end="104">
+<p data-start="58" data-end="104"><strong data-start="58" data-end="70">RFCOMM 层</strong>：掉线后自动重建 <code data-start="79" data-end="93">/dev/rfcomm0</code>，并清理“占用”。</p>
+</li>
+<li data-start="105" data-end="136">
+<p data-start="108" data-end="136"><strong data-start="108" data-end="117">桥接程序层</strong>：串口断开时自动重开，而不是退出。</p>
+</li>
+<li data-start="137" data-end="196">
+<p data-start="140" data-end="196"><strong data-start="140" data-end="156">编排层（systemd）</strong>：让两端的 RFCOMM 与桥接程序都能自动重启、按顺序拉起，并在失败时自清理。</p>
+</li>
+</ol>
+<p data-start="198" data-end="225">下面给你一套可直接用的方案（不需要手动关两端再重连）。</p>
+<hr data-start="227" data-end="230">
+<h1 data-start="232" data-end="261">① RFCOMM 持久化 + 自清理（systemd）</h1>
+<h2 data-start="263" data-end="287">i-walk（客户端，主动连对端 MAC）</h2>
+<p data-start="288" data-end="332">创建模板服务：<code data-start="295" data-end="332">/etc/systemd/system/rfcomm@.service</code></p>
+<pre class="overflow-visible!" data-start="333" data-end="792"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">ini</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-ini"><span><span><span class="hljs-section">[Unit]</span></span><span>
+</span><span><span class="hljs-attr">Description</span></span><span>=RFCOMM connect </span><span><span class="hljs-literal">on</span></span><span> /dev/rfcomm%I
+</span><span><span class="hljs-attr">After</span></span><span>=bluetooth.service
+</span><span><span class="hljs-attr">Requires</span></span><span>=bluetooth.service
+
+</span><span><span class="hljs-section">[Service]</span></span><span>
+</span><span><span class="hljs-attr">Type</span></span><span>=simple
+</span><span><span class="hljs-comment"># 先释放可能残留的占用/锁</span></span><span>
+</span><span><span class="hljs-attr">ExecStartPre</span></span><span>=/usr/bin/rfcomm release %I || </span><span><span class="hljs-literal">true</span></span><span>
+</span><span><span class="hljs-attr">ExecStartPre</span></span><span>=/usr/bin/rm -f /var/lock/LCK..rfcomm%I || </span><span><span class="hljs-literal">true</span></span><span>
+</span><span><span class="hljs-comment"># 连接对端 MAC 的 SPP 通道（示例用 channel 1；按你的通道改）</span></span><span>
+</span><span><span class="hljs-attr">ExecStart</span></span><span>=/usr/bin/rfcomm connect %I AA:BB:CC:DD:EE:FF </span><span><span class="hljs-number">1</span></span><span>
+</span><span><span class="hljs-attr">ExecStop</span></span><span>=/usr/bin/rfcomm release %I
+</span><span><span class="hljs-attr">Restart</span></span><span>=always
+</span><span><span class="hljs-attr">RestartSec</span></span><span>=</span><span><span class="hljs-number">2</span></span><span>
+
+</span><span><span class="hljs-section">[Install]</span></span><span>
+</span><span><span class="hljs-attr">WantedBy</span></span><span>=multi-user.target
+</span></span></code></div></div></pre>
+<p data-start="793" data-end="812">启用（以 <code data-start="798" data-end="807">rfcomm0</code> 为例）：</p>
+<pre class="overflow-visible!" data-start="813" data-end="898"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">bash</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>sudo systemctl daemon-reload
+sudo systemctl </span><span><span class="hljs-built_in">enable</span></span><span> --now rfcomm@0.service
+</span></span></code></div></div></pre>
+<h2 data-start="900" data-end="918">i-mop（服务端，被动等待）</h2>
+<p data-start="919" data-end="963"><code data-start="919" data-end="963">/etc/systemd/system/rfcomm-listen@.service</code></p>
+<pre class="overflow-visible!" data-start="964" data-end="1375"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">ini</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-ini"><span><span><span class="hljs-section">[Unit]</span></span><span>
+</span><span><span class="hljs-attr">Description</span></span><span>=RFCOMM listen </span><span><span class="hljs-literal">on</span></span><span> /dev/rfcomm%I
+</span><span><span class="hljs-attr">After</span></span><span>=bluetooth.service
+</span><span><span class="hljs-attr">Requires</span></span><span>=bluetooth.service
+
+</span><span><span class="hljs-section">[Service]</span></span><span>
+</span><span><span class="hljs-attr">Type</span></span><span>=simple
+</span><span><span class="hljs-attr">ExecStartPre</span></span><span>=/usr/bin/rfcomm release %I || </span><span><span class="hljs-literal">true</span></span><span>
+</span><span><span class="hljs-attr">ExecStartPre</span></span><span>=/usr/bin/rm -f /var/lock/LCK..rfcomm%I || </span><span><span class="hljs-literal">true</span></span><span>
+</span><span><span class="hljs-comment"># 监听指定通道（与客户端一致），断开就自动重启继续监听</span></span><span>
+</span><span><span class="hljs-attr">ExecStart</span></span><span>=/usr/bin/rfcomm listen %I </span><span><span class="hljs-number">1</span></span><span>
+</span><span><span class="hljs-attr">ExecStop</span></span><span>=/usr/bin/rfcomm release %I
+</span><span><span class="hljs-attr">Restart</span></span><span>=always
+</span><span><span class="hljs-attr">RestartSec</span></span><span>=</span><span><span class="hljs-number">2</span></span><span>
+
+</span><span><span class="hljs-section">[Install]</span></span><span>
+</span><span><span class="hljs-attr">WantedBy</span></span><span>=multi-user.target
+</span></span></code></div></div></pre>
+<p data-start="1376" data-end="1379">启用：</p>
+<pre class="overflow-visible!" data-start="1380" data-end="1472"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">bash</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>sudo systemctl daemon-reload
+sudo systemctl </span><span><span class="hljs-built_in">enable</span></span><span> --now rfcomm-listen@0.service
+</span></span></code></div></div></pre>
+<blockquote data-start="1474" data-end="1655">
+<p data-start="1476" data-end="1480">说明</p>
+<ul data-start="1483" data-end="1655">
+<li data-start="1483" data-end="1547">
+<p data-start="1485" data-end="1547"><code data-start="1485" data-end="1501">rfcomm release</code> 与删除 <code data-start="1506" data-end="1530">/var/lock/LCK..rfcomm*</code> 能处理“端口被占用”的残留。</p>
+</li>
+<li data-start="1550" data-end="1602">
+<p data-start="1552" data-end="1602"><code data-start="1552" data-end="1568">Restart=always</code> 让断链后自动重建 <code data-start="1578" data-end="1592">/dev/rfcomm0</code>，不用人工介入。</p>
+</li>
+<li data-start="1605" data-end="1655">
+<p data-start="1607" data-end="1655">确认 i-mop 上已开启 SPP 服务（若需要：<code data-start="1632" data-end="1648">sdptool add SP</code>，只需一次）。</p>
+</li>
+</ul>
+</blockquote>
+<hr data-start="1657" data-end="1660">
+<h1 data-start="1662" data-end="1685">② 桥接脚本：检测串口故障并<strong data-start="1678" data-end="1685">自重连</strong></h1>
+<p data-start="1687" data-end="1757">把你现在用的桥接脚本里 <strong data-start="1699" data-end="1707">打开串口</strong> 的部分改成“重试式”，并在读写出错时<strong data-start="1726" data-end="1735">关闭并重开</strong>。核心思路如下（示例片段，放到两端脚本里）：</p>
+<pre class="overflow-visible!" data-start="1759" data-end="3044"><div class="contain-inline-size rounded-2xl relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl">python</div><div class="sticky top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="复制"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" class="icon-sm"><path d="M12.668 10.667C12.668 9.95614 12.668 9.46258 12.6367 9.0791C12.6137 8.79732 12.5758 8.60761 12.5244 8.46387L12.4688 8.33399C12.3148 8.03193 12.0803 7.77885 11.793 7.60254L11.666 7.53125C11.508 7.45087 11.2963 7.39395 10.9209 7.36328C10.5374 7.33197 10.0439 7.33203 9.33301 7.33203H6.5C5.78896 7.33203 5.29563 7.33195 4.91211 7.36328C4.63016 7.38632 4.44065 7.42413 4.29688 7.47559L4.16699 7.53125C3.86488 7.68518 3.61186 7.9196 3.43555 8.20703L3.36524 8.33399C3.28478 8.49198 3.22795 8.70352 3.19727 9.0791C3.16595 9.46259 3.16504 9.95611 3.16504 10.667V13.5C3.16504 14.211 3.16593 14.7044 3.19727 15.0879C3.22797 15.4636 3.28473 15.675 3.36524 15.833L3.43555 15.959C3.61186 16.2466 3.86474 16.4807 4.16699 16.6348L4.29688 16.6914C4.44063 16.7428 4.63025 16.7797 4.91211 16.8027C5.29563 16.8341 5.78896 16.835 6.5 16.835H9.33301C10.0439 16.835 10.5374 16.8341 10.9209 16.8027C11.2965 16.772 11.508 16.7152 11.666 16.6348L11.793 16.5645C12.0804 16.3881 12.3148 16.1351 12.4688 15.833L12.5244 15.7031C12.5759 15.5594 12.6137 15.3698 12.6367 15.0879C12.6681 14.7044 12.668 14.211 12.668 13.5V10.667ZM13.998 12.665C14.4528 12.6634 14.8011 12.6602 15.0879 12.6367C15.4635 12.606 15.675 12.5492 15.833 12.4688L15.959 12.3975C16.2466 12.2211 16.4808 11.9682 16.6348 11.666L16.6914 11.5361C16.7428 11.3924 16.7797 11.2026 16.8027 10.9209C16.8341 10.5374 16.835 10.0439 16.835 9.33301V6.5C16.835 5.78896 16.8341 5.29563 16.8027 4.91211C16.7797 4.63025 16.7428 4.44063 16.6914 4.29688L16.6348 4.16699C16.4807 3.86474 16.2466 3.61186 15.959 3.43555L15.833 3.36524C15.675 3.28473 15.4636 3.22797 15.0879 3.19727C14.7044 3.16593 14.211 3.16504 13.5 3.16504H10.667C9.9561 3.16504 9.46259 3.16595 9.0791 3.19727C8.79739 3.22028 8.6076 3.2572 8.46387 3.30859L8.33399 3.36524C8.03176 3.51923 7.77886 3.75343 7.60254 4.04102L7.53125 4.16699C7.4508 4.32498 7.39397 4.53655 7.36328 4.91211C7.33985 5.19893 7.33562 5.54719 7.33399 6.00195H9.33301C10.022 6.00195 10.5791 6.00131 11.0293 6.03809C11.4873 6.07551 11.8937 6.15471 12.2705 6.34668L12.4883 6.46875C12.984 6.7728 13.3878 7.20854 13.6533 7.72949L13.7197 7.87207C13.8642 8.20859 13.9292 8.56974 13.9619 8.9707C13.9987 9.42092 13.998 9.97799 13.998 10.667V12.665ZM18.165 9.33301C18.165 10.022 18.1657 10.5791 18.1289 11.0293C18.0961 11.4302 18.0311 11.7914 17.8867 12.1279L17.8203 12.2705C17.5549 12.7914 17.1509 13.2272 16.6553 13.5313L16.4365 13.6533C16.0599 13.8452 15.6541 13.9245 15.1963 13.9619C14.8593 13.9895 14.4624 13.9935 13.9951 13.9951C13.9935 14.4624 13.9895 14.8593 13.9619 15.1963C13.9292 15.597 13.864 15.9576 13.7197 16.2939L13.6533 16.4365C13.3878 16.9576 12.9841 17.3941 12.4883 17.6982L12.2705 17.8203C11.8937 18.0123 11.4873 18.0915 11.0293 18.1289C10.5791 18.1657 10.022 18.165 9.33301 18.165H6.5C5.81091 18.165 5.25395 18.1657 4.80371 18.1289C4.40306 18.0962 4.04235 18.031 3.70606 17.8867L3.56348 17.8203C3.04244 17.5548 2.60585 17.151 2.30176 16.6553L2.17969 16.4365C1.98788 16.0599 1.90851 15.6541 1.87109 15.1963C1.83431 14.746 1.83496 14.1891 1.83496 13.5V10.667C1.83496 9.978 1.83432 9.42091 1.87109 8.9707C1.90851 8.5127 1.98772 8.10625 2.17969 7.72949L2.30176 7.51172C2.60586 7.0159 3.04236 6.6122 3.56348 6.34668L3.70606 6.28027C4.04237 6.136 4.40303 6.07083 4.80371 6.03809C5.14051 6.01057 5.53708 6.00551 6.00391 6.00391C6.00551 5.53708 6.01057 5.14051 6.03809 4.80371C6.0755 4.34588 6.15483 3.94012 6.34668 3.56348L6.46875 3.34473C6.77282 2.84912 7.20856 2.44514 7.72949 2.17969L7.87207 2.11328C8.20855 1.96886 8.56979 1.90385 8.9707 1.87109C9.42091 1.83432 9.978 1.83496 10.667 1.83496H13.5C14.1891 1.83496 14.746 1.83431 15.1963 1.87109C15.6541 1.90851 16.0599 1.98788 16.4365 2.17969L16.6553 2.30176C17.151 2.60585 17.5548 3.04244 17.8203 3.56348L17.8867 3.70606C18.031 4.04235 18.0962 4.40306 18.1289 4.80371C18.1657 5.25395 18.165 5.81091 18.165 6.5V9.33301Z"></path></svg>复制代码</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-python"><span><span><span class="hljs-keyword">import</span></span><span> serial, time
+
+SERIAL_DEV = </span><span><span class="hljs-string">"/dev/rfcomm0"</span></span><span>
+SERIAL_BAUD = </span><span><span class="hljs-number">115200</span></span><span>
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">open_serial</span></span><span>():
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            ser = serial.Serial(SERIAL_DEV, SERIAL_BAUD, timeout=</span><span><span class="hljs-number">0.2</span></span><span>)
+            </span><span><span class="hljs-comment"># 关键：断线重连后，清空缓冲，避免半包</span></span><span>
+            ser.reset_input_buffer()
+            ser.reset_output_buffer()
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL OPENED:"</span></span><span>, SERIAL_DEV)
+            </span><span><span class="hljs-keyword">return</span></span><span> ser
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL OPEN FAIL:"</span></span><span>, e)
+            time.sleep(</span><span><span class="hljs-number">1</span></span><span>)
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_reader_loop</span></span><span>(</span><span><span class="hljs-params">on_frame</span></span><span>):
+    ser = open_serial()
+    buf = </span><span><span class="hljs-built_in">bytearray</span></span><span>()
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            chunk = ser.read(</span><span><span class="hljs-number">1024</span></span><span>)
+            </span><span><span class="hljs-keyword">if</span></span><span> chunk:
+                buf += chunk
+                </span><span><span class="hljs-comment"># ... 你的帧解析逻辑 ...</span></span><span>
+                </span><span><span class="hljs-comment"># on_frame(payload)</span></span><span>
+            </span><span><span class="hljs-keyword">else</span></span><span>:
+                time.sleep(</span><span><span class="hljs-number">0.02</span></span><span>)
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL READ ERR:"</span></span><span>, e)
+            </span><span><span class="hljs-keyword">try</span></span><span>: ser.close()
+            </span><span><span class="hljs-keyword">except</span></span><span>: </span><span><span class="hljs-keyword">pass</span></span><span>
+            time.sleep(</span><span><span class="hljs-number">1</span></span><span>)
+            ser = open_serial()
+
+</span><span><span class="hljs-keyword">def</span></span><span> </span><span><span class="hljs-title function_">serial_write</span></span><span>(</span><span><span class="hljs-params">ser, data</span></span><span>):
+    </span><span><span class="hljs-keyword">while</span></span><span> </span><span><span class="hljs-literal">True</span></span><span>:
+        </span><span><span class="hljs-keyword">try</span></span><span>:
+            ser.write(data); ser.flush()
+            </span><span><span class="hljs-keyword">return</span></span><span>
+        </span><span><span class="hljs-keyword">except</span></span><span> Exception </span><span><span class="hljs-keyword">as</span></span><span> e:
+            </span><span><span class="hljs-built_in">print</span></span><span>(</span><span><span class="hljs-string">"SERIAL WRITE ERR:"</span></span><span>, e)
+            </span><span><span class="hljs-keyword">try</span></span><span>: ser.close()
+            </span><span><span class="hljs-keyword">except</span></span><span>: </span><span><span class="hljs-keyword">pass</span></span><span>
+            time.sleep(</span><span><span class="hljs-number">1</span></span><span>)
+            ser = open_serial()
+</span></span></code></div></div></pre>
+<blockquote data-start="3046" data-end="3105" data-is-last-node="" data-is-only-node="">
+<p data-start="3048" data-end="3105" data-is-last-node="">这样蓝牙一断：读写抛异常 → 关闭串口 → 等 RFCOMM 服务恢复并重新创建设备 → 自动 `open_se_</p>
+</blockquote></div>
