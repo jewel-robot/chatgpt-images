@@ -324,9 +324,7 @@ Supabase 会用你填的 Secret key 去帮你做校验，所以 Secret key 不�
 Vercel API 生成 6 位验证码，存入 Supabase 临时表
 通过 Resend 发送验证码邮件
 用户输入验证码 → 前端调用 API 验证
-验证通过后完成注册
--------------------
-上面这个方案可行吗，vercel是否提供这样的免费功能？</div></div>
+验证通过后完成注册 <br>上面这个方案可行吗，vercel是否提供这样的免费功能？</div></div>
 <div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="121">可行，而且<strong data-start="5" data-end="71">Vercel（免费 Hobby）确实能跑 Edge Functions + 调外部 API（Resend、Supabase）</strong>。但要注意：<strong data-start="77" data-end="91">免费不是“无限免费”</strong>，是“<strong data-start="94" data-end="104">有额度的免费</strong>”，超过后一般要升级/等下月重置。</p>
 <h2 data-start="123" data-end="137">这个方案技术上可行吗？</h2>
 <p data-start="138" data-end="149">可行。你的流程本质是：</p>
