@@ -1,6 +1,14 @@
 {
   "notes": [
     {
+      "id": "zhihu_1766546707345",
+      "name": "番外一：重新审视 EM Planner的规划框架",
+      "createdAt": 1766546707390,
+      "updatedAt": 1766546707390,
+      "source": "zhihu",
+      "url": "https://zhuanlan.zhihu.com/p/1979534602667323915"
+    },
+    {
       "id": "zhihu_1766546525504",
       "name": "番外一：重新审视 EM Planner的规划框架",
       "createdAt": 1766546525525,
@@ -221,5 +229,5 @@
       "noteSha": "63783757bd5bb146f51365658ddeffc4154169f3"
     }
   ],
-  "updated": 1766546530966
+  "updated": 1766546712607
 }
