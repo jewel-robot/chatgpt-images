@@ -1,0 +1,249 @@
+<div class="message-block role-user"><div class="message-role">用户</div><div class="message-content">详细讲上面做的内容重新整理，并附加完整代码。</div></div>
+<div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="174">下面把我们前面做过的内容<strong data-start="12" data-end="145">按“问题 → 原因 → 方案 → 落地代码 → 验证方法”<strong data-start="43" data-end="134">完整整理一遍，并把你现在这套 <strong data-start="60" data-end="106">gazebo_ros_control + diff_drive_controller</strong> 的“能跑、能超时停、日志不报 PID”版本给你一套</strong>可直接用的完整代码</strong>（URDF/Xacro + YAML + launch）。</p>
+<hr data-start="176" data-end="179">
+<h2 data-start="181" data-end="197">1. 你最开始的问题是什么</h2>
+<blockquote data-start="199" data-end="257">
+<p data-start="201" data-end="257">在 Gazebo 里给 <code data-start="213" data-end="223">/cmd_vel</code> 发了一次速度后，即使后续不再发布，机器人仍然沿用上一次速度继续跑。</p>
+</blockquote>
+<hr data-start="259" data-end="262">
+<h2 data-start="264" data-end="275">2. 根因是什么</h2>
+<p data-start="277" data-end="302">你用的是 Gazebo classic 的老插件：</p>
+<pre class="overflow-visible! px-0!" data-start="304" data-end="353"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">xml</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-xml"><span><span>filename="libgazebo_ros_diff_drive.so"
+</span></span></code></div></div></pre>
+<p data-start="355" data-end="473">这类插件在不少版本里会<strong data-start="366" data-end="387">保持最后一次收到的 cmd_vel</strong>，并不保证“断流自动停”。你虽然写了 <code data-start="406" data-end="424">&lt;commandTimeout&gt;</code>，但很多版本要么不支持这个参数、要么名字不一致，结果就是<strong data-start="452" data-end="461">参数被忽略</strong>，表现为“停发也不停”。</p>
+<hr data-start="475" data-end="478">
+<h2 data-start="480" data-end="497">3. 我们最后采用的解决方案</h2>
+<p data-start="499" data-end="518">换成更标准、更像真实机器人的控制链路：</p>
+<ol data-start="520" data-end="923">
+<li data-start="520" data-end="602">
+<p data-start="523" data-end="602">URDF 里给轮子关节添加 <strong data-start="537" data-end="553">transmission</strong>（告诉 ros_control 关节怎么被控制，VelocityJointInterface）</p>
+</li>
+<li data-start="603" data-end="679">
+<p data-start="606" data-end="679">URDF 里加载 <strong data-start="615" data-end="637">gazebo_ros_control</strong> 插件（让 Gazebo 把关节交给 controller_manager 管）</p>
+</li>
+<li data-start="680" data-end="745">
+<p data-start="683" data-end="745">用 <code data-start="685" data-end="702">ros_controllers</code> 里的 <strong data-start="706" data-end="731">diff_drive_controller</strong> 来接收 cmd_vel</p>
+</li>
+<li data-start="746" data-end="830">
+<p data-start="749" data-end="830">用 <code data-start="751" data-end="774">diff_drive_controller</code> 的 <code data-start="777" data-end="794">cmd_vel_timeout</code> 实现：<strong data-start="798" data-end="828">超过 X 秒没收到 cmd_vel 自动置 0 停车</strong></p>
+</li>
+<li data-start="831" data-end="923">
+<p data-start="834" data-end="923">解决你看到的新报错：<code data-start="844" data-end="873">No p gain specified for pid</code> —— 给 <code data-start="879" data-end="911">gazebo_ros_control/pid_gains/*</code> 补 PID（至少 p）</p>
+</li>
+</ol>
+<hr data-start="925" data-end="928">
+<h2 data-start="930" data-end="968">4. 完整代码（URDF/Xacro + YAML + launch）</h2>
+<blockquote data-start="970" data-end="1139">
+<p data-start="972" data-end="1139">你原本还有 <code data-start="978" data-end="991">iwalk.xacro</code> / <code data-start="994" data-end="1015">caster.gazebo.xacro</code> 的 include，我这里保留你的结构，只把关键部分补齐。<br data-start="1045" data-end="1048">
+<strong data-start="1050" data-end="1075">注意：关节名必须与你真实 URDF 里一致</strong>：这里假设轮子关节叫 <code data-start="1086" data-end="1098">left_wheel</code> / <code data-start="1101" data-end="1114">right_wheel</code>，base_link 是 <code data-start="1127" data-end="1138">base_link</code>。</p>
+</blockquote>
+<hr data-start="1141" data-end="1144">
+<h3 data-start="1146" data-end="1178">A) <code data-start="1153" data-end="1178">urdf/iwalk.gazebo.xacro</code></h3>
+<pre class="overflow-visible! px-0!" data-start="1180" data-end="2950"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">xml</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-xml"><span><span><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">"1.0"</span></span></span><span>?&gt;
+</span><span><span class="hljs-tag">&lt;<span class="hljs-name">robot</span></span></span><span> </span><span><span class="hljs-attr">xmlns:xacro</span></span><span>=</span><span><span class="hljs-string">"http://www.ros.org/wiki/xacro"</span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"iwalk"</span></span><span>&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 你的主体模型 --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">xacro:include</span></span></span><span> </span><span><span class="hljs-attr">filename</span></span><span>=</span><span><span class="hljs-string">"$(find scrubber_urdf)/urdf/iwalk.xacro"</span></span><span> /&gt;
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">xacro:include</span></span></span><span> </span><span><span class="hljs-attr">filename</span></span><span>=</span><span><span class="hljs-string">"$(find scrubber_urdf)/urdf/wheels/caster.gazebo.xacro"</span></span><span> /&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- Gazebo 材质/摩擦（保持你的设置） --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">gazebo</span></span></span><span> </span><span><span class="hljs-attr">reference</span></span><span>=</span><span><span class="hljs-string">"base_link"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">material</span></span></span><span>&gt;Gazebo/Grey</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">material</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">gazebo</span></span></span><span>&gt;
+
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">gazebo</span></span></span><span> </span><span><span class="hljs-attr">reference</span></span><span>=</span><span><span class="hljs-string">"left_wheel_link"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mu1</span></span></span><span>&gt;1.0</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mu1</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mu2</span></span></span><span>&gt;1.0</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mu2</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">gazebo</span></span></span><span>&gt;
+
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">gazebo</span></span></span><span> </span><span><span class="hljs-attr">reference</span></span><span>=</span><span><span class="hljs-string">"right_wheel_link"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mu1</span></span></span><span>&gt;1.0</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mu1</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mu2</span></span></span><span>&gt;1.0</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mu2</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">gazebo</span></span></span><span>&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 万向轮 Gazebo 属性 --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">xacro:caster_gazebo</span></span></span><span> </span><span><span class="hljs-attr">prefix</span></span><span>=</span><span><span class="hljs-string">"front_caster"</span></span><span> /&gt;
+
+  <span class="hljs-comment">&lt;!-- =========================
+       ros_control 必要：transmission
+       ========================= --&gt;</span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">transmission</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"left_wheel_trans"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">type</span></span></span><span>&gt;transmission_interface/SimpleTransmission</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">type</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">actuator</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"left_wheel_motor"</span></span><span>&gt;
+      </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mechanicalReduction</span></span></span><span>&gt;1</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mechanicalReduction</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">actuator</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">joint</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"left_wheel"</span></span><span>&gt;
+      </span><span><span class="hljs-tag">&lt;<span class="hljs-name">hardwareInterface</span></span></span><span>&gt;hardware_interface/VelocityJointInterface</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">hardwareInterface</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">joint</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">transmission</span></span></span><span>&gt;
+
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">transmission</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"right_wheel_trans"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">type</span></span></span><span>&gt;transmission_interface/SimpleTransmission</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">type</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">actuator</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"right_wheel_motor"</span></span><span>&gt;
+      </span><span><span class="hljs-tag">&lt;<span class="hljs-name">mechanicalReduction</span></span></span><span>&gt;1</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">mechanicalReduction</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">actuator</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">joint</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"right_wheel"</span></span><span>&gt;
+      </span><span><span class="hljs-tag">&lt;<span class="hljs-name">hardwareInterface</span></span></span><span>&gt;hardware_interface/VelocityJointInterface</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">hardwareInterface</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">joint</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">transmission</span></span></span><span>&gt;
+
+  <span class="hljs-comment">&lt;!-- =========================
+       gazebo_ros_control 插件
+       ========================= --&gt;</span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">gazebo</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">plugin</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"gazebo_ros_control"</span></span><span> </span><span><span class="hljs-attr">filename</span></span><span>=</span><span><span class="hljs-string">"libgazebo_ros_control.so"</span></span><span>&gt;
+      </span><span><span class="hljs-comment">&lt;!-- 关键：与 spawner 的 namespace 一致 --&gt;</span></span><span>
+      </span><span><span class="hljs-tag">&lt;<span class="hljs-name">robotNamespace</span></span></span><span>&gt;/iwalk</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">robotNamespace</span></span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">plugin</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">gazebo</span></span></span><span>&gt;
+
+</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">robot</span></span></span><span>&gt;
+</span></span></code></div></div></pre>
+<blockquote data-start="2952" data-end="3056">
+<p data-start="2954" data-end="3056">你之前 <code data-start="2958" data-end="2978">controller_spawner</code> 用了 <code data-start="2982" data-end="3002">--namespace=/iwalk</code>，所以这里一定要 <code data-start="3011" data-end="3019">/iwalk</code>，否则 spawner 就会找不到 controller_manager。</p>
+</blockquote>
+<hr data-start="3058" data-end="3061">
+<h3 data-start="3063" data-end="3105">B) <code data-start="3070" data-end="3105">config/diff_drive_controller.yaml</code></h3>
+<pre class="overflow-visible! px-0!" data-start="3107" data-end="4414"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">yaml</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-yaml"><span><span><span class="hljs-attr">iwalk:</span></span><span>
+  </span><span><span class="hljs-comment"># 1) 发布 joint_states</span></span><span>
+  </span><span><span class="hljs-attr">joint_state_controller:</span></span><span>
+    </span><span><span class="hljs-attr">type:</span></span><span> </span><span><span class="hljs-string">joint_state_controller/JointStateController</span></span><span>
+    </span><span><span class="hljs-attr">publish_rate:</span></span><span> </span><span><span class="hljs-number">50</span></span><span>
+
+  </span><span><span class="hljs-comment"># 2) 两轮差速控制器（接收 cmd_vel）</span></span><span>
+  </span><span><span class="hljs-attr">diff_drive_controller:</span></span><span>
+    </span><span><span class="hljs-attr">type:</span></span><span> </span><span><span class="hljs-string">diff_drive_controller/DiffDriveController</span></span><span>
+
+    </span><span><span class="hljs-comment"># 关键：一定用列表（即使只有一个关节）</span></span><span>
+    </span><span><span class="hljs-attr">left_wheel:</span></span><span>  [</span><span><span class="hljs-string">'left_wheel'</span></span><span>]
+    </span><span><span class="hljs-attr">right_wheel:</span></span><span> [</span><span><span class="hljs-string">'right_wheel'</span></span><span>]
+
+    </span><span><span class="hljs-attr">publish_rate:</span></span><span> </span><span><span class="hljs-number">50</span></span><span>
+
+    </span><span><span class="hljs-comment"># 关键：停发 cmd_vel 后自动停车</span></span><span>
+    </span><span><span class="hljs-attr">cmd_vel_timeout:</span></span><span> </span><span><span class="hljs-number">0.1</span></span><span>
+
+    </span><span><span class="hljs-attr">wheel_separation:</span></span><span> </span><span><span class="hljs-number">0.61</span></span><span>
+    </span><span><span class="hljs-attr">wheel_radius:</span></span><span> </span><span><span class="hljs-number">0.065</span></span><span>
+
+    </span><span><span class="hljs-attr">wheel_separation_multiplier:</span></span><span> </span><span><span class="hljs-number">1.0</span></span><span>
+    </span><span><span class="hljs-attr">wheel_radius_multiplier:</span></span><span> </span><span><span class="hljs-number">1.0</span></span><span>
+
+    </span><span><span class="hljs-attr">base_frame_id:</span></span><span> </span><span><span class="hljs-string">base_link</span></span><span>
+    </span><span><span class="hljs-attr">odom_frame_id:</span></span><span> </span><span><span class="hljs-string">odom</span></span><span>
+    </span><span><span class="hljs-attr">enable_odom_tf:</span></span><span> </span><span><span class="hljs-literal">true</span></span><span>
+
+    </span><span><span class="hljs-attr">estimate_velocity_from_position:</span></span><span> </span><span><span class="hljs-literal">false</span></span><span>
+
+    </span><span><span class="hljs-attr">pose_covariance_diagonal:</span></span><span>  [</span><span><span class="hljs-number">0.001</span></span><span>, </span><span><span class="hljs-number">0.001</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000.0</span></span><span>]
+    </span><span><span class="hljs-attr">twist_covariance_diagonal:</span></span><span> [</span><span><span class="hljs-number">0.001</span></span><span>, </span><span><span class="hljs-number">0.001</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000000.0</span></span><span>, </span><span><span class="hljs-number">1000.0</span></span><span>]
+
+    </span><span><span class="hljs-attr">linear:</span></span><span>
+      </span><span><span class="hljs-attr">x:</span></span><span>
+        </span><span><span class="hljs-attr">has_velocity_limits:</span></span><span> </span><span><span class="hljs-literal">true</span></span><span>
+        </span><span><span class="hljs-attr">max_velocity:</span></span><span> </span><span><span class="hljs-number">1.0</span></span><span>
+        </span><span><span class="hljs-attr">has_acceleration_limits:</span></span><span> </span><span><span class="hljs-literal">true</span></span><span>
+        </span><span><span class="hljs-attr">max_acceleration:</span></span><span> </span><span><span class="hljs-number">1.0</span></span><span>
+
+    </span><span><span class="hljs-attr">angular:</span></span><span>
+      </span><span><span class="hljs-attr">z:</span></span><span>
+        </span><span><span class="hljs-attr">has_velocity_limits:</span></span><span> </span><span><span class="hljs-literal">true</span></span><span>
+        </span><span><span class="hljs-attr">max_velocity:</span></span><span> </span><span><span class="hljs-number">2.0</span></span><span>
+        </span><span><span class="hljs-attr">has_acceleration_limits:</span></span><span> </span><span><span class="hljs-literal">true</span></span><span>
+        </span><span><span class="hljs-attr">max_acceleration:</span></span><span> </span><span><span class="hljs-number">2.0</span></span><span>
+
+  </span><span><span class="hljs-comment"># 3) 解决 gazebo_ros_control 的 PID 报错（至少给 p）</span></span><span>
+  </span><span><span class="hljs-attr">gazebo_ros_control:</span></span><span>
+    </span><span><span class="hljs-attr">pid_gains:</span></span><span>
+      </span><span><span class="hljs-attr">left_wheel:</span></span><span>  {</span><span><span class="hljs-attr">p:</span></span><span> </span><span><span class="hljs-number">10.0</span></span><span>, </span><span><span class="hljs-attr">i:</span></span><span> </span><span><span class="hljs-number">0.0</span></span><span>, </span><span><span class="hljs-attr">d:</span></span><span> </span><span><span class="hljs-number">0.0</span></span><span>}
+      </span><span><span class="hljs-attr">right_wheel:</span></span><span> {</span><span><span class="hljs-attr">p:</span></span><span> </span><span><span class="hljs-number">10.0</span></span><span>, </span><span><span class="hljs-attr">i:</span></span><span> </span><span><span class="hljs-number">0.0</span></span><span>, </span><span><span class="hljs-attr">d:</span></span><span> </span><span><span class="hljs-number">0.0</span></span><span>}
+</span></span></code></div></div></pre>
+<blockquote data-start="4416" data-end="4535">
+<p data-start="4418" data-end="4535">这段 <code data-start="4421" data-end="4432">pid_gains</code> 就是用来消除你看到的：<br>
+<code data-start="4447" data-end="4535">No p gain specified for pid. Namespace: /iwalk/gazebo_ros_control/pid_gains/left_wheel</code></p>
+</blockquote>
+<hr data-start="4537" data-end="4540">
+<h3 data-start="4542" data-end="4577">C) <code data-start="4549" data-end="4577">launch/iwalk_gazebo.launch</code></h3>
+<pre class="overflow-visible! px-0!" data-start="4579" data-end="5862"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">xml</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-xml"><span><span><span class="hljs-meta">&lt;?xml version=<span class="hljs-string">"1.0"</span></span></span><span>?&gt;
+</span><span><span class="hljs-tag">&lt;<span class="hljs-name">launch</span></span></span><span>&gt;
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">arg</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"paused"</span></span><span> </span><span><span class="hljs-attr">default</span></span><span>=</span><span><span class="hljs-string">"false"</span></span><span>/&gt;
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">arg</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"gui"</span></span><span> </span><span><span class="hljs-attr">default</span></span><span>=</span><span><span class="hljs-string">"true"</span></span><span>/&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 1) 生成 robot_description --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">param</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"robot_description"</span></span><span>
+         </span><span><span class="hljs-attr">command</span></span><span>=</span><span><span class="hljs-string">"$(find xacro)/xacro $(find scrubber_urdf)/urdf/iwalk.gazebo.xacro"</span></span><span> /&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 2) 加载控制器参数（到参数服务器） --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">rosparam</span></span></span><span> </span><span><span class="hljs-attr">file</span></span><span>=</span><span><span class="hljs-string">"$(find scrubber_urdf)/config/diff_drive_controller.yaml"</span></span><span> </span><span><span class="hljs-attr">command</span></span><span>=</span><span><span class="hljs-string">"load"</span></span><span>/&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 3) 启动 Gazebo --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">include</span></span></span><span> </span><span><span class="hljs-attr">file</span></span><span>=</span><span><span class="hljs-string">"$(find gazebo_ros)/launch/empty_world.launch"</span></span><span>&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">arg</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"paused"</span></span><span> </span><span><span class="hljs-attr">value</span></span><span>=</span><span><span class="hljs-string">"$(arg paused)"</span></span><span>/&gt;
+    </span><span><span class="hljs-tag">&lt;<span class="hljs-name">arg</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"gui"</span></span><span> </span><span><span class="hljs-attr">value</span></span><span>=</span><span><span class="hljs-string">"$(arg gui)"</span></span><span>/&gt;
+  </span><span><span class="hljs-tag">&lt;/<span class="hljs-name">include</span></span></span><span>&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 4) 把机器人生成进 Gazebo --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">node</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"spawn_urdf"</span></span><span> </span><span><span class="hljs-attr">pkg</span></span><span>=</span><span><span class="hljs-string">"gazebo_ros"</span></span><span> </span><span><span class="hljs-attr">type</span></span><span>=</span><span><span class="hljs-string">"spawn_model"</span></span><span>
+        </span><span><span class="hljs-attr">args</span></span><span>=</span><span><span class="hljs-string">"-param robot_description -urdf -model iwalk -z 0.1"</span></span><span> /&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 5) TF --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">node</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"robot_state_publisher"</span></span><span> </span><span><span class="hljs-attr">pkg</span></span><span>=</span><span><span class="hljs-string">"robot_state_publisher"</span></span><span> </span><span><span class="hljs-attr">type</span></span><span>=</span><span><span class="hljs-string">"robot_state_publisher"</span></span><span>/&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 6) 启动控制器（注意 namespace=/iwalk） --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">node</span></span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"controller_spawner"</span></span><span> </span><span><span class="hljs-attr">pkg</span></span><span>=</span><span><span class="hljs-string">"controller_manager"</span></span><span> </span><span><span class="hljs-attr">type</span></span><span>=</span><span><span class="hljs-string">"spawner"</span></span><span>
+        </span><span><span class="hljs-attr">respawn</span></span><span>=</span><span><span class="hljs-string">"true"</span></span><span> </span><span><span class="hljs-attr">respawn_delay</span></span><span>=</span><span><span class="hljs-string">"1"</span></span><span>
+        </span><span><span class="hljs-attr">args</span></span><span>=</span><span><span class="hljs-string">"--namespace=/iwalk joint_state_controller diff_drive_controller"</span></span><span> /&gt;
+
+  </span><span><span class="hljs-comment">&lt;!-- 7) cmd_vel 转发（你也可以用 remap，这里沿用 relay） --&gt;</span></span><span>
+  </span><span><span class="hljs-tag">&lt;<span class="hljs-name">node</span></span></span><span> </span><span><span class="hljs-attr">pkg</span></span><span>=</span><span><span class="hljs-string">"topic_tools"</span></span><span> </span><span><span class="hljs-attr">type</span></span><span>=</span><span><span class="hljs-string">"relay"</span></span><span> </span><span><span class="hljs-attr">name</span></span><span>=</span><span><span class="hljs-string">"cmd_vel_relay"</span></span><span>
+        </span><span><span class="hljs-attr">args</span></span><span>=</span><span><span class="hljs-string">"/cmd_vel /iwalk/diff_drive_controller/cmd_vel"</span></span><span>/&gt;
+</span><span><span class="hljs-tag">&lt;/<span class="hljs-name">launch</span></span></span><span>&gt;
+</span></span></code></div></div></pre>
+<blockquote data-start="5864" data-end="5954">
+<p data-start="5866" data-end="5954">我加了 <code data-start="5870" data-end="5886">respawn="true"</code> 是为了避免偶发启动顺序竞争（机器人刚 spawn 出来时 controller_manager 还没就绪，spawner 可能早退）。</p>
+</blockquote>
+<hr data-start="5956" data-end="5959">
+<h2 data-start="5961" data-end="5980">5. 你现在这个链路的效果是什么</h2>
+<ul data-start="5982" data-end="6176">
+<li data-start="5982" data-end="6050">
+<p data-start="5984" data-end="6050">你发 <code data-start="5987" data-end="5997">/cmd_vel</code> → 通过 relay 转到 <code data-start="6012" data-end="6050">/iwalk/diff_drive_controller/cmd_vel</code></p>
+</li>
+<li data-start="6051" data-end="6080">
+<p data-start="6053" data-end="6080">diff_drive_controller 控轮子速度</p>
+</li>
+<li data-start="6081" data-end="6151">
+<p data-start="6083" data-end="6151">当你停止发布 cmd_vel 后，超过 <code data-start="6103" data-end="6125">cmd_vel_timeout: 0.1</code> 秒 → 控制器自动把速度当成 0 → <strong data-start="6145" data-end="6151">车停</strong></p>
+</li>
+<li data-start="6152" data-end="6176">
+<p data-start="6154" data-end="6176">PID 报错消失（因为给了 <code data-start="6168" data-end="6175">p/i/d</code>）</p>
+</li>
+</ul>
+<hr data-start="6178" data-end="6181">
+<h2 data-start="6183" data-end="6201">6. 必做验证（建议你跑一遍）</h2>
+<h3 data-start="6203" data-end="6235">A) 看 controller_manager 是否存在</h3>
+<pre class="overflow-visible! px-0!" data-start="6236" data-end="6295"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">bash</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>rosservice list | grep iwalk/controller_manager
+</span></span></code></div></div></pre>
+<h3 data-start="6297" data-end="6318">B) 看控制器是否 running</h3>
+<pre class="overflow-visible! px-0!" data-start="6319" data-end="6389"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">bash</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>rosservice call /iwalk/controller_manager/list_controllers
+</span></span></code></div></div></pre>
+<p data-start="6391" data-end="6463">你应该能看到 <code data-start="6398" data-end="6422">joint_state_controller</code> 和 <code data-start="6425" data-end="6448">diff_drive_controller</code> 状态是 <code data-start="6453" data-end="6462">running</code>。</p>
+<h3 data-start="6465" data-end="6478">C) 验证超时停车</h3>
+<ol data-start="6479" data-end="6488">
+<li data-start="6479" data-end="6488">
+<p data-start="6482" data-end="6488">发一个速度：</p>
+</li>
+</ol>
+<pre class="overflow-visible! px-0!" data-start="6489" data-end="6622"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="flex items-center text-token-text-secondary px-4 py-2 text-xs font-sans justify-between h-9 bg-token-sidebar-surface-primary select-none rounded-t-2xl corner-t-superellipse/1.1">bash</div><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"><div class="bg-token-bg-elevated-secondary text-token-text-secondary flex items-center gap-4 rounded-sm px-2 font-sans text-xs"><button class="flex gap-1 items-center select-none py-1" aria-label="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" aria-hidden="true" class="icon-sm"><use href="/cdn/assets/sprites-core-i9agxugi.svg#ce3544" fill="currentColor"></use></svg>Copy code</button></div></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-bash"><span><span>rostopic pub -r 10 /cmd_vel geometry_msgs/Twist \
+</span><span><span class="hljs-string">'{linear: {x: 0.3, y: 0.0, z: 0.0}, angular: {x: 0.0, y: 0.0, z: 0.0}}'</span></span><span>
+</span></span></code></div></div></pre>
+<ol start="2" data-start="6623" data-end="6682">
+<li data-start="6623" data-end="6637">
+<p data-start="6626" data-end="6637">Ctrl+C 停发</p>
+</li>
+<li data-start="6638" data-end="6682">
+<p data-start="6641" data-end="6682">车应在 <strong data-start="6645" data-end="6656">0.1 秒左右</strong>停下（仿真卡顿时会有体感延迟，但轮子命令应迅速归零）</p>
+</li>
+</ol>
+<hr data-start="6684" data-end="6687">
+<p data-start="6689" data-end="6786">如果你接下来还遇到“车能动但走得很飘/抖/轮速跟踪差”，我可以基于你模型的质量、轮子惯性和摩擦参数，给你一个更稳的 PID 起步值（以及是否需要给轮子关节加 damping/friction）。</p>
+</div></div>
