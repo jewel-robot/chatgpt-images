@@ -6,11 +6,6 @@
       "updatedAt": 1767032900135
     },
     {
-      "id": "1767031797312-v2ua1wm",
-      "title": "优化算法中的非精确搜索",
-      "updatedAt": 1767031797316
-    },
-    {
       "id": "1767029650747-fvy0gl4",
       "title": "Google Gemini",
       "updatedAt": 1767029650752
@@ -354,5 +349,5 @@
       "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
     }
   ],
-  "updated": 1767032985956
+  "updated": 1767032992641
 }
