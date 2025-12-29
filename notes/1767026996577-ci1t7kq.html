@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>命令行提示符配置</title>
+  <meta name="created-at" content="1767027004915">
+  <meta name="updated-at" content="1767027004915">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69523cda-cbb8-8323-889b-9e947b5c4911">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>命令行提示符配置</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">这是为什么：
+ The statusline setup agent couldn't find shell configuration files with PS1 settings in the typical locations. Since you're on Windows, you might be using Git Bash, WSL, PowerShell, or another shell
+  environment.
+
+  To configure your status line, please provide one of the following:
+
+  1. The path to your shell configuration file (e.g., .bashrc, .zshrc)
+  2. Your PS1 value directly (copy the PS1 line from your shell config)
+  3. Instructions for what you'd like your status line to display (e.g., "username@hostname in current directory")
+
+  If you're using WSL, the config files would typically be at paths like \\wsl$\Ubuntu\home\&lt;username&gt;\.bashrc.</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="124">这段提示的意思是：<strong data-start="9" data-end="108">某个“statusline setup agent”（状态栏/命令行提示符配置助手）想自动帮你改命令行提示符（PS1），但它在常见位置没找到你的 shell 配置文件或没找到 PS1 的设置</strong>，所以就停下来让你手动提供信息。</p>
+<p data-start="126" data-end="157">在 Windows 上它经常会找不到，原因通常是下面这些之一：</p>
+<h3 data-start="159" data-end="171">为什么它找不到？</h3>
+<ol data-start="172" data-end="771">
+<li data-start="172" data-end="303">
+<p data-start="175" data-end="201"><strong data-start="175" data-end="201">你用的不是 Bash/Zsh（没有 PS1）</strong></p>
+<ul data-start="205" data-end="303">
+<li data-start="205" data-end="249">
+<p data-start="207" data-end="249"><strong data-start="207" data-end="227">PowerShell / CMD</strong> 不用 <code data-start="231" data-end="236">PS1</code>，它们的提示符机制不一样。</p>
+</li>
+<li data-start="253" data-end="303">
+<p data-start="255" data-end="303">所以如果你是在 PowerShell 里跑的，它去找 <code data-start="282" data-end="291">.bashrc</code>/<code data-start="292" data-end="297">PS1</code> 就会失败。</p>
+</li>
+</ul>
+</li>
+<li data-start="305" data-end="469">
+<p data-start="308" data-end="347"><strong data-start="308" data-end="347">你用的是 Git Bash / MSYS2，但配置文件不在“典型路径”</strong></p>
+<ul data-start="351" data-end="469">
+<li data-start="351" data-end="408">
+<p data-start="353" data-end="408">Git Bash 的 home 目录不一定是 <code data-start="376" data-end="391">C:\Users\&lt;你&gt;\</code>，有时是 Git 自己的目录结构。</p>
+</li>
+<li data-start="412" data-end="469">
+<p data-start="414" data-end="469">或者你根本没创建过 <code data-start="424" data-end="435">~/.bashrc</code>，PS1 在别的文件里（例如 <code data-start="450" data-end="467">~/.bash_profile</code>）。</p>
+</li>
+</ul>
+</li>
+<li data-start="471" data-end="660">
+<p data-start="474" data-end="518"><strong data-start="474" data-end="518">你用的是 WSL，但 agent 没法自动访问 WSL 的 Linux 文件系统</strong></p>
+<ul data-start="522" data-end="660">
+<li data-start="522" data-end="567">
+<p data-start="524" data-end="567">你的 <code data-start="527" data-end="536">.bashrc</code> 在 WSL 里：<code data-start="545" data-end="567">/home/&lt;user&gt;/.bashrc</code></p>
+</li>
+<li data-start="571" data-end="629">
+<p data-start="573" data-end="629">Windows 侧对应路径是它提示的这种：<code data-start="594" data-end="629">\\wsl$\Ubuntu\home\&lt;user&gt;\.bashrc</code></p>
+</li>
+<li data-start="633" data-end="660">
+<p data-start="635" data-end="660">有些工具没权限/没能力去扫这个路径，就会说找不到。</p>
+</li>
+</ul>
+</li>
+<li data-start="662" data-end="771">
+<p data-start="665" data-end="690"><strong data-start="665" data-end="690">你的提示符没有在配置文件里显式设置 PS1</strong></p>
+<ul data-start="694" data-end="771">
+<li data-start="694" data-end="771">
+<p data-start="696" data-end="771">比如用了 Oh-My-Posh、Starship、oh-my-zsh 主题等，PS1 可能被框架动态生成，不是一个简单的 <code data-start="757" data-end="768">PS1="..."</code> 行。</p>
+</li>
+</ul>
+</li>
+</ol>
+<hr data-start="773" data-end="776">
+<h2 data-start="778" data-end="797">你该怎么做（按你实际用的终端选）</h2>
+<h3 data-start="798" data-end="826">A) 如果你用的是 <strong data-start="812" data-end="826">PowerShell</strong></h3>
+<ul data-start="827" data-end="1026">
+<li data-start="827" data-end="983">
+<p data-start="829" data-end="885">这类工具要配置“状态栏”，一般不是给 PS1，而是要你提供 <strong data-start="859" data-end="881">PowerShell profile</strong> 路径：</p>
+<ul data-start="888" data-end="983">
+<li data-start="888" data-end="904">
+<p data-start="890" data-end="904">常见是：<code data-start="894" data-end="904">$PROFILE</code></p>
+</li>
+<li data-start="907" data-end="983">
+<p data-start="909" data-end="983">文件通常在：<code data-start="915" data-end="983">C:\Users\&lt;你&gt;\Documents\PowerShell\Microsoft.PowerShell_profile.ps1</code></p>
+</li>
+</ul>
+</li>
+<li data-start="984" data-end="1026">
+<p data-start="986" data-end="1026">你可以在 PowerShell 里运行：<code data-start="1006" data-end="1021">echo $PROFILE</code> 看路径。</p>
+</li>
+</ul>
+<h3 data-start="1028" data-end="1054">B) 如果你用的是 <strong data-start="1042" data-end="1054">Git Bash</strong></h3>
+<ul data-start="1055" data-end="1171">
+<li data-start="1055" data-end="1106">
+<p data-start="1057" data-end="1075">你可以在 Git Bash 里运行：</p>
+<ul data-start="1078" data-end="1106">
+<li data-start="1078" data-end="1092">
+<p data-start="1080" data-end="1092"><code data-start="1080" data-end="1092">echo $HOME</code></p>
+</li>
+<li data-start="1095" data-end="1106">
+<p data-start="1097" data-end="1106"><code data-start="1097" data-end="1106">ls -a ~</code></p>
+</li>
+</ul>
+</li>
+<li data-start="1107" data-end="1147">
+<p data-start="1109" data-end="1147">常见配置文件：<code data-start="1116" data-end="1127">~/.bashrc</code> 或 <code data-start="1130" data-end="1147">~/.bash_profile</code></p>
+</li>
+<li data-start="1148" data-end="1171">
+<p data-start="1150" data-end="1171">PS1 通常长这样：<code data-start="1160" data-end="1171">PS1='...'</code></p>
+</li>
+</ul>
+<h3 data-start="1173" data-end="1194">C) 如果你用的是 <strong data-start="1187" data-end="1194">WSL</strong></h3>
+<ul data-start="1195" data-end="1339">
+<li data-start="1195" data-end="1252">
+<p data-start="1197" data-end="1252">在 WSL 里运行：<code data-start="1207" data-end="1223">nano ~/.bashrc</code> 或 <code data-start="1226" data-end="1252">cat ~/.bashrc | grep PS1</code></p>
+</li>
+<li data-start="1253" data-end="1339">
+<p data-start="1255" data-end="1277">如果要给 Windows 侧工具路径，就用：</p>
+<ul data-start="1280" data-end="1339">
+<li data-start="1280" data-end="1339">
+<p data-start="1282" data-end="1339"><code data-start="1282" data-end="1321">\\wsl$\Ubuntu\home\&lt;你的WSL用户名&gt;\.bashrc</code>（Ubuntu 发行版名字可能不同）</p>
+</li>
+</ul>
+</li>
+</ul>
+<h3 data-start="1341" data-end="1370">D) 如果你不想管 PS1，只想告诉它“显示什么”</h3>
+<p data-start="1371" data-end="1386">你可以直接给它一个需求，比如：</p>
+<ul data-start="1387" data-end="1425">
+<li data-start="1387" data-end="1425">
+<p data-start="1389" data-end="1425"><code data-start="1389" data-end="1425">username@hostname:cwd (git branch)</code></p>
+</li>
+</ul>
+<hr data-start="1427" data-end="1430">
+<h2 data-start="1432" data-end="1454">我帮你快速定位：你现在用的是哪种终端？</h2>
+<p data-start="1455" data-end="1543">你只要回我一句：你是在 <strong data-start="1467" data-end="1529">PowerShell / Windows Terminal / VSCode 终端 / Git Bash / WSL</strong> 的哪一个里看到这段提示的？</p>
+<p data-start="1545" data-end="1582">如果你懒得判断，也可以把你终端里这两条命令的输出贴出来（不涉及隐私的话）：</p>
+<ul data-start="1583" data-end="1610">
+<li data-start="1583" data-end="1594">
+<p data-start="1585" data-end="1594"><code data-start="1585" data-end="1594">echo $0</code></p>
+</li>
+<li data-start="1595" data-end="1610">
+<p data-start="1597" data-end="1610"><code data-start="1597" data-end="1610">echo $SHELL</code></p>
+</li>
+</ul>
+<p data-start="1612" data-end="1644" data-is-last-node="" data-is-only-node="">我就能告诉你它为什么找不到，以及应该给它哪个文件路径/配置方式。</p></div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">PowerShell</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="151">那就对上了：<strong data-start="6" data-end="47">PowerShell 根本没有 <code data-start="24" data-end="29">PS1</code> / <code data-start="32" data-end="41">.bashrc</code> 这一套</strong>。<br data-start="48" data-end="51">
+所以那个“statusline setup agent”按 <em data-start="81" data-end="95">Bash/Zsh 的思路</em> 去找 <code data-start="99" data-end="104">PS1</code>，在 Windows 的 PowerShell 里当然会报“找不到典型位置的 PS1 配置”。</p>
+<h3 data-start="153" data-end="173">你现在有 2 条路（选一种就行）</h3>
+<h2 data-start="175" data-end="211">路 1：继续用 PowerShell 的方式配置“状态栏/提示符”</h2>
+<p data-start="212" data-end="260">PowerShell 的提示符通常在 <strong data-start="231" data-end="242">Profile</strong> 里配置（相当于它的“启动脚本”）。</p>
+<ol data-start="262" data-end="282">
+<li data-start="262" data-end="282">
+<p data-start="265" data-end="282">在 PowerShell 里执行：</p>
+</li>
+</ol>
+<pre class="overflow-visible! px-0!" data-start="283" data-end="309"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-variable">$PROFILE</span></span><span>
+</span></span></code></div></div></pre>
+<p data-start="310" data-end="400">它会输出你的 profile 文件路径（例如 <code data-start="333" data-end="399">C:\Users\你\Documents\PowerShell\Microsoft.PowerShell_profile.ps1</code>）</p>
+<ol start="2" data-start="402" data-end="417">
+<li data-start="402" data-end="417">
+<p data-start="405" data-end="417">如果文件不存在，创建它：</p>
+</li>
+</ol>
+<pre class="overflow-visible! px-0!" data-start="418" data-end="488"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-built_in">New-Item</span></span><span> </span><span><span class="hljs-literal">-Type</span></span><span> File </span><span><span class="hljs-literal">-Force</span></span><span> </span><span><span class="hljs-variable">$PROFILE</span></span><span>
+notepad </span><span><span class="hljs-variable">$PROFILE</span></span><span>
+</span></span></code></div></div></pre>
+<ol start="3" data-start="490" data-end="560">
+<li data-start="490" data-end="560">
+<p data-start="493" data-end="560">你用的那个“statusline setup agent”既然要你提供“配置文件路径”，你就把 <code data-start="541" data-end="551">$PROFILE</code> 输出的路径给它。</p>
+</li>
+</ol>
+<blockquote data-start="562" data-end="635">
+<p data-start="564" data-end="635">如果它只支持 PS1（Bash 专用），那它本身就不支持 PowerShell；你得换用 PowerShell 兼容的提示符方案（见路 2）。</p>
+</blockquote>
+<hr data-start="637" data-end="640">
+<h2 data-start="642" data-end="676">路 2：用 PowerShell 常见的“状态栏”工具（更稳）</h2>
+<p data-start="677" data-end="700">在 PowerShell 里最常见的是这两个：</p>
+<h3 data-start="702" data-end="743">A) Oh My Posh（PowerShell/Windows 很常用）</h3>
+<p data-start="744" data-end="784">它不靠 PS1，而是初始化一个主题。你通常会在 <code data-start="768" data-end="778">$PROFILE</code> 里写类似：</p>
+<pre class="overflow-visible! px-0!" data-start="785" data-end="861"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-built_in">oh</span></span><span><span class="hljs-literal">-my-posh</span></span><span> init pwsh </span><span><span class="hljs-literal">--config</span></span><span> </span><span><span class="hljs-string">"&lt;主题路径&gt;"</span></span><span> | </span><span><span class="hljs-built_in">Invoke-Expression</span></span><span>
+</span></span></code></div></div></pre>
+<h3 data-start="863" data-end="883">B) Starship（跨平台）</h3>
+<p data-start="884" data-end="900">在 <code data-start="886" data-end="896">$PROFILE</code> 里写：</p>
+<pre class="overflow-visible! px-0!" data-start="901" data-end="964"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-built_in">Invoke-Expression</span></span><span> (&amp;starship init powershell)
+</span></span></code></div></div></pre>
+<hr data-start="966" data-end="969">
+<h2 data-start="971" data-end="991">我需要你告诉我一件事（不用多解释）</h2>
+<p data-start="992" data-end="1070">你看到这个提示的“statusline setup agent”是哪个工具/程序弹出来的？（比如某个 VSCode 插件、终端增强工具、某个安装脚本的步骤）</p>
+<p data-start="1072" data-end="1106">如果你不确定，也可以直接把提示前后各 10 行贴出来。我就能告诉你：</p>
+<ul data-start="1107" data-end="1181" data-is-last-node="" data-is-only-node="">
+<li data-start="1107" data-end="1129">
+<p data-start="1109" data-end="1129">它到底支不支持 PowerShell</p>
+</li>
+<li data-start="1130" data-end="1181" data-is-last-node="">
+<p data-start="1132" data-end="1181" data-is-last-node="">该给它 <code data-start="1136" data-end="1146">$PROFILE</code> 路径还是要换 Oh My Posh / Starship 的配置方式</p>
+</li>
+</ul></div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">claude code怎么进行样式设置</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="215">在 Claude Code 里，“样式”通常分三块：<strong data-start="26" data-end="34">终端主题</strong>、<strong data-start="35" data-end="70">Claude Code 的输出风格（Output Style）</strong>、<strong data-start="71" data-end="93">底部状态行（Status Line）</strong>。你用的是 <strong data-start="99" data-end="113">PowerShell</strong>，所以你之前看到的 PS1 提示，其实是因为它在尝试“复刻 Bash/Zsh 的提示符”，但 PowerShell 没有 PS1。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/statusline" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/statusline" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<hr data-start="217" data-end="220">
+<h2 data-start="222" data-end="258">1) 终端主题（颜色/字体）——不在 Claude Code 里改</h2>
+<p data-start="259" data-end="421">Claude Code <strong data-start="271" data-end="279">不能控制</strong>你的终端主题（这是 Windows Terminal / PowerShell 自己的主题）。你只能在终端应用里换配色/字体；Claude Code 这边可以用 <code data-start="360" data-end="369">/config</code> 让它的配色更“贴近”你终端。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/zh-CN/terminal-config" target="_blank" rel="noopener" alt="https://code.claude.com/docs/zh-CN/terminal-config" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<hr data-start="423" data-end="426">
+<h2 data-start="428" data-end="473">2) 输出风格（Output Styles）——改 Claude 回答的“说话方式”</h2>
+<p data-start="474" data-end="492">在 Claude Code 里运行：</p>
+<ul data-start="494" data-end="718">
+<li data-start="494" data-end="575">
+<p data-start="496" data-end="575">打开选择菜单：<code data-start="503" data-end="518">/output-style</code>（也能从 <code data-start="523" data-end="532">/config</code> 里进）<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/output-styles" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/output-styles" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+</li>
+<li data-start="576" data-end="718">
+<p data-start="578" data-end="585">直接切换：</p>
+<ul data-start="588" data-end="718">
+<li data-start="588" data-end="615">
+<p data-start="590" data-end="615"><code data-start="590" data-end="613">/output-style default</code></p>
+</li>
+<li data-start="618" data-end="649">
+<p data-start="620" data-end="649"><code data-start="620" data-end="647">/output-style explanatory</code></p>
+</li>
+<li data-start="652" data-end="718">
+<p data-start="654" data-end="718"><code data-start="654" data-end="678">/output-style learning</code> <span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/output-styles" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/output-styles" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="720" data-end="944">这些是官方内置三种风格：Default / Explanatory / Learning。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/output-styles" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/output-styles" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span><br data-start="802" data-end="805">
+也支持自定义 output style（markdown + frontmatter），放在 <code data-start="852" data-end="877">~/.claude/output-styles</code> 或项目的 <code data-start="883" data-end="906">.claude/output-styles</code>。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/output-styles" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/output-styles" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<hr data-start="946" data-end="949">
+<h2 data-start="951" data-end="992">3) 状态行（Status Line）——改底部那条信息的“显示样式/内容”</h2>
+<p data-start="993" data-end="1002">你可以用两种方式：</p>
+<h3 data-start="1004" data-end="1031">A) 最简单：用命令让 Claude 帮你生成</h3>
+<p data-start="1032" data-end="1168">在 Claude Code 里输入：<code data-start="1050" data-end="1063">/statusline</code><br data-start="1063" data-end="1066">
+它会尝试按你的终端提示符来生成；但在 Windows/PowerShell 下它经常拿不到“提示符定义”，就会让你提供路径/规则。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/statusline" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/statusline" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<h3 data-start="1170" data-end="1214">B) 最稳：自己写一个 statusLine 命令（推荐 PowerShell）</h3>
+<p data-start="1215" data-end="1295">在 <code data-start="1217" data-end="1242">~/.claude/settings.json</code>（Windows 通常是 <code data-start="1255" data-end="1291">C:\Users\&lt;你&gt;\.claude\settings.json</code>）里加：</p>
+<pre class="overflow-visible! px-0!" data-start="1297" data-end="1478"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-json"><span><span><span class="hljs-punctuation">{</span></span><span>
+  </span><span><span class="hljs-attr">"statusLine"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-punctuation">{</span></span><span>
+    </span><span><span class="hljs-attr">"type"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"command"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+    </span><span><span class="hljs-attr">"command"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"pwsh -NoProfile -ExecutionPolicy Bypass -File C:\\Users\\&lt;你&gt;\\.claude\\statusline.ps1"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+    </span><span><span class="hljs-attr">"padding"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-number">0</span></span><span>
+  </span><span><span class="hljs-punctuation">}</span></span><span>
+</span><span><span class="hljs-punctuation">}</span></span><span>
+</span></span></code></div></div></pre>
+<p data-start="1480" data-end="1612">Claude Code 会把一段 JSON（包含 model、cwd、cost 等）通过 stdin 传给你的脚本，你脚本 <strong data-start="1542" data-end="1551">输出第一行</strong>作为状态行；并且支持 ANSI 颜色码来做样式。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/statusline" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/statusline" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<p data-start="1614" data-end="1655">一个最小可用的 <code data-start="1622" data-end="1638">statusline.ps1</code> 示例（显示模型 + 当前目录）：</p>
+<pre class="overflow-visible! px-0!" data-start="1657" data-end="1964"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-comment"># C:\Users\&lt;你&gt;\.claude\statusline.ps1</span></span><span>
+</span><span><span class="hljs-variable">$inputJson</span></span><span> = [</span><span><span class="hljs-type">Console</span></span><span>]::In.ReadToEnd()
+</span><span><span class="hljs-variable">$data</span></span><span> = </span><span><span class="hljs-variable">$inputJson</span></span><span> | </span><span><span class="hljs-built_in">ConvertFrom-Json</span></span><span>
+
+</span><span><span class="hljs-variable">$model</span></span><span> = </span><span><span class="hljs-variable">$data</span></span><span>.model.display_name
+</span><span><span class="hljs-variable">$dir</span></span><span>   = </span><span><span class="hljs-built_in">Split-Path</span></span><span> </span><span><span class="hljs-literal">-Leaf</span></span><span> </span><span><span class="hljs-variable">$data</span></span><span>.workspace.current_dir
+
+</span><span><span class="hljs-comment"># ANSI：黄色示例（你也可以换别的）</span></span><span>
+</span><span><span class="hljs-variable">$esc</span></span><span> = [</span><span><span class="hljs-built_in">char</span></span><span>]</span><span><span class="hljs-number">27</span></span><span>
+</span><span><span class="hljs-built_in">Write-Output</span></span><span> </span><span><span class="hljs-string">"<span class="hljs-variable">$esc</span></span></span><span>[33m[</span><span><span class="hljs-variable">$model</span></span><span>]</span><span><span class="hljs-variable">$esc</span></span><span>[0m  📁 </span><span><span class="hljs-variable">$dir</span></span><span>"
+</span></span></code></div></div></pre>
+<hr data-start="1966" data-end="1969">
+<p data-start="1971" data-end="1991">如果你告诉我你说的“样式”更偏向哪一种：</p>
+<ol data-start="1992" data-end="2108">
+<li data-start="1992" data-end="2029">
+<p data-start="1995" data-end="2029"><strong data-start="1995" data-end="2006">终端颜色/字体</strong>（Windows Terminal 主题）</p>
+</li>
+<li data-start="2030" data-end="2073">
+<p data-start="2033" data-end="2073"><strong data-start="2033" data-end="2057">Claude 回答更啰嗦/更教学/更简洁</strong>（Output Style）</p>
+</li>
+<li data-start="2074" data-end="2108">
+<p data-start="2077" data-end="2108"><strong data-start="2077" data-end="2093">底部状态行显示内容+颜色</strong>（Status Line）</p>
+</li>
+</ol>
+<p data-start="2110" data-end="2143">我就按你的目标给你一套最合适的配置（PowerShell 版本）。</p>
+</div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content"><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767026996577-ci1t7kq_img_0_1767026996598.png" alt="已上传的图片" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767026996577-ci1t7kq_img_0_1767026996598.png" data-github-sha="eeede73e820bbfe4f61539f6325b5366364f4a0e">这里怎么设置</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="58">你这个界面就是 Claude Code 的 <strong data-start="22" data-end="38">Config（偏好设置）</strong> TUI，操作方式跟大多数终端菜单一样：</p>
+<h3 data-start="60" data-end="73">在这个界面里怎么改</h3>
+<ol data-start="74" data-end="386">
+<li data-start="74" data-end="143">
+<p data-start="77" data-end="143"><strong data-start="77" data-end="84">Tab</strong>：在顶部 <code data-start="89" data-end="114">Status / Config / Usage</code> 之间切换（你图里右上角也写了 tab to cycle）</p>
+</li>
+<li data-start="144" data-end="190">
+<p data-start="147" data-end="190"><strong data-start="147" data-end="156">↑ / ↓</strong>：上下移动选中项（你现在选中的是 <strong data-start="173" data-end="189">Output style</strong>）</p>
+</li>
+<li data-start="191" data-end="386">
+<p data-start="194" data-end="208">对不同类型的项，改法不一样：</p>
+<ul data-start="212" data-end="386">
+<li data-start="212" data-end="266">
+<p data-start="214" data-end="266"><strong data-start="214" data-end="230">true / false</strong> 这类开关：通常按 <strong data-start="240" data-end="249">Space</strong> 或 <strong data-start="252" data-end="261">Enter</strong> 直接切换</p>
+</li>
+<li data-start="270" data-end="386">
+<p data-start="272" data-end="386"><strong data-start="272" data-end="318">Theme / Output style / Editor mode / Model</strong> 这种“选项值”：<br data-start="327" data-end="330">
+选中后按 <strong data-start="340" data-end="349">← / →</strong> 轮换，或按 <strong data-start="356" data-end="365">Enter</strong> 弹出/进入选择（不同版本可能是其中一种）</p>
+</li>
+</ul>
+</li>
+</ol>
+<h3 data-start="388" data-end="417">你图里这个 “Output style” 怎么设置</h3>
+<ul data-start="418" data-end="526">
+<li data-start="418" data-end="448">
+<p data-start="420" data-end="448">先用 <strong data-start="423" data-end="430">↑/↓</strong> 选中 <code data-start="434" data-end="448">Output style</code></p>
+</li>
+<li data-start="449" data-end="526">
+<p data-start="451" data-end="526">然后按 <strong data-start="455" data-end="462">←/→</strong> 或 <strong data-start="465" data-end="474">Enter</strong>，把它切到你想要的（一般会有 <code data-start="489" data-end="523">default / explanatory / learning</code> 等）</p>
+</li>
+</ul>
+<h3 data-start="528" data-end="541">备用方式（更直接）</h3>
+<p data-start="542" data-end="579">在 Claude Code 里也可以直接输入命令切换输出风格（不进菜单）：</p>
+<ul data-start="580" data-end="662">
+<li data-start="580" data-end="605">
+<p data-start="582" data-end="605"><code data-start="582" data-end="605">/output-style default</code></p>
+</li>
+<li data-start="606" data-end="635">
+<p data-start="608" data-end="635"><code data-start="608" data-end="635">/output-style explanatory</code></p>
+</li>
+<li data-start="636" data-end="662">
+<p data-start="638" data-end="662"><code data-start="638" data-end="662">/output-style learning</code></p>
+</li>
+</ul>
+<p data-start="664" data-end="790">如果你按 <strong data-start="669" data-end="678">Enter</strong> 或 <strong data-start="681" data-end="688">←/→</strong> 没反应，告诉我你用的终端是 Windows Terminal 还是 VSCode 终端，以及 Claude Code 版本/构建号（Settings 页里通常能看到），我就按你那版的实际快捷键给你对照。</p>
+</div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content"><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767026996577-ci1t7kq_img_1_1767027000799.png" alt="已上传的图片" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767026996577-ci1t7kq_img_1_1767027000799.png" data-github-sha="eeede73e820bbfe4f61539f6325b5366364f4a0e">图片中的选项都是什么意思</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="63">下面按你截图里的每一项，逐个解释它“在 Claude Code 里大概控制什么”（不同版本文案可能略有差异，但含义基本一致）。</p>
+<h3 data-start="65" data-end="81">Auto-compact</h3>
+<ul data-start="82" data-end="202">
+<li data-start="82" data-end="158">
+<p data-start="84" data-end="158"><strong data-start="84" data-end="90">作用</strong>：对话/上下文变长时，Claude Code 会自动“压缩/整理”历史内容（把长对话做摘要化），以减少上下文占用、避免跑满窗口/上下文。</p>
+</li>
+<li data-start="159" data-end="202">
+<p data-start="161" data-end="202"><strong data-start="161" data-end="166">开</strong>：更省上下文、更不容易变慢；<strong data-start="180" data-end="185">关</strong>：保留原始细节更多，但更容易变长。</p>
+</li>
+</ul>
+<h3 data-start="204" data-end="217">Show tips</h3>
+<ul data-start="218" data-end="248">
+<li data-start="218" data-end="248">
+<p data-start="220" data-end="248"><strong data-start="220" data-end="226">作用</strong>：是否在使用过程中显示新手提示/快捷键提示。</p>
+</li>
+</ul>
+<h3 data-start="250" data-end="279">Rewind code (checkpoints)</h3>
+<ul data-start="280" data-end="371">
+<li data-start="280" data-end="330">
+<p data-start="282" data-end="330"><strong data-start="282" data-end="288">作用</strong>：启用“回退/撤销”的检查点机制（做改动前/关键步骤会留下 checkpoint）。</p>
+</li>
+<li data-start="331" data-end="371">
+<p data-start="333" data-end="371"><strong data-start="333" data-end="338">开</strong>：更容易回滚到之前状态；<strong data-start="350" data-end="355">关</strong>：更轻量，但出了问题要自己恢复。</p>
+</li>
+</ul>
+<h3 data-start="373" data-end="391">Verbose output</h3>
+<ul data-start="392" data-end="457">
+<li data-start="392" data-end="430">
+<p data-start="394" data-end="430"><strong data-start="394" data-end="400">作用</strong>：输出更“啰嗦”的日志/调试信息（比如执行步骤、更多细节）。</p>
+</li>
+<li data-start="431" data-end="457">
+<p data-start="433" data-end="457"><strong data-start="433" data-end="438">开</strong>：排错更方便；<strong data-start="445" data-end="450">关</strong>：界面更干净。</p>
+</li>
+</ul>
+<h3 data-start="459" data-end="484">Terminal progress bar</h3>
+<ul data-start="485" data-end="524">
+<li data-start="485" data-end="524">
+<p data-start="487" data-end="524"><strong data-start="487" data-end="493">作用</strong>：长任务时是否显示进度条/进度提示（例如下载、扫描、生成等）。</p>
+</li>
+</ul>
+<h3 data-start="526" data-end="553">Default permission mode</h3>
+<ul data-start="554" data-end="696">
+<li data-start="554" data-end="609">
+<p data-start="556" data-end="609"><strong data-start="556" data-end="562">作用</strong>：Claude Code 触发一些可能影响系统/文件/命令的操作时，默认的“权限/确认策略”。</p>
+</li>
+<li data-start="610" data-end="656">
+<p data-start="612" data-end="656"><strong data-start="612" data-end="623">Default</strong> 通常表示：按系统默认安全策略来（可能会在敏感动作前询问你确认）。</p>
+</li>
+<li data-start="657" data-end="696">
+<p data-start="659" data-end="696">（如果你看到还有别的选项，一般是“更严格每次都问”或“更宽松自动允许”等）</p>
+</li>
+</ul>
+<h3 data-start="698" data-end="735">Respect .gitignore in file picker</h3>
+<ul data-start="736" data-end="866">
+<li data-start="736" data-end="776">
+<p data-start="738" data-end="776"><strong data-start="738" data-end="744">作用</strong>：在文件选择器/文件列表里，是否遵守 <code data-start="763" data-end="775">.gitignore</code>。</p>
+</li>
+<li data-start="777" data-end="843">
+<p data-start="779" data-end="843"><strong data-start="779" data-end="784">开</strong>：被 gitignore 的文件/目录不太会出现在选择列表里（更清爽，避免选到 <code data-start="824" data-end="838">node_modules</code> 之类）。</p>
+</li>
+<li data-start="844" data-end="866">
+<p data-start="846" data-end="866"><strong data-start="846" data-end="851">关</strong>：能看到所有文件（但会更乱）。</p>
+</li>
+</ul>
+<h3 data-start="868" data-end="877">Theme</h3>
+<ul data-start="878" data-end="987">
+<li data-start="878" data-end="926">
+<p data-start="880" data-end="926"><strong data-start="880" data-end="886">作用</strong>：Claude Code 自己这套 TUI 的主题（比如 Dark mode）。</p>
+</li>
+<li data-start="927" data-end="987">
+<p data-start="929" data-end="987">注意：它改的是 <strong data-start="937" data-end="957">Claude Code 界面风格</strong>，不是你 Windows Terminal 的全局配色主题。</p>
+</li>
+</ul>
+<h3 data-start="989" data-end="1006">Notifications</h3>
+<ul data-start="1007" data-end="1067">
+<li data-start="1007" data-end="1038">
+<p data-start="1009" data-end="1038"><strong data-start="1009" data-end="1015">作用</strong>：是否发送系统通知（任务完成、需要你确认等）。</p>
+</li>
+<li data-start="1039" data-end="1067">
+<p data-start="1041" data-end="1067"><strong data-start="1041" data-end="1049">Auto</strong>：通常表示“能发就发、看环境支持”。</p>
+</li>
+</ul>
+<h3 data-start="1069" data-end="1085">Output style</h3>
+<ul data-start="1086" data-end="1167">
+<li data-start="1086" data-end="1128">
+<p data-start="1088" data-end="1128"><strong data-start="1088" data-end="1094">作用</strong>：Claude 的回答风格（更简洁 vs 更解释型 vs 更教学）。</p>
+</li>
+<li data-start="1129" data-end="1167">
+<p data-start="1131" data-end="1167">你现在是 <code data-start="1136" data-end="1145">default</code>，切换后会影响它输出的详细程度、解释方式等。</p>
+</li>
+</ul>
+<h3 data-start="1169" data-end="1184">Editor mode</h3>
+<ul data-start="1185" data-end="1268">
+<li data-start="1185" data-end="1240">
+<p data-start="1187" data-end="1240"><strong data-start="1187" data-end="1193">作用</strong>：编辑/交互的按键模式（比如“普通模式”或类似 Vim 风格的模式，取决于版本提供哪些选项）。</p>
+</li>
+<li data-start="1241" data-end="1268">
+<p data-start="1243" data-end="1268">你这里是 <code data-start="1248" data-end="1256">normal</code>：通常就是常规按键行为。</p>
+</li>
+</ul>
+<h3 data-start="1270" data-end="1279">Model</h3>
+<ul data-start="1280" data-end="1363">
+<li data-start="1280" data-end="1335">
+<p data-start="1282" data-end="1335"><strong data-start="1282" data-end="1288">作用</strong>：选择 Claude Code 使用的模型（你这里显示 <code data-start="1316" data-end="1333">claude-opus-4.5</code>）。</p>
+</li>
+<li data-start="1336" data-end="1363">
+<p data-start="1338" data-end="1363">不同模型通常在速度、质量、成本（如果计费）上不同。</p>
+</li>
+</ul>
+<h3 data-start="1365" data-end="1408">Auto-connect to IDE (external terminal)</h3>
+<ul data-start="1409" data-end="1532">
+<li data-start="1409" data-end="1496">
+<p data-start="1411" data-end="1496"><strong data-start="1411" data-end="1417">作用</strong>：当你在“外部终端”运行 Claude Code 时，是否自动连接到 IDE（例如 VS Code/JetBrains 的集成）以实现更顺滑的跳转/编辑协同。</p>
+</li>
+<li data-start="1497" data-end="1532">
+<p data-start="1499" data-end="1532"><strong data-start="1499" data-end="1504">开</strong>：更容易和 IDE 联动；<strong data-start="1517" data-end="1522">关</strong>：纯终端模式更干净。</p>
+</li>
+</ul>
+<hr data-start="1534" data-end="1537">
+<p data-start="1539" data-end="1619">如果你告诉我你最想调的是哪一类（比如“让它回答更啰嗦/更短”“文件列表别显示 node_modules”“怎么回退改动”），我可以给你一套更具体的推荐设置组合。</p>
+</div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content"><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767026996577-ci1t7kq_img_2_1767027002883.png" alt="已上传的图片" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767026996577-ci1t7kq_img_2_1767027002883.png" data-github-sha="a42d865f76806a6334b3c3ab217481738664c582">这个的橙色怎么修改</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="177">你图里那条<strong data-start="5" data-end="18">橙色边框/标题高亮</strong>，本质上是 Claude Code 在终端里输出的 <strong data-start="44" data-end="55">ANSI 颜色</strong>。在官方文档里也明确说了：<strong data-start="68" data-end="109">终端主题/配色是由你的终端应用控制的，Claude Code 不能直接控制</strong>，只能在 <code data-start="114" data-end="123">/config</code> 里把它的主题“匹配”到终端环境。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 68px;"><a href="https://code.claude.com/docs/en/terminal-config" target="_blank" rel="noopener" alt="https://code.claude.com/docs/en/terminal-config" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 68px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Claude Code</span></span></span></a></span></span></p>
+<p data-start="179" data-end="204">所以想改“橙色”，一般有三种做法（从推荐到折腾）：</p>
+<h2 data-start="206" data-end="243">方式 1（最推荐）：改 Windows Terminal 的配色方案</h2>
+<p data-start="244" data-end="427">Claude Code 的橙色通常来自终端配色表里的某个颜色位（常见是 <em data-start="280" data-end="301">yellow/brightYellow</em> 这类槽位），你改终端的 <strong data-start="314" data-end="330">Color scheme</strong>，它的橙色就会跟着变。Windows Terminal 支持在 <code data-start="362" data-end="377">settings.json</code> 里自定义/切换配色方案。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 79px;"><a href="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/color-schemes?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://learn.microsoft.com/en-us/windows/terminal/customize-settings/color-schemes?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 79px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Microsoft Learn</span></span></span></a></span></span></p>
+<p data-start="429" data-end="450">操作（Windows Terminal）：</p>
+<ol data-start="451" data-end="581">
+<li data-start="451" data-end="488">
+<p data-start="454" data-end="488">打开 Windows Terminal 设置（<code data-start="477" data-end="487">Ctrl + ,</code>）</p>
+</li>
+<li data-start="489" data-end="519">
+<p data-start="492" data-end="519">找到 <strong data-start="495" data-end="519">Color schemes / 配色方案</strong></p>
+</li>
+<li data-start="520" data-end="581">
+<p data-start="523" data-end="581">直接换一个 scheme，或编辑当前 scheme（重点改 <em data-start="553" data-end="574">yellow/brightYellow</em> 之类的颜色）</p>
+</li>
+</ol>
+<blockquote data-start="583" data-end="630">
+<p data-start="585" data-end="630">这样不只 Claude Code，其他使用相同 ANSI 颜色的 CLI 工具也会一起变。</p>
+</blockquote>
+<hr data-start="632" data-end="635">
+<h2 data-start="637" data-end="653">方式 2：只想“不要颜色”</h2>
+<p data-start="654" data-end="799">如果你是不喜欢橙色、但也不想折腾配色，可以让 Claude Code <strong data-start="689" data-end="699">禁用彩色输出</strong>。很多 CLI（包括 Claude Code）会遵守 <code data-start="726" data-end="739">FORCE_COLOR</code> 这类约定；把它设为 <code data-start="750" data-end="753">0</code> 通常会关闭颜色。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 45px;"><a href="https://github.com/Piebald-AI/tweakcc?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://github.com/Piebald-AI/tweakcc?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 45px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">GitHub</span></span></span></a></span></span></p>
+<p data-start="801" data-end="823">PowerShell 临时关闭（当前窗口）：</p>
+<pre class="overflow-visible! px-0!" data-start="824" data-end="869"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-variable">$env:FORCE_COLOR</span></span><span>=</span><span><span class="hljs-string">"0"</span></span><span>
+claude
+</span></span></code></div></div></pre>
+<hr data-start="871" data-end="874">
+<h2 data-start="876" data-end="907">方式 3（更折腾/非官方）：用第三方工具做“自定义主题”</h2>
+<p data-start="908" data-end="1082">如果你想把边框高亮精确改成任意颜色（比如改成蓝色/紫色），官方目前没有提供细粒度的“自定义 accent 色”。社区有个叫 <strong data-start="970" data-end="981">tweakcc</strong> 的工具，主打给 Claude Code 做界面个性化（包括主题/颜色等）。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 60px;"><a href="https://github.com/anthropics/claude-code/issues/4429?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://github.com/anthropics/claude-code/issues/4429?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 60px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">GitHub</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+1</span></span></span></a></span></span><br data-start="1056" data-end="1059">
+（这是第三方方案，稳定性/兼容性要自行评估。）</p>
+<hr data-start="1084" data-end="1087">
+<h3 data-start="1089" data-end="1129">你用的是 Windows Terminal 还是 VS Code 终端？</h3>
+<ul data-start="1130" data-end="1217">
+<li data-start="1130" data-end="1173">
+<p data-start="1132" data-end="1173"><strong data-start="1132" data-end="1152">Windows Terminal</strong>：改 Color scheme 最直接</p>
+</li>
+<li data-start="1174" data-end="1217">
+<p data-start="1176" data-end="1217"><strong data-start="1176" data-end="1190">VS Code 终端</strong>：需要改 VS Code 的终端配色/主题（逻辑类似）</p>
+</li>
+</ul>
+<p data-start="1219" data-end="1254">你告诉我你用哪个，我就按对应平台给你具体点“点哪里 / 改哪个字段”。</p>
+</div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">我的是windows系统下的powershell</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="205">在 Windows 上，“PowerShell 的颜色”<strong data-start="28" data-end="51">不是 PowerShell 自己决定的</strong>，而是由你运行它的<strong data-start="60" data-end="68">终端宿主</strong>决定（Windows Terminal / 传统控制台 conhost / VS Code 终端等）。Claude Code 那个橙色边框一般是用了 ANSI 的 <strong data-start="150" data-end="175">yellow / brightYellow</strong>，所以要改的是终端的 16 色调色板/配色方案里对应的颜色。</p>
+<p data-start="207" data-end="238">先用这条命令快速判断你是哪种终端里跑的 PowerShell：</p>
+<pre class="overflow-visible! px-0!" data-start="240" data-end="408"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-powershell"><span><span><span class="hljs-keyword">if</span></span><span> (</span><span><span class="hljs-variable">$env:WT_SESSION</span></span><span>) { </span><span><span class="hljs-string">"Windows Terminal"</span></span><span> }
+</span><span><span class="hljs-keyword">elseif</span></span><span> (</span><span><span class="hljs-variable">$env:TERM_PROGRAM</span></span><span> </span><span><span class="hljs-operator">-eq</span></span><span> </span><span><span class="hljs-string">"vscode"</span></span><span>) { </span><span><span class="hljs-string">"VS Code Terminal"</span></span><span> }
+</span><span><span class="hljs-keyword">else</span></span><span> { </span><span><span class="hljs-string">"Legacy console (conhost) / other"</span></span><span> }
+</span></span></code></div></div></pre>
+<hr data-start="410" data-end="413">
+<h2 data-start="415" data-end="450">1) 如果是 Windows Terminal（最常见、最好改）</h2>
+<h3 data-start="451" data-end="465">方法 A：UI 里改</h3>
+<ol data-start="466" data-end="615">
+<li data-start="466" data-end="488">
+<p data-start="469" data-end="488">打开 Windows Terminal</p>
+</li>
+<li data-start="489" data-end="514">
+<p data-start="492" data-end="514"><code data-start="492" data-end="502">Ctrl + ,</code> 进入 Settings</p>
+</li>
+<li data-start="515" data-end="564">
+<p data-start="518" data-end="564">找 <strong data-start="520" data-end="543">Color schemes（配色方案）</strong>，选一个你喜欢的，或编辑当前 scheme</p>
+</li>
+<li data-start="565" data-end="615">
+<p data-start="568" data-end="615">重点改 <strong data-start="572" data-end="598">Yellow / Bright Yellow</strong>（很多工具的“橙色”就映射到这里）</p>
+</li>
+</ol>
+<h3 data-start="617" data-end="650">方法 B：直接改 <code data-start="630" data-end="645">settings.json</code>（最精确）</h3>
+<ol data-start="651" data-end="781">
+<li data-start="651" data-end="694">
+<p data-start="654" data-end="694">Windows Terminal 设置里点 <strong data-start="676" data-end="694">Open JSON file</strong></p>
+</li>
+<li data-start="695" data-end="781">
+<p data-start="698" data-end="781">给你的 PowerShell profile 指定一个 <code data-start="726" data-end="739">colorScheme</code>，并定义一个 scheme，改掉 <code data-start="756" data-end="764">yellow</code> / <code data-start="767" data-end="781">brightYellow</code></p>
+</li>
+</ol>
+<p data-start="783" data-end="808">示例（把“橙黄”改成偏蓝，你也可以换成任意颜色）：</p>
+<pre class="overflow-visible! px-0!" data-start="810" data-end="1123"><div class="contain-inline-size rounded-2xl corner-superellipse/1.1 relative bg-token-sidebar-surface-primary"><div class="sticky top-[calc(--spacing(9)+var(--header-height))] @w-xl/main:top-9"><div class="absolute end-0 bottom-0 flex h-9 items-center pe-2"></div></div><div class="overflow-y-auto p-4" dir="ltr"><code class="whitespace-pre! language-json"><span><span><span class="hljs-punctuation">{</span></span><span>
+  </span><span><span class="hljs-attr">"profiles"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-punctuation">{</span></span><span>
+    </span><span><span class="hljs-attr">"list"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-punctuation">[</span></span><span>
+      </span><span><span class="hljs-punctuation">{</span></span><span>
+        </span><span><span class="hljs-attr">"name"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"Windows PowerShell"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+        </span><span><span class="hljs-attr">"commandline"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"powershell.exe"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+        </span><span><span class="hljs-attr">"colorScheme"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"MyClaudeScheme"</span></span><span>
+      </span><span><span class="hljs-punctuation">}</span></span><span>
+    </span><span><span class="hljs-punctuation">]</span></span><span>
+  </span><span><span class="hljs-punctuation">}</span></span><span><span class="hljs-punctuation">,</span></span><span>
+  </span><span><span class="hljs-attr">"schemes"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-punctuation">[</span></span><span>
+    </span><span><span class="hljs-punctuation">{</span></span><span>
+      </span><span><span class="hljs-attr">"name"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"MyClaudeScheme"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+      </span><span><span class="hljs-attr">"yellow"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"#4FC1FF"</span></span><span><span class="hljs-punctuation">,</span></span><span>
+      </span><span><span class="hljs-attr">"brightYellow"</span></span><span><span class="hljs-punctuation">:</span></span><span> </span><span><span class="hljs-string">"#A7E3FF"</span></span><span>
+    </span><span><span class="hljs-punctuation">}</span></span><span>
+  </span><span><span class="hljs-punctuation">]</span></span><span>
+</span><span><span class="hljs-punctuation">}</span></span><span>
+</span></span></code></div></div></pre>
+<blockquote data-start="1125" data-end="1205">
+<p data-start="1127" data-end="1205">你可能用的是 “PowerShell (pwsh)” 而不是 “Windows PowerShell”，就改对应 profile 的 <code data-start="1194" data-end="1200">name</code> 那一项。</p>
+</blockquote>
+<hr data-start="1207" data-end="1210">
+<h2 data-start="1212" data-end="1240">2) 如果是传统控制台（conhost，黑框那种）</h2>
+<p data-start="1241" data-end="1269">这个能改的比较有限，但也能改“黄/亮黄”那套 16 色：</p>
+<ol data-start="1270" data-end="1356">
+<li data-start="1270" data-end="1307">
+<p data-start="1273" data-end="1307">在窗口标题栏 <strong data-start="1280" data-end="1286">右键</strong> → <strong data-start="1289" data-end="1307">Properties（属性）</strong></p>
+</li>
+<li data-start="1308" data-end="1329">
+<p data-start="1311" data-end="1329"><strong data-start="1311" data-end="1325">Colors（颜色）</strong> 标签页</p>
+</li>
+<li data-start="1330" data-end="1356">
+<p data-start="1333" data-end="1356">修改颜色表里对应的颜色（不同版本界面略有差异）</p>
+</li>
+</ol>
+<p data-start="1358" data-end="1411">如果你发现没有完整的配色方案管理，建议直接装/用 <strong data-start="1383" data-end="1403">Windows Terminal</strong>，可控性强很多。</p>
+<hr data-start="1413" data-end="1416">
+<h2 data-start="1418" data-end="1438">3) 如果是 VS Code 终端</h2>
+<p data-start="1439" data-end="1548">VS Code 的终端颜色跟着 VS Code 主题/终端颜色设置走，需要在 VS Code 的 Settings 里改 <code data-start="1500" data-end="1516">terminal.ansi*</code> 相关颜色（同样是改 yellow/brightYellow）。</p>
+<hr data-start="1550" data-end="1553">
+<p data-start="1555" data-end="1681">如果你把上面那条检测命令的输出发我（Windows Terminal / conhost / VS Code），我就按你的那一种给你“点哪里/改哪几项”到位；你也可以告诉我想把橙色改成什么色（比如蓝/紫/绿/灰），我给你一份直接可粘贴的 scheme。</p>
+</div>
+        </div>
+</body>
+</html>
