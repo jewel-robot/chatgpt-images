@@ -1,6 +1,11 @@
 {
   "notes": [
     {
+      "id": "1766984937938-3dim72y",
+      "title": ".clipper-dock.dragging .clipper-floating-button { ...",
+      "updatedAt": 1766984937944
+    },
+    {
       "id": "1766949126168-9oeony8",
       "title": "是这样的： EDY@EDY D:\\....\\Todo APP  main git fe...",
       "updatedAt": 1766949126171
@@ -279,5 +284,5 @@
       "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
     }
   ],
-  "updated": 1766982397478
+  "updated": 1766984959507
 }
