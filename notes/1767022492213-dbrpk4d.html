@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CMU最优控制 第12课 DDP细节补充 - 知乎</title>
+  <meta name="created-at" content="1767022508525">
+  <meta name="updated-at" content="1767022508525">
+  <meta name="source-type" content="zhihu">
+  <meta name="source-url" content="https://zhuanlan.zhihu.com/p/1986053009088742308">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CMU最优控制 第12课 DDP细节补充 - 知乎</h1>
+  <div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><h1>CMU最优控制 第12课 DDP细节补充</h1>
+<div class="css-1od93p9"><div class="css-376mun"><div class="css-h7wqi8"><div class="css-1sr3uml"><div class="css-lcgmxk"><div><div class="Catalog isCatalogV2 css-2hy5iv" data-za-detail-view-name="正文"><div class="css-8kjoqe"><div class="css-u56wtg"><span style="display: inline-flex; align-items: center;">​<svg width="1.2em" height="1.2em" viewBox="0 0 24 24" class="ZDI ZDI--Catalog24" fill="currentColor"><path fill-rule="evenodd" d="M10 5a1 1 0 0 1 1-1h10a1 1 0 1 1 0 2H11a1 1 0 0 1-1-1Zm4 6a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2h-7Zm0 7a1 1 0 1 0 0 2h7a1 1 0 1 0 0-2h-7Zm-8.335.25a.915.915 0 0 1-.915-.915V12.75H10a.75.75 0 0 0 0-1.5H4.75V6.665c0-.505.41-.915.915-.915H7a.75.75 0 0 0 0-1.5H5.665A2.415 2.415 0 0 0 3.25 6.665v10.67a2.415 2.415 0 0 0 2.415 2.415H10a.75.75 0 0 0 0-1.5H5.665Z" clip-rule="evenodd"></path></svg></span><div class="css-1czzy4f">目录</div></div></div></div></div></div></div></div><span id="content"><div class="RichText ztext Post-RichText css-10o75c2" options="[object Object]"><h2 data-first-child="" id="h_1986053009088742308_0" data-into-catalog-status="">1. DDP说明</h2><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="OxjYzN6P" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">DDP优化问题是非凸的，所以在有一个随机的不同的初始数值 <span class="math-tex" data-tex="\{x_n,u_n \}_0">$\{x_n,u_n \}_0$</span> 时会出现不同的局部最优化结果，即优化得到不同的轨迹。</li><li data-pid="aInaCzmZ" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">虽然使用DDP求解每完成一次大循环迭代次数会更少，但是计算时间会比iLQR更长。</li><li data-pid="81gFYPrD" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">对于初始轨迹的要求：需要初始轨迹 <span class="math-tex" data-tex="\{x_n \}_0">$\{x_n \}_0$</span> 是在动力学 <span class="math-tex" data-tex="x_{k+1}=f(x_n,u_n )">$x_{k+1}=f(x_n,u_n )$</span> 可以到达的范围内的。不适合某些可以生成轨迹但这些轨迹不在动力学可达范围内的算法。</li></ul><h2 id="h_1986053009088742308_1" data-into-catalog-status="">2. DDP的Regularization和line search</h2><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="WsMiEfor" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">既然DDP的推导过程是与牛顿迭代的推导是类似的，那么需要考虑在牛顿迭代时遇到的Regularization和line search问题。</li><li data-pid="-ucVjyuJ" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">Regularization。就像在进行标准的牛顿迭代一样， <span class="math-tex" data-tex="S_n (x,u)">$S_n (x,u)$</span> 的Hessian矩阵在反向迭代进行求解时会出现非正定的情况，所以需要对其进行Regularization。有几种进行的方法：</li></ul><p data-pid="raY0OOxQ">          1） 直接对 <span class="math-tex" data-tex="S_n (x,u)">$S_n (x,u)$</span> 的Hessian矩阵加上一个单位阵;</p><p data-pid="XT04Atxd">          2） 直接对 <span class="math-tex" data-tex="S_n (x,u)">$S_n (x,u)$</span> 的Hessian矩阵加上一个单位阵：对 <span class="math-tex" data-tex="V_n (x)">$V_n (x)$</span> 的Hessian矩阵 <span class="math-tex" data-tex="P_n">$P_n$</span> 在反向算出来之后进行正则化。</p><p data-pid="Va1SSxEr">          3 ）只对 <span class="math-tex" data-tex="G_{uu}">$G_{uu}$</span> 进行优化，因为在求解参数 <span class="math-tex" data-tex="(K_n,d_n)">$(K_n,d_n)$</span> 时只用到了它（只对iLQR有效）。</p><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="fBUTF0al" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">line search。前面进行的类牛顿算法推导中得到的传统项 <span class="math-tex" data-tex="∆u_n=-G_{uu}^{-1} g_u">$∆u_n=-G_{uu}^{-1} g_u$</span> 其实确定的是Descent method中的search direction，还需要确定这一步的search step size t。采用Backtracking line search操作进行寻找：</li></ul><figure data-size="normal"><div><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767022492213-dbrpk4d_img_0_1767022492226.png" data-caption="" data-size="normal" data-rawwidth="650" data-rawheight="146" data-original-token="v2-07c2604f13945630e6a31f4eda7045a2" class="origin_image zh-lightbox-thumb" width="650" data-original="https://pic3.zhimg.com/v2-a4e8cc643293debd027e7873866e57e4_r.jpg" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767022492213-dbrpk4d_img_0_1767022492226.png" data-github-sha="cae24cffb763f944227c1bb886a4ab099fb585fc" alt="图片"></div></figure><p data-pid="CJti56g3">    因为是序列优化，所以在计算 <span class="math-tex" data-tex="αt∇f(x)_n^T∆x_n">$αt∇f(x)_n^T∆x_n$</span> 这项时需要考虑所有离散点，使用加和进行表示：</p><figure data-size="normal"><div><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767022492213-dbrpk4d_img_1_1767022498073.png" data-caption="" data-size="normal" data-rawwidth="478" data-rawheight="88" data-original-token="v2-9e5404a81136fc7d1b5d4d9ca78ae54c" class="origin_image zh-lightbox-thumb" width="478" data-original="https://pic4.zhimg.com/v2-05fa65c1144a34585bf1506960629769_r.jpg" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767022492213-dbrpk4d_img_1_1767022498073.png" data-github-sha="7a507d1c14253deabfedafd69d1b31c3d293c789" alt="图片"></div></figure><p data-pid="IHXGAj7U">     其中 <span class="math-tex" data-tex="{∇f(x)}_n={g_u}_n，∆x_n=(G_{uu}^{-1} g_u )_n=d_n">${∇f(x)}_n={g_u}_n，∆x_n=(G_{uu}^{-1} g_u )_n=d_n$</span> 。这里不考虑额外项/反馈项，原因在上一课已经分析了。</p><p data-pid="J3lShmlk">    然后这一步的∆J进行判断，如果不满足条件：</p><figure data-size="normal"><div><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767022492213-dbrpk4d_img_2_1767022502150.png" data-caption="" data-size="normal" data-rawwidth="472" data-rawheight="100" data-original-token="v2-665726a83389f397b88a7987e68535c0" class="origin_image zh-lightbox-thumb" width="472" data-original="https://pica.zhimg.com/v2-6e33281bf5709ce1c034cfce08ac121c_r.jpg" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767022492213-dbrpk4d_img_2_1767022502150.png" data-github-sha="b329014eb34f31700084784bc89787365869cb40" alt="图片"></div></figure><p data-pid="CIifpKTH">    则通过α取值0.5，让step t变小。b取值范围 <span class="math-tex" data-tex="[10^{-4},0.1]">$[10^{-4},0.1]$</span> 应该是考虑了序列加和cost影响，将其变小，同时对于微小的cost变化也可以接受，让每次迭代不很激进。代码如下：</p><figure data-size="normal"><div><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767022492213-dbrpk4d_img_3_1767022504059.png" data-caption="" data-size="normal" data-rawwidth="652" data-rawheight="196" data-original-token="v2-8863835759e697ac92ee0485ff840dba" class="origin_image zh-lightbox-thumb" width="652" data-original="https://pic2.zhimg.com/v2-3018ac4e3e08f9b7567c2f75e5f0fe35_r.jpg" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767022492213-dbrpk4d_img_3_1767022504059.png" data-github-sha="d7325cebfb6c3dac81103f94dc1d7cbcfe6460a3" alt="图片"></div></figure><h2 id="h_1986053009088742308_2" data-into-catalog-status="">3. 带约束的DDP</h2><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="3_rnmlsk" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">对控制输入的限制</li></ul><p data-pid="nqTYyPKN">    在每一次求解局部最优控制输入时其实是在求解一个无约束的QP，因此可以加入对输入的限制作为一个QP问题进行求解，会非常快：</p><figure data-size="normal"><div><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767022492213-dbrpk4d_img_4_1767022506376.png" data-caption="" data-size="normal" data-rawwidth="664" data-rawheight="178" data-original-token="v2-31fbebf4d6e557c59bf38549962262fb" class="origin_image zh-lightbox-thumb" width="664" data-original="https://pic4.zhimg.com/v2-55bfab4f7b638c9a53d97e531662acd5_r.jpg" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767022492213-dbrpk4d_img_4_1767022506376.png" data-github-sha="15f53ec7110057560c37e8e802ac499d13498502" alt="图片"></div></figure><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="YPc6Xbt3" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">对状态的限制</li></ul><p data-pid="g9_xrTSP">    DDP的stage cost 是二次的，可以将对状态的一次不等式限制加入到cost中，组成拉格朗日形式。</p></div><span id="VirtualCatalogAnchorPoint"></span></span></div></div></div>
+        </div>
+</body>
+</html>
