@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>非精确搜索算法</title>
+  <meta name="created-at" content="1767116711011">
+  <meta name="updated-at" content="1767116711011">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69540f45-7c3c-8323-b209-f0fb982f0b5c">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>非精确搜索算法</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">讲一下非精确搜索算法</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="121">“非精确搜索”（也叫<strong data-start="10" data-end="32">模糊搜索 / 近似搜索 / 容错检索</strong>）大体分两类：<strong data-start="39" data-end="53">字符串层面的近似匹配</strong>（拼写错、漏字、多字、顺序小改动）和<strong data-start="71" data-end="84">语义层面的近似检索</strong>（同义表达、相关但不包含原词）。下面按场景把常见算法讲清楚，并给出怎么选。</p>
+<hr data-start="123" data-end="126">
+<h2 data-start="128" data-end="148">1) 字符串相似度：你想“像不像”</h2>
+<p data-start="149" data-end="189">这类方法把两个字符串映射成一个“距离/相似度”，再按阈值或 Top-K 取结果。</p>
+<h3 data-start="191" data-end="238">1.1 编辑距离（Levenshtein / Damerau-Levenshtein）</h3>
+<ul data-start="239" data-end="368">
+<li data-start="239" data-end="294">
+<p data-start="241" data-end="294"><strong data-start="241" data-end="247">思想</strong>：把 A 变成 B 最少需要多少次编辑（插入/删除/替换；Damerau 额外支持相邻交换）。</p>
+</li>
+<li data-start="295" data-end="332">
+<p data-start="297" data-end="332"><strong data-start="297" data-end="303">适合</strong>：拼写纠错、用户输入容错、短字符串（人名、型号、关键词）。</p>
+</li>
+<li data-start="333" data-end="368">
+<p data-start="335" data-end="368"><strong data-start="335" data-end="341">代价</strong>：经典 DP 是 <code data-start="350" data-end="358">O(n*m)</code>，长文本直接算会慢。</p>
+</li>
+</ul>
+<p data-start="370" data-end="378"><strong data-start="370" data-end="378">常见增强</strong></p>
+<ul data-start="379" data-end="517">
+<li data-start="379" data-end="443">
+<p data-start="381" data-end="443"><strong data-start="381" data-end="398">阈值剪枝（Ukkonen）</strong>：只关心距离 ≤ k，把 DP 限制在对角带内，复杂度约 <code data-start="427" data-end="442">O(k*min(n,m))</code>。</p>
+</li>
+<li data-start="444" data-end="517">
+<p data-start="446" data-end="517"><strong data-start="446" data-end="489">位运算加速（Bitap/Shift-Or, Myers bit-vector）</strong>：对短模式串极快（常用于“在文本里找近似匹配”的场景）。</p>
+</li>
+</ul>
+<h3 data-start="519" data-end="546">1.2 Jaro / Jaro–Winkler</h3>
+<ul data-start="547" data-end="639">
+<li data-start="547" data-end="596">
+<p data-start="549" data-end="596"><strong data-start="549" data-end="555">思想</strong>：更偏向“人名”这种错位/缺失少量字符的相似度，Winkler 还会奖励共同前缀。</p>
+</li>
+<li data-start="597" data-end="639">
+<p data-start="599" data-end="639"><strong data-start="599" data-end="605">适合</strong>：姓名/品牌名匹配、去重合并（entity resolution）。</p>
+</li>
+</ul>
+<h3 data-start="641" data-end="684">1.3 n-gram / Shingle + Jaccard / Cosine</h3>
+<ul data-start="685" data-end="821">
+<li data-start="685" data-end="736">
+<p data-start="687" data-end="736"><strong data-start="687" data-end="693">思想</strong>：把字符串切成 n-gram（如 2-gram、3-gram），比较集合或向量相似度。</p>
+</li>
+<li data-start="737" data-end="782">
+<p data-start="739" data-end="782"><strong data-start="739" data-end="745">适合</strong>：中等长度文本、容忍局部差异；也很适合做<strong data-start="765" data-end="773">候选召回</strong>（先粗筛再精排）。</p>
+</li>
+<li data-start="783" data-end="821">
+<p data-start="785" data-end="821"><strong data-start="785" data-end="791">优点</strong>：可索引化（倒排索引按 n-gram 建），工程上非常常见。</p>
+</li>
+</ul>
+<h3 data-start="823" data-end="861">1.4 语音/发音相似（Soundex / Metaphone 等）</h3>
+<ul data-start="862" data-end="962">
+<li data-start="862" data-end="890">
+<p data-start="864" data-end="890"><strong data-start="864" data-end="870">思想</strong>：把词编码到发音特征码，再匹配编码相似。</p>
+</li>
+<li data-start="891" data-end="917">
+<p data-start="893" data-end="917"><strong data-start="893" data-end="899">适合</strong>：英文姓名按读音查找、口述输入纠错。</p>
+</li>
+<li data-start="918" data-end="962">
+<p data-start="920" data-end="962"><strong data-start="920" data-end="930">中文常用替代</strong>：按<strong data-start="932" data-end="938">拼音</strong>（含声母韵母/声调）做编辑距离或 n-gram。</p>
+</li>
+</ul>
+<hr data-start="964" data-end="967">
+<h2 data-start="969" data-end="993">2) 如何“搜得快”：索引结构（候选召回）</h2>
+<p data-start="994" data-end="1027">当库很大时，你不可能对每个候选都算一遍距离，需要索引来缩小候选集。</p>
+<h3 data-start="1029" data-end="1053">2.1 BK-tree（适用于编辑距离）</h3>
+<ul data-start="1054" data-end="1154">
+<li data-start="1054" data-end="1099">
+<p data-start="1056" data-end="1099"><strong data-start="1056" data-end="1062">思想</strong>：利用“距离满足三角不等式”，按编辑距离分桶建树；查询半径 k 时可剪枝。</p>
+</li>
+<li data-start="1100" data-end="1125">
+<p data-start="1102" data-end="1125"><strong data-start="1102" data-end="1108">适合</strong>：词典/关键词库、纠错词表、短串。</p>
+</li>
+<li data-start="1126" data-end="1154">
+<p data-start="1128" data-end="1154"><strong data-start="1128" data-end="1134">优点</strong>：实现简单、内存友好；k 很小效果最好。</p>
+</li>
+</ul>
+<h3 data-start="1156" data-end="1178">2.2 Trie + 近似匹配自动机</h3>
+<ul data-start="1179" data-end="1286">
+<li data-start="1179" data-end="1239">
+<p data-start="1181" data-end="1239"><strong data-start="1181" data-end="1187">思想</strong>：Trie 存词典；查询时在 Trie 上跑“允许 k 次编辑”的状态转移（相当于 DP 在树上展开）。</p>
+</li>
+<li data-start="1240" data-end="1267">
+<p data-start="1242" data-end="1267"><strong data-start="1242" data-end="1248">适合</strong>：输入法联想、搜索框提示、词典型业务。</p>
+</li>
+<li data-start="1268" data-end="1286">
+<p data-start="1270" data-end="1286"><strong data-start="1270" data-end="1276">特点</strong>：对前缀搜索尤其强。</p>
+</li>
+</ul>
+<h3 data-start="1288" data-end="1325">2.3 n-gram 倒排索引（工业界最常用的字符串模糊检索骨架）</h3>
+<ul data-start="1326" data-end="1452">
+<li data-start="1326" data-end="1426">
+<p data-start="1328" data-end="1337"><strong data-start="1328" data-end="1334">流程</strong>：</p>
+<ol data-start="1340" data-end="1426">
+<li data-start="1340" data-end="1366">
+<p data-start="1343" data-end="1366">把每个词/短文本切 n-gram 建倒排；</p>
+</li>
+<li data-start="1369" data-end="1401">
+<p data-start="1372" data-end="1401">查询也切 n-gram，按 overlap 召回候选；</p>
+</li>
+<li data-start="1404" data-end="1426">
+<p data-start="1407" data-end="1426">对候选再算编辑距离/Jaro 等精排。</p>
+</li>
+</ol>
+</li>
+<li data-start="1427" data-end="1452">
+<p data-start="1429" data-end="1452"><strong data-start="1429" data-end="1435">适合</strong>：大规模、需要可控延迟的模糊搜索。</p>
+</li>
+</ul>
+<hr data-start="1454" data-end="1457">
+<h2 data-start="1459" data-end="1493">3) 信息检索（IR）的“非精确”：关键词不完全匹配也能找得到</h2>
+<p data-start="1494" data-end="1533">这类更像搜索引擎：不要求字面完全一致，而是“包含部分词也行”，并按相关性排序。</p>
+<h3 data-start="1535" data-end="1570">3.1 TF-IDF / BM25（词项匹配 + 相关性排序）</h3>
+<ul data-start="1571" data-end="1668">
+<li data-start="1571" data-end="1598">
+<p data-start="1573" data-end="1598"><strong data-start="1573" data-end="1579">思想</strong>：把文档看成词袋，按词频和稀有度评分。</p>
+</li>
+<li data-start="1599" data-end="1629">
+<p data-start="1601" data-end="1629"><strong data-start="1601" data-end="1607">适合</strong>：文档检索、站内搜索、FAQ 搜索的第一步。</p>
+</li>
+<li data-start="1630" data-end="1668">
+<p data-start="1632" data-end="1668"><strong data-start="1632" data-end="1638">配套</strong>：分词、停用词、同义词扩展、拼写纠错（常用上面的编辑距离）。</p>
+</li>
+</ul>
+<h3 data-start="1670" data-end="1693">3.2 Query 扩展 / 拼写纠错</h3>
+<ul data-start="1694" data-end="1787">
+<li data-start="1694" data-end="1787">
+<p data-start="1696" data-end="1707"><strong data-start="1696" data-end="1704">典型组合</strong>：</p>
+<ul data-start="1710" data-end="1787">
+<li data-start="1710" data-end="1740">
+<p data-start="1712" data-end="1740">先用编辑距离/BK-tree 找“可能你想搜的词”；</p>
+</li>
+<li data-start="1743" data-end="1759">
+<p data-start="1745" data-end="1759">再用 BM25 搜文档；</p>
+</li>
+<li data-start="1762" data-end="1787">
+<p data-start="1764" data-end="1787">或把纠错候选作为“did you mean”。</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="1789" data-end="1792">
+<h2 data-start="1794" data-end="1815">4) 语义近似搜索：你想“意思接近”</h2>
+<p data-start="1816" data-end="1855">当用户输入和目标文本<strong data-start="1826" data-end="1836">用词完全不同</strong>时，字符串方法会失效，这时用向量检索。</p>
+<h3 data-start="1857" data-end="1891">4.1 向量化（Embedding）+ ANN（近似最近邻）</h3>
+<ul data-start="1892" data-end="1958">
+<li data-start="1892" data-end="1926">
+<p data-start="1894" data-end="1926"><strong data-start="1894" data-end="1900">思想</strong>：把文本/图片/商品等编码成向量；相似=向量距离近。</p>
+</li>
+<li data-start="1927" data-end="1958">
+<p data-start="1929" data-end="1958"><strong data-start="1929" data-end="1937">核心问题</strong>：向量维度高、数据大，需要 ANN 索引。</p>
+</li>
+</ul>
+<p data-start="1960" data-end="1975"><strong data-start="1960" data-end="1975">常见 ANN 索引家族</strong></p>
+<ul data-start="1976" data-end="2131">
+<li data-start="1976" data-end="2007">
+<p data-start="1978" data-end="2007"><strong data-start="1978" data-end="1986">HNSW</strong>（图结构）：精度高、延迟低，工程上很常见。</p>
+</li>
+<li data-start="2008" data-end="2045">
+<p data-start="2010" data-end="2045"><strong data-start="2010" data-end="2022">IVF / PQ</strong>（聚类倒排 + 量化）：更省内存，适合超大库。</p>
+</li>
+<li data-start="2046" data-end="2087">
+<p data-start="2048" data-end="2087"><strong data-start="2048" data-end="2055">LSH</strong>（局部敏感哈希）：理论经典，但在很多文本场景精度/效率未必最佳。</p>
+</li>
+<li data-start="2088" data-end="2131">
+<p data-start="2090" data-end="2131"><strong data-start="2090" data-end="2118">Annoy / ScaNN / FAISS 系列</strong>：属于不同工程实现/组合。</p>
+</li>
+</ul>
+<hr data-start="2133" data-end="2136">
+<h2 data-start="2138" data-end="2155">5) 怎么选（实用选型指南）</h2>
+<p data-start="2156" data-end="2169"><strong data-start="2156" data-end="2169">你先回答两个问题：</strong></p>
+<ol data-start="2170" data-end="2214">
+<li data-start="2170" data-end="2197">
+<p data-start="2173" data-end="2197">你需要容错的是<strong data-start="2180" data-end="2186">字符</strong>还是<strong data-start="2188" data-end="2194">语义</strong>？</p>
+</li>
+<li data-start="2198" data-end="2214">
+<p data-start="2201" data-end="2214">数据规模和延迟要求多苛刻？</p>
+</li>
+</ol>
+<p data-start="2216" data-end="2224"><strong data-start="2216" data-end="2224">典型方案</strong></p>
+<ul data-start="2225" data-end="2474">
+<li data-start="2225" data-end="2277">
+<p data-start="2227" data-end="2277"><strong data-start="2227" data-end="2242">搜索框拼写容错（短词）</strong>：BK-tree（编辑距离）或 Trie 近似匹配；k 通常 1~2。</p>
+</li>
+<li data-start="2278" data-end="2329">
+<p data-start="2280" data-end="2329"><strong data-start="2280" data-end="2293">人名/品牌去重合并</strong>：Jaro-Winkler + 规则（大小写、空格、符号归一）+ 阈值。</p>
+</li>
+<li data-start="2330" data-end="2373">
+<p data-start="2332" data-end="2373"><strong data-start="2332" data-end="2345">大库字符串模糊搜索</strong>：n-gram 倒排召回 + 编辑距离精排（工业常用）。</p>
+</li>
+<li data-start="2374" data-end="2418">
+<p data-start="2376" data-end="2418"><strong data-start="2376" data-end="2384">文档检索</strong>：BM25（可加纠错/同义词/拼音）+（可选）向量检索做召回或重排。</p>
+</li>
+<li data-start="2419" data-end="2474">
+<p data-start="2421" data-end="2474"><strong data-start="2421" data-end="2436">同义表达/相关问题匹配</strong>：Embedding + HNSW/IVF（必要时再用 BM25 做混合）。</p>
+</li>
+</ul>
+<hr data-start="2476" data-end="2479">
+<h2 data-start="2481" data-end="2500">6) 中文场景的几个坑（很常见）</h2>
+<ul data-start="2501" data-end="2627">
+<li data-start="2501" data-end="2537">
+<p data-start="2503" data-end="2537"><strong data-start="2503" data-end="2509">分词</strong>：BM25 依赖分词质量；可考虑“字粒度/词粒度混合”。</p>
+</li>
+<li data-start="2538" data-end="2576">
+<p data-start="2540" data-end="2576"><strong data-start="2540" data-end="2551">拼音/同音错字</strong>：可把查询映射到拼音再做编辑距离或 n-gram。</p>
+</li>
+<li data-start="2577" data-end="2627">
+<p data-start="2579" data-end="2627"><strong data-start="2579" data-end="2596">全半角、繁简、大小写、标点</strong>：先做规范化（normalize）会让模糊搜索效果提升一大截。</p>
+</li>
+</ul>
+<hr data-start="2629" data-end="2632">
+<p data-start="2634" data-end="2738" data-is-last-node="" data-is-only-node="">如果你告诉我：<strong data-start="2641" data-end="2709">数据类型（词典/商品名/文档）、规模（1万/100万/1亿）、需要多快（50ms? 200ms?）、错误类型（拼写/同音/同义）</strong>，我可以直接给你一套更具体的架构（召回+精排）和参数建议。</p></div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">最优化算法中的非精确搜索算法</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="103" data-is-last-node="" data-is-only-node="">明白，你说的是<strong data-start="7" data-end="53">最优化（optimization）里的“非精确搜索（inexact search）”</strong>：每一步不把子问题（比如线搜索、信赖域子问题、牛顿方程）解到最优，只要满足某些“足够好”的条件，就能</p></div>
+        </div>
+</body>
+</html>
