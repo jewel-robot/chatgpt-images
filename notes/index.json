@@ -21,11 +21,6 @@
       "updatedAt": 1767032900135
     },
     {
-      "id": "1767029650747-fvy0gl4",
-      "title": "Google Gemini",
-      "updatedAt": 1767029650752
-    },
-    {
       "id": "1767029576524-7qv6ai6",
       "title": "命令行提示符配置",
       "updatedAt": 1767029584463
@@ -354,5 +349,5 @@
       "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
     }
   ],
-  "updated": 1767117600231
+  "updated": 1767458997000
 }
