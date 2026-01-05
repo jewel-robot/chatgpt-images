@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kiro 协议注册流程分析 - 开发调优 / 开发调优, Lv3 - LINUX DO</title>
+  <meta name="created-at" content="1767624014231">
+  <meta name="updated-at" content="1767624014231">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/1403024">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>kiro 协议注册流程分析 - 开发调优 / 开发调优, Lv3 - LINUX DO</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content"><div class="post-meta"><strong>lansonsam</strong> #1</div>
+<p dir="auto">请我打款（bushi）</p>
+<p dir="auto">给我博客加点流量吧，我到时候一些文章放在我的博客上面<br>
+<a href="https://nuiziyyds.com" rel="noopener nofollow ugc" data-clicks="124" aria-label="博客 链接已点击 124 次">博客</a></p>
+<h1 dir="auto"><a name="p-12092478-kiro-1" class="anchor" href="#p-12092478-kiro-1" aria-label="标题链接"></a>kiro 协议注册流程分析</h1>
+<h2 dir="auto"><a name="p-12092478-h-2" class="anchor" href="#p-12092478-h-2" aria-label="标题链接"></a>整体架构</h2>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-undefined" data-highlighted="yes">┌─────────────────────────────────────────────────────────────────┐
+│                        注册流程总览                              │
+├─────────────────────────────────────────────────────────────────┤
+│  1. OIDC 客户端注册 → 2. 设备授权 → 3. 邮箱创建                  │
+│  4. Portal 登录初始化 → 5. Workflow 初始化                       │
+│  6. 邮箱提交 → 7. 进入注册流程 → 8. Profile 创建                 │
+│  9. 邮箱验证 → 10. 身份创建 → 11. 密码设置                       │
+│  12. 登录完成 → 13. SSO Token → 14. 设备授权确认                 │
+│  15. Token 关联 → 16. 获取最终 Refresh Token                     │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 dir="auto"><a name="p-12092478-h-3" class="anchor" href="#p-12092478-h-3" aria-label="标题链接"></a>核心组件</h2>
+<h3 dir="auto"><a name="p-12092478-h-1-jwe-jweencryptor-4" class="anchor" href="#p-12092478-h-1-jwe-jweencryptor-4" aria-label="标题链接"></a>1. JWE 加密器 (JWEEncryptor)</h3>
+<p dir="auto">用于密码的安全传输，采用 JWE (JSON Web Encryption) 标准。</p>
+<p dir="auto"><strong>加密流程：</strong></p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-markdown" data-highlighted="yes"><span class="hljs-bullet">1.</span> 从服务器获取 RSA 公钥 (JWK 格式)
+<span class="hljs-bullet">2.</span> 生成随机 CEK (Content Encryption Key, 256-bit)
+<span class="hljs-bullet">3.</span> 使用 RSA-OAEP-256 加密 CEK
+<span class="hljs-bullet">4.</span> 构建 JWT Claims (包含密码、时间戳、issuer、audience 等)
+<span class="hljs-bullet">5.</span> 使用 A256GCM 对称加密 JWT Claims
+<span class="hljs-bullet">6.</span> 输出 JWE Compact Serialization 格式
+</code></pre>
+<p dir="auto"><strong>JWE Header 结构：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"alg"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"RSA-OAEP-256"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"kid"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;key-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"enc"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"A256GCM"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"cty"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"enc"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"typ"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"application/aws+signin+jwe"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>JWT Claims 结构：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"iss"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;region&gt;.&lt;issuer&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"iat"</span><span class="hljs-punctuation">:</span> &lt;timestamp&gt;<span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"nbf"</span><span class="hljs-punctuation">:</span> &lt;timestamp&gt;<span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"jti"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;uuid&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"exp"</span><span class="hljs-punctuation">:</span> &lt;timestamp + <span class="hljs-number">300</span>&gt;<span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"aud"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;region&gt;.&lt;audience&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"password"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;password&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-2-fingerprintgenerator-5" class="anchor" href="#p-12092478-h-2-fingerprintgenerator-5" aria-label="标题链接"></a>2. 指纹生成器 (FingerprintGenerator)</h3>
+<p dir="auto">感谢佬友的逻辑，我整合在一起的了<a href="https://linux.do/u/zcrdwx/summary" class="inline-onebox">个人资料 - zcrdwx - LINUX DO</a></p>
+<h2 dir="auto"><a name="p-12092478-fingerprint-6" class="anchor" href="#p-12092478-fingerprint-6" aria-label="标题链接"></a>指纹信息 (FingerPrint) - 完整生成逻辑</h2>
+<p dir="auto">请求中包含浏览器指纹信息，格式为:</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-ruby" data-highlighted="yes"><span class="hljs-title class_">ECdITeCs</span><span class="hljs-symbol">:&lt;base64_encoded_xxtea_encrypted_json&gt;</span>
+</code></pre>
+<p dir="auto">这用于设备识别和安全验证 (TES - Threat Evaluation Service)。</p>
+<h3 dir="auto"><a name="p-12092478-h-7" class="anchor" href="#p-12092478-h-7" aria-label="标题链接"></a>指纹格式结构</h3>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-makefile" data-highlighted="yes"><span class="hljs-section">前缀:加密数据</span>
+<span class="hljs-section">ECdITeCs:wgPgxDbgwJg5yg4uCM50vY1Yneo3kY5OkW3hxxzNUkPi2fGcOuo1a7a+...</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-8" class="anchor" href="#p-12092478-h-8" aria-label="标题链接"></a>加密算法</h3>
+<p dir="auto"><strong>算法</strong>: XXTEA (Corrected Block TEA)<br>
+<strong>密钥</strong>: 固定 128-bit 密钥</p>
+<pre data-code-wrap="javascript" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-javascript hljs language-javascript" data-highlighted="yes"><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">KEY</span> = {
+    <span class="hljs-attr">identifier</span>: <span class="hljs-string">"ECdITeCs"</span>,
+    <span class="hljs-attr">material</span>: [<span class="hljs-number">1888420705</span>, <span class="hljs-number">2576816180</span>, <span class="hljs-number">2347232058</span>, <span class="hljs-number">874813317</span>]  <span class="hljs-comment">// 4个32位整数</span>
+};
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-9" class="anchor" href="#p-12092478-h-9" aria-label="标题链接"></a>生成流程</h3>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-markdown" data-highlighted="yes"><span class="hljs-bullet">1.</span> 收集浏览器特征 → JSON 对象
+<span class="hljs-bullet">2.</span> JSON.stringify() → 字符串
+<span class="hljs-bullet">3.</span> XXTEA 加密 (使用固定密钥 KEY.material)
+<span class="hljs-bullet">4.</span> Base64 编码
+<span class="hljs-bullet">5.</span> 添加 "ECdITeCs:" 前缀
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-10" class="anchor" href="#p-12092478-h-10" aria-label="标题链接"></a>解密流程</h3>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-markdown" data-highlighted="yes"><span class="hljs-bullet">1.</span> 分离前缀 "ECdITeCs:" 和数据部分
+<span class="hljs-bullet">2.</span> Base64 解码 → 加密字节
+<span class="hljs-bullet">3.</span> XXTEA 解密 (使用 KEY.material)
+<span class="hljs-bullet">4.</span> JSON.parse() → 原始特征对象
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-xxtea-javascript-11" class="anchor" href="#p-12092478-xxtea-javascript-11" aria-label="标题链接"></a>XXTEA 算法实现 (JavaScript)</h3>
+<pre data-code-wrap="javascript" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-javascript hljs language-javascript" data-highlighted="yes"><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">DELTA</span> = <span class="hljs-number">0x9E3779B9</span>;
+
+<span class="hljs-comment">// XXTEA 加密</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">xxteaEncrypt</span>(<span class="hljs-params">str, key</span>) {
+    <span class="hljs-keyword">if</span> (str.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>;
+    
+    <span class="hljs-comment">// 字符串转 32 位整数数组</span>
+    <span class="hljs-keyword">const</span> len = <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">ceil</span>(str.<span class="hljs-property">length</span> / <span class="hljs-number">4</span>);
+    <span class="hljs-keyword">const</span> v = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Array</span>(len);
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; len; i++) {
+        v[i] = (str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i) &amp; <span class="hljs-number">0xFF</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">1</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">8</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">2</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">16</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">3</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">24</span>);
+    }
+    
+    <span class="hljs-comment">// XXTEA 加密</span>
+    <span class="hljs-keyword">const</span> rounds = <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">floor</span>(<span class="hljs-number">6</span> + <span class="hljs-number">52</span> / len);
+    <span class="hljs-keyword">let</span> sum = <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">let</span> z = v[len - <span class="hljs-number">1</span>];
+    
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; rounds; i++) {
+        sum = (sum + <span class="hljs-variable constant_">DELTA</span>) &gt;&gt;&gt; <span class="hljs-number">0</span>;
+        <span class="hljs-keyword">const</span> e = (sum &gt;&gt;&gt; <span class="hljs-number">2</span>) &amp; <span class="hljs-number">3</span>;
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> p = <span class="hljs-number">0</span>; p &lt; len; p++) {
+            <span class="hljs-keyword">const</span> y = v[(p + <span class="hljs-number">1</span>) % len];
+            <span class="hljs-keyword">const</span> mx = (((z &gt;&gt;&gt; <span class="hljs-number">5</span> ^ y &lt;&lt; <span class="hljs-number">2</span>) + (y &gt;&gt;&gt; <span class="hljs-number">3</span> ^ z &lt;&lt; <span class="hljs-number">4</span>)) ^ 
+                       ((sum ^ y) + (key[(p &amp; <span class="hljs-number">3</span>) ^ e] ^ z)));
+            v[p] = (v[p] + mx) &gt;&gt;&gt; <span class="hljs-number">0</span>;
+            z = v[p];
+        }
+    }
+    
+    <span class="hljs-comment">// 整数数组转字符串</span>
+    <span class="hljs-keyword">const</span> result = [];
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; len; i++) {
+        result.<span class="hljs-title function_">push</span>(
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>(v[i] &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">8</span>) &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">16</span>) &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">24</span>) &amp; <span class="hljs-number">0xFF</span>)
+        );
+    }
+    <span class="hljs-keyword">return</span> result.<span class="hljs-title function_">join</span>(<span class="hljs-string">""</span>);
+}
+
+<span class="hljs-comment">// XXTEA 解密</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">xxteaDecrypt</span>(<span class="hljs-params">str, key</span>) {
+    <span class="hljs-keyword">if</span> (str.<span class="hljs-property">length</span> === <span class="hljs-number">0</span>) <span class="hljs-keyword">return</span> <span class="hljs-string">""</span>;
+    
+    <span class="hljs-comment">// 字符串转 32 位整数数组</span>
+    <span class="hljs-keyword">const</span> len = <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">ceil</span>(str.<span class="hljs-property">length</span> / <span class="hljs-number">4</span>);
+    <span class="hljs-keyword">const</span> v = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Array</span>(len);
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; len; i++) {
+        v[i] = (str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i) &amp; <span class="hljs-number">0xFF</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">1</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">8</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">2</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">16</span>) +
+               ((str.<span class="hljs-title function_">charCodeAt</span>(<span class="hljs-number">4</span> * i + <span class="hljs-number">3</span>) &amp; <span class="hljs-number">0xFF</span>) &lt;&lt; <span class="hljs-number">24</span>);
+    }
+    
+    <span class="hljs-comment">// XXTEA 解密 (逆向加密过程)</span>
+    <span class="hljs-keyword">const</span> rounds = <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">floor</span>(<span class="hljs-number">6</span> + <span class="hljs-number">52</span> / len);
+    <span class="hljs-keyword">let</span> sum = (rounds * <span class="hljs-variable constant_">DELTA</span>) &gt;&gt;&gt; <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">let</span> y = v[<span class="hljs-number">0</span>];
+    
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; rounds; i++) {
+        <span class="hljs-keyword">const</span> e = (sum &gt;&gt;&gt; <span class="hljs-number">2</span>) &amp; <span class="hljs-number">3</span>;
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> p = len - <span class="hljs-number">1</span>; p &gt;= <span class="hljs-number">0</span>; p--) {
+            <span class="hljs-keyword">const</span> z = v[(p + len - <span class="hljs-number">1</span>) % len];
+            <span class="hljs-keyword">const</span> mx = (((z &gt;&gt;&gt; <span class="hljs-number">5</span> ^ y &lt;&lt; <span class="hljs-number">2</span>) + (y &gt;&gt;&gt; <span class="hljs-number">3</span> ^ z &lt;&lt; <span class="hljs-number">4</span>)) ^ 
+                       ((sum ^ y) + (key[(p &amp; <span class="hljs-number">3</span>) ^ e] ^ z)));
+            v[p] = (v[p] - mx) &gt;&gt;&gt; <span class="hljs-number">0</span>;
+            y = v[p];
+        }
+        sum = (sum - <span class="hljs-variable constant_">DELTA</span>) &gt;&gt;&gt; <span class="hljs-number">0</span>;
+    }
+    
+    <span class="hljs-comment">// 整数数组转字符串</span>
+    <span class="hljs-keyword">const</span> result = [];
+    <span class="hljs-keyword">for</span> (<span class="hljs-keyword">let</span> i = <span class="hljs-number">0</span>; i &lt; len; i++) {
+        result.<span class="hljs-title function_">push</span>(
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>(v[i] &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">8</span>) &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">16</span>) &amp; <span class="hljs-number">0xFF</span>),
+            <span class="hljs-title class_">String</span>.<span class="hljs-title function_">fromCharCode</span>((v[i] &gt;&gt;&gt; <span class="hljs-number">24</span>) &amp; <span class="hljs-number">0xFF</span>)
+        );
+    }
+    <span class="hljs-keyword">return</span> result.<span class="hljs-title function_">join</span>(<span class="hljs-string">""</span>).<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/\0+$/</span>, <span class="hljs-string">''</span>);
+}
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-javascript-12" class="anchor" href="#p-12092478-javascript-12" aria-label="标题链接"></a>完整指纹生成代码 (JavaScript)</h3>
+<pre data-code-wrap="javascript" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-javascript hljs language-javascript" data-highlighted="yes"><span class="hljs-keyword">const</span> <span class="hljs-variable constant_">KEY</span> = {
+    <span class="hljs-attr">identifier</span>: <span class="hljs-string">"ECdITeCs"</span>,
+    <span class="hljs-attr">material</span>: [<span class="hljs-number">1888420705</span>, <span class="hljs-number">2576816180</span>, <span class="hljs-number">2347232058</span>, <span class="hljs-number">874813317</span>]
+};
+
+<span class="hljs-comment">// 生成指纹</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">generateFingerprint</span>(<span class="hljs-params">features</span>) {
+    <span class="hljs-comment">// 1. JSON 序列化</span>
+    <span class="hljs-keyword">const</span> jsonStr = <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">stringify</span>(features);
+    
+    <span class="hljs-comment">// 2. XXTEA 加密</span>
+    <span class="hljs-keyword">const</span> encrypted = <span class="hljs-title function_">xxteaEncrypt</span>(jsonStr, <span class="hljs-variable constant_">KEY</span>.<span class="hljs-property">material</span>);
+    
+    <span class="hljs-comment">// 3. Base64 编码</span>
+    <span class="hljs-keyword">const</span> encoded = <span class="hljs-title function_">btoa</span>(encrypted);
+    
+    <span class="hljs-comment">// 4. 添加前缀</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-variable constant_">KEY</span>.<span class="hljs-property">identifier</span> + <span class="hljs-string">":"</span> + encoded;
+}
+
+<span class="hljs-comment">// 解码指纹</span>
+<span class="hljs-keyword">function</span> <span class="hljs-title function_">decodeFingerprint</span>(<span class="hljs-params">fingerprint</span>) {
+    <span class="hljs-comment">// 1. 分离前缀和数据</span>
+    <span class="hljs-keyword">const</span> [prefix, encoded] = fingerprint.<span class="hljs-title function_">split</span>(<span class="hljs-string">':'</span>);
+    
+    <span class="hljs-comment">// 2. Base64 解码</span>
+    <span class="hljs-keyword">const</span> encrypted = <span class="hljs-title function_">atob</span>(encoded);
+    
+    <span class="hljs-comment">// 3. XXTEA 解密</span>
+    <span class="hljs-keyword">const</span> decrypted = <span class="hljs-title function_">xxteaDecrypt</span>(encrypted, <span class="hljs-variable constant_">KEY</span>.<span class="hljs-property">material</span>);
+    
+    <span class="hljs-comment">// 4. JSON 解析</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-title class_">JSON</span>.<span class="hljs-title function_">parse</span>(decrypted);
+}
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-python-13" class="anchor" href="#p-12092478-python-13" aria-label="标题链接"></a>Python 实现</h3>
+<pre data-code-wrap="python" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-python hljs language-python" data-highlighted="yes"><span class="hljs-keyword">import</span> base64
+<span class="hljs-keyword">import</span> json
+
+<span class="hljs-comment"># XXTEA 密钥</span>
+KEY_IDENTIFIER = <span class="hljs-string">"ECdITeCs"</span>
+KEY_MATERIAL = [<span class="hljs-number">1888420705</span>, <span class="hljs-number">2576816180</span>, <span class="hljs-number">2347232058</span>, <span class="hljs-number">874813317</span>]
+DELTA = <span class="hljs-number">0x9E3779B9</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">_to_uint32</span>(<span class="hljs-params">x</span>):
+    <span class="hljs-string">"""转换为无符号32位整数"""</span>
+    <span class="hljs-keyword">return</span> x &amp; <span class="hljs-number">0xFFFFFFFF</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">xxtea_encrypt</span>(<span class="hljs-params">data: <span class="hljs-built_in">bytes</span>, key: <span class="hljs-built_in">list</span></span>) -&gt; <span class="hljs-built_in">bytes</span>:
+    <span class="hljs-string">"""XXTEA 加密"""</span>
+    <span class="hljs-comment"># 转换为 32-bit 整数数组</span>
+    n = (<span class="hljs-built_in">len</span>(data) + <span class="hljs-number">3</span>) // <span class="hljs-number">4</span>
+    v = []
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n):
+        val = <span class="hljs-number">0</span>
+        <span class="hljs-keyword">for</span> j <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">4</span>):
+            idx = i * <span class="hljs-number">4</span> + j
+            <span class="hljs-keyword">if</span> idx &lt; <span class="hljs-built_in">len</span>(data):
+                val |= data[idx] &lt;&lt; (j * <span class="hljs-number">8</span>)
+        v.append(val)
+    
+    <span class="hljs-comment"># XXTEA 加密</span>
+    rounds = <span class="hljs-number">6</span> + <span class="hljs-number">52</span> // n
+    sum_val = <span class="hljs-number">0</span>
+    z = v[n - <span class="hljs-number">1</span>]
+    
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(rounds):
+        sum_val = _to_uint32(sum_val + DELTA)
+        e = (sum_val &gt;&gt; <span class="hljs-number">2</span>) &amp; <span class="hljs-number">3</span>
+        <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n):
+            y = v[(p + <span class="hljs-number">1</span>) % n]
+            mx = (((z &gt;&gt; <span class="hljs-number">5</span> ^ y &lt;&lt; <span class="hljs-number">2</span>) + (y &gt;&gt; <span class="hljs-number">3</span> ^ z &lt;&lt; <span class="hljs-number">4</span>)) ^ 
+                  ((sum_val ^ y) + (key[(p &amp; <span class="hljs-number">3</span>) ^ e] ^ z)))
+            v[p] = _to_uint32(v[p] + mx)
+            z = v[p]
+    
+    <span class="hljs-comment"># 转回字节</span>
+    result = <span class="hljs-built_in">bytearray</span>()
+    <span class="hljs-keyword">for</span> val <span class="hljs-keyword">in</span> v:
+        result.extend([
+            val &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">8</span>) &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">16</span>) &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">24</span>) &amp; <span class="hljs-number">0xFF</span>
+        ])
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">bytes</span>(result)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">xxtea_decrypt</span>(<span class="hljs-params">data: <span class="hljs-built_in">bytes</span>, key: <span class="hljs-built_in">list</span></span>) -&gt; <span class="hljs-built_in">bytes</span>:
+    <span class="hljs-string">"""XXTEA 解密"""</span>
+    <span class="hljs-comment"># 转换为 32-bit 整数数组</span>
+    n = <span class="hljs-built_in">len</span>(data) // <span class="hljs-number">4</span>
+    <span class="hljs-keyword">if</span> n &lt; <span class="hljs-number">2</span>:
+        <span class="hljs-keyword">return</span> data
+    
+    v = []
+    <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n):
+        val = (data[i*<span class="hljs-number">4</span>] | 
+               (data[i*<span class="hljs-number">4</span>+<span class="hljs-number">1</span>] &lt;&lt; <span class="hljs-number">8</span>) | 
+               (data[i*<span class="hljs-number">4</span>+<span class="hljs-number">2</span>] &lt;&lt; <span class="hljs-number">16</span>) | 
+               (data[i*<span class="hljs-number">4</span>+<span class="hljs-number">3</span>] &lt;&lt; <span class="hljs-number">24</span>))
+        v.append(val)
+    
+    <span class="hljs-comment"># XXTEA 解密</span>
+    rounds = <span class="hljs-number">6</span> + <span class="hljs-number">52</span> // n
+    sum_val = _to_uint32(rounds * DELTA)
+    y = v[<span class="hljs-number">0</span>]
+    
+    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(rounds):
+        e = (sum_val &gt;&gt; <span class="hljs-number">2</span>) &amp; <span class="hljs-number">3</span>
+        <span class="hljs-keyword">for</span> p <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n - <span class="hljs-number">1</span>, -<span class="hljs-number">1</span>, -<span class="hljs-number">1</span>):
+            z = v[(p + n - <span class="hljs-number">1</span>) % n]
+            mx = (((z &gt;&gt; <span class="hljs-number">5</span> ^ y &lt;&lt; <span class="hljs-number">2</span>) + (y &gt;&gt; <span class="hljs-number">3</span> ^ z &lt;&lt; <span class="hljs-number">4</span>)) ^ 
+                  ((sum_val ^ y) + (key[(p &amp; <span class="hljs-number">3</span>) ^ e] ^ z)))
+            v[p] = _to_uint32(v[p] - mx)
+            y = v[p]
+        sum_val = _to_uint32(sum_val - DELTA)
+    
+    <span class="hljs-comment"># 转回字节</span>
+    result = <span class="hljs-built_in">bytearray</span>()
+    <span class="hljs-keyword">for</span> val <span class="hljs-keyword">in</span> v:
+        result.extend([
+            val &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">8</span>) &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">16</span>) &amp; <span class="hljs-number">0xFF</span>,
+            (val &gt;&gt; <span class="hljs-number">24</span>) &amp; <span class="hljs-number">0xFF</span>
+        ])
+    <span class="hljs-comment"># 移除末尾的 null 字符</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-built_in">bytes</span>(result).rstrip(<span class="hljs-string">b'\x00'</span>)
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">generate_fingerprint</span>(<span class="hljs-params">features: <span class="hljs-built_in">dict</span></span>) -&gt; <span class="hljs-built_in">str</span>:
+    <span class="hljs-string">"""生成指纹"""</span>
+    <span class="hljs-comment"># 1. JSON 序列化</span>
+    json_str = json.dumps(features, separators=(<span class="hljs-string">','</span>, <span class="hljs-string">':'</span>))
+    
+    <span class="hljs-comment"># 2. XXTEA 加密</span>
+    encrypted = xxtea_encrypt(json_str.encode(<span class="hljs-string">'utf-8'</span>), KEY_MATERIAL)
+    
+    <span class="hljs-comment"># 3. Base64 编码</span>
+    encoded = base64.b64encode(encrypted).decode(<span class="hljs-string">'ascii'</span>)
+    
+    <span class="hljs-comment"># 4. 添加前缀</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-string">f"<span class="hljs-subst">{KEY_IDENTIFIER}</span>:<span class="hljs-subst">{encoded}</span>"</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">decode_fingerprint</span>(<span class="hljs-params">fingerprint: <span class="hljs-built_in">str</span></span>) -&gt; <span class="hljs-built_in">dict</span>:
+    <span class="hljs-string">"""解码指纹"""</span>
+    <span class="hljs-comment"># 1. 分离前缀和数据</span>
+    prefix, encoded = fingerprint.split(<span class="hljs-string">':'</span>, <span class="hljs-number">1</span>)
+    
+    <span class="hljs-comment"># 2. Base64 解码</span>
+    encrypted = base64.b64decode(encoded)
+    
+    <span class="hljs-comment"># 3. XXTEA 解密</span>
+    decrypted = xxtea_decrypt(encrypted, KEY_MATERIAL)
+    
+    <span class="hljs-comment"># 4. JSON 解析</span>
+    <span class="hljs-keyword">return</span> json.loads(decrypted.decode(<span class="hljs-string">'utf-8'</span>))
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-json-14" class="anchor" href="#p-12092478-json-14" aria-label="标题链接"></a>指纹特征字段 (解密后的 JSON 结构)</h3>
+<p dir="auto">解密后的 JSON 包含以下浏览器特征:</p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"userAgent"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Mozilla/5.0 (Windows NT 10.0; Win64; x64) ..."</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"language"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"zh-CN"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"colorDepth"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">24</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"screenResolution"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-number">1920</span><span class="hljs-punctuation">,</span> <span class="hljs-number">1080</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"availableScreenResolution"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-number">1920</span><span class="hljs-punctuation">,</span> <span class="hljs-number">1040</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"timezoneOffset"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">-480</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"timezone"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Asia/Shanghai"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"sessionStorage"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"localStorage"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"indexedDb"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"cpuClass"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"platform"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Win32"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"plugins"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>...<span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"canvas"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"canvas_hash_value"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"webgl"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"webgl_hash_value"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"webglVendorAndRenderer"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Google Inc.~ANGLE..."</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"adBlock"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"hasLiedLanguages"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"hasLiedResolution"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"hasLiedOs"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"hasLiedBrowser"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"touchSupport"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-number">0</span><span class="hljs-punctuation">,</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"fonts"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"Arial"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"Arial Black"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"audio"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"audio_fingerprint_hash"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-tes-threat-evaluation-service-15" class="anchor" href="#p-12092478-tes-threat-evaluation-service-15" aria-label="标题链接"></a>TES (Threat Evaluation Service) 检测</h3>
+<p dir="auto">AWS 使用 TES 服务端检测系统分析指纹，检测以下异常:</p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><strong>指纹一致性</strong> - 同一会话中指纹应保持一致</li>
+<li><strong>visitorId 匹配</strong> - <code>browserData.attributes.visitorId</code> 必须与 <code>awsd2c-token-c</code> cookie 中的 <code>vid</code> 一致</li>
+<li><strong>静态指纹检测</strong> - 重复使用相同指纹会被标记</li>
+<li><strong>环境一致性</strong> - 指纹中的特征应与请求头 (User-Agent 等) 一致</li>
+<li><strong>行为模式</strong> - 请求时序、页面停留时间等</li>
+</ol>
+<h3 dir="auto"><a name="p-12092478-h-3-browserdatagenerator-16" class="anchor" href="#p-12092478-h-3-browserdatagenerator-16" aria-label="标题链接"></a>3. 浏览器数据生成器 (BrowserDataGenerator)</h3>
+<p dir="auto">模拟真实浏览器行为数据。</p>
+<p dir="auto"><strong>数据结构：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"attributes"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"fingerprint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;fingerprint&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"eventTimestamp"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;ISO8601&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"timeSpentOnPage"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;milliseconds&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"eventType"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"PageLoad|PageSubmit"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"ubid"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;ubid&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"pageName"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;page&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"visitorId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;visitor-id&gt;"</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"cookies"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span><span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 dir="auto"><a name="p-12092478-h-17" class="anchor" href="#p-12092478-h-17" aria-label="标题链接"></a>详细流程分析</h2>
+<h3 dir="auto"><a name="p-12092478-phase-1-oidc-18" class="anchor" href="#p-12092478-phase-1-oidc-18" aria-label="标题链接"></a>Phase 1: OIDC 初始化</h3>
+<h4 dir="auto"><a name="p-12092478-step-1-oidc-19" class="anchor" href="#p-12092478-step-1-oidc-19" aria-label="标题链接"></a>Step 1: 注册 OIDC 客户端</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /client/register</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"clientName"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"Amazon Q Developer for command line"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"clientType"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"public"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"scopes"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-string">"codewhisperer:completions"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"codewhisperer:analysis"</span><span class="hljs-punctuation">,</span> <span class="hljs-string">"codewhisperer:conversations"</span><span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"clientId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"clientSecret"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-secret&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-2-20" class="anchor" href="#p-12092478-step-2-20" aria-label="标题链接"></a>Step 2: 设备授权</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /device_authorization</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"clientId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"clientSecret"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-secret&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"startUrl"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://view.awsapps.com/start"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"deviceCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;device-code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"userCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;user-code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"verificationUri"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;url&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"verificationUriComplete"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;url-with-code&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-phase-2-21" class="anchor" href="#p-12092478-phase-2-21" aria-label="标题链接"></a>Phase 2: 账号创建</h3>
+<h4 dir="auto"><a name="p-12092478-step-3-22" class="anchor" href="#p-12092478-step-3-22" aria-label="标题链接"></a>Step 3: 临时邮箱创建</h4>
+<p dir="auto">支持两种邮箱服务：</p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><strong>mail.tm</strong> (公开 API)</li>
+<li><strong>私有邮箱服务</strong> (备用)</li>
+</ol>
+<p dir="auto"><strong>mail.tm 流程：</strong></p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-bash" data-highlighted="yes">1. GET /domains → 获取可用域名
+2. POST /accounts → 创建邮箱账户
+3. POST /token → 获取访问令牌
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-phase-3-portal-23" class="anchor" href="#p-12092478-phase-3-portal-23" aria-label="标题链接"></a>Phase 3: Portal 登录流程</h3>
+<h4 dir="auto"><a name="p-12092478-step-4-portal-login-24" class="anchor" href="#p-12092478-step-4-portal-login-24" aria-label="标题链接"></a>Step 4: 初始化 Portal Login</h4>
+<p dir="auto"><strong>端点：</strong> <code>GET /login?directory_id=view&amp;redirect_url=&lt;url&gt;</code></p>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"redirectUrl"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"https://signin.aws/platform/&lt;directory&gt;/login?workflowStateHandle=&lt;handle&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>关键参数：</strong></p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li><code>workflowStateHandle</code>: 工作流状态句柄，贯穿整个流程</li>
+</ul>
+<h4 dir="auto"><a name="p-12092478-step-5-signin-25" class="anchor" href="#p-12092478-step-5-signin-25" aria-label="标题链接"></a>Step 5: 访问 Signin 页面</h4>
+<p dir="auto">模拟浏览器访问登录页面，获取必要的 Cookies：</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li><code>platform-ubid</code></li>
+<li><code>login-interview-token</code></li>
+</ul>
+<h4 dir="auto"><a name="p-12092478-step-6-7-workflow-26" class="anchor" href="#p-12092478-step-6-7-workflow-26" aria-label="标题链接"></a>Step 6-7: Workflow 初始化</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /platform/&lt;directory&gt;/api/execute</code></p>
+<p dir="auto"><strong>两次 POST 请求：</strong></p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><strong>第一次 (stepId=“”)：</strong> 初始化工作流</li>
+<li><strong>第二次 (stepId=“start”)：</strong> 获取 <code>aws-usi-authn</code> Cookie</li>
+</ol>
+<p dir="auto"><strong>请求结构：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">""</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"workflowStateHandle"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;handle&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inputs"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"FingerPrintRequestInput"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"fingerPrint"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;fingerprint&gt;"</span><span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"requestId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;uuid&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-phase-4-27" class="anchor" href="#p-12092478-phase-4-27" aria-label="标题链接"></a>Phase 4: 用户注册</h3>
+<h4 dir="auto"><a name="p-12092478-step-8-submit-28" class="anchor" href="#p-12092478-step-8-submit-28" aria-label="标题链接"></a>Step 8: 提交邮箱 (SUBMIT)</h4>
+<p dir="auto"><strong>关键 Cookie 设置：</strong></p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><code>awsccc</code>: Base64 编码的 JSON (包含 consent 信息)</li>
+<li><code>awsd2c-token-c</code>: 从 <a href="http://vs.aws.amazon.com/token" rel="noopener nofollow ugc">vs.aws.amazon.com/token</a> 获取的 D2C Token</li>
+</ol>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"get-identity-user"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"workflowStateHandle"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;handle&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"actionId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"SUBMIT"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inputs"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"UserRequestInput"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"username"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;email&gt;"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"ApplicationTypeRequestInput"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"applicationType"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"SSO_INDIVIDUAL_ID"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"UserEventRequestInput"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"FingerPrintRequestInput"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"visitorId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;visitor-id&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应处理：</strong></p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>200: 用户已存在 (登录流程)</li>
+<li>400 + ENTITY_DOES_NOT_EXIST: 用户不存在 (继续注册)</li>
+</ul>
+<h4 dir="auto"><a name="p-12092478-step-9-signup-29" class="anchor" href="#p-12092478-step-9-signup-29" aria-label="标题链接"></a>Step 9: 进入注册 (SIGNUP)</h4>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"get-identity-user"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"workflowStateHandle"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;handle&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"actionId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"SIGNUP"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inputs"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>...<span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"redirect"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"url"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"/signup?workflowStateHandle=&lt;new-handle&gt;"</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"presentationContext"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"workflowId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;workflow-id&gt;"</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-10-105-signup-30" class="anchor" href="#p-12092478-step-10-105-signup-30" aria-label="标题链接"></a>Step 10-10.5: Signup 页面初始化</h4>
+<p dir="auto"><strong>两次 POST 到 <code>/signup/api/execute</code>：</strong></p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><strong>第一次 (stepId=“”)：</strong> 初始化注册页面</li>
+<li><strong>第二次 (stepId=“start”)：</strong> 获取 <code>workflowId</code></li>
+</ol>
+<h3 dir="auto"><a name="p-12092478-phase-5-profile-31" class="anchor" href="#p-12092478-phase-5-profile-31" aria-label="标题链接"></a>Phase 5: Profile 创建与验证</h3>
+<h4 dir="auto"><a name="p-12092478-step-11-profile-apistart-32" class="anchor" href="#p-12092478-step-11-profile-apistart-32" aria-label="标题链接"></a>Step 11: Profile /api/start</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /api/start</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"workflowID"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;workflow-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"browserData"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>...<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"workflowState"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;encrypted-state&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-12-33" class="anchor" href="#p-12092478-step-12-33" aria-label="标题链接"></a>Step 12: 发送验证码</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /api/send-otp</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"workflowState"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;state&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"email"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;email&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"browserData"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>...<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-13-34" class="anchor" href="#p-12092478-step-13-34" aria-label="标题链接"></a>Step 13: 获取验证码</h4>
+<p dir="auto">从邮箱服务获取 6 位数字验证码。</p>
+<p dir="auto"><strong>轮询策略：</strong></p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>最大重试次数: 30</li>
+<li>间隔: 5 秒</li>
+<li>正则匹配: <code>\b(\d{6})\b</code></li>
+</ul>
+<h4 dir="auto"><a name="p-12092478-step-14-35" class="anchor" href="#p-12092478-step-14-35" aria-label="标题链接"></a>Step 14: 创建身份</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /api/create-identity</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"workflowState"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;state&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"userData"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"email"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;email&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"fullName"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;name&gt;"</span>
+  <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"otpCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;6-digit-code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"browserData"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>...<span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"registrationCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"signInState"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;base64-state&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-phase-6-36" class="anchor" href="#p-12092478-phase-6-36" aria-label="标题链接"></a>Phase 6: 密码设置</h3>
+<h4 dir="auto"><a name="p-12092478-step-15-37" class="anchor" href="#p-12092478-step-15-37" aria-label="标题链接"></a>Step 15: 初始化密码设置页面</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /signup/api/execute</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">""</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"state"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;sign-in-state&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inputs"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"UserRegistrationRequestInput"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"registrationCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;code&gt;"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"state"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;state&gt;"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"FingerPrintRequestInput"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应 (关键)：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"workflowStateHandle"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;password-handle&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"get-new-password-for-password-creation"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"workflowResponseData"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"encryptionContextResponse"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"publicKey"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+        <span class="hljs-attr">"kid"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;key-id&gt;"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"n"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;modulus&gt;"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"e"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;exponent&gt;"</span><span class="hljs-punctuation">,</span>
+        <span class="hljs-attr">"alg"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"RSA-OAEP-256"</span>
+      <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"issuer"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"signin.aws"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"audience"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"AWSPasswordService"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"region"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"us-east-1"</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-16-38" class="anchor" href="#p-12092478-step-16-38" aria-label="标题链接"></a>Step 16: 设置密码</h4>
+<p dir="auto"><strong>关键修复点：</strong></p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li>
+<p><strong>CSRF Token 处理：</strong></p>
+<ul style="list-style-type: disc; padding-left: 1.5em;">
+<li><code>directory-csrf-token</code>: 只包含 <code>loginCsrfToken</code></li>
+<li><code>workflow-csrf-token</code>: 包含 <code>loginCsrfToken</code> + <code>signupCsrfToken</code></li>
+</ul>
+</li>
+<li>
+<p><strong>Cookie 顺序 (重要)：</strong></p>
+<pre class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-python" data-highlighted="yes">directory-csrf-token → aws-usi-authn → platform-ubid → 
+login-interview-token → workflow-step-<span class="hljs-built_in">id</span> → workflow-csrf-token → 
+workflow-csrftoken → awsccc → awsd2c-token-c
+</code></pre>
+</li>
+<li>
+<p><strong>密码加密：</strong></p>
+<ul style="list-style-type: disc; padding-left: 1.5em;">
+<li>使用服务器返回的公钥进行 JWE 加密</li>
+<li>Plaintext 填充到 192 字节</li>
+</ul>
+</li>
+</ol>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"get-new-password-for-password-creation"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"workflowStateHandle"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;password-handle&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"actionId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"SUBMIT"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"inputs"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"PasswordRequestInput"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"password"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;jwe-encrypted-password&gt;"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"successfullyEncrypted"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"SUCCESSFUL"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"errorLog"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">null</span></span>
+    <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"UserEventRequestInput"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"UserRequestInput"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"username"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;email&gt;"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-punctuation">{</span><span class="hljs-attr">"input_type"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"FingerPrintRequestInput"</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"visitorId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;visitor-id&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>成功响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"stepId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"end-of-user-registration-success"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"redirect"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"url"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"/login?workflowStateHandle=&lt;handle&gt;&amp;workflowResultHandle=&lt;auth-code&gt;"</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-phase-7-token-39" class="anchor" href="#p-12092478-phase-7-token-39" aria-label="标题链接"></a>Phase 7: 获取 Token</h3>
+<h4 dir="auto"><a name="p-12092478-step-17-40" class="anchor" href="#p-12092478-step-17-40" aria-label="标题链接"></a>Step 17: 完成登录流程</h4>
+<p dir="auto">从 <code>set_password</code> 响应的重定向 URL 中提取 <code>workflowResultHandle</code> (即 authCode)。</p>
+<h4 dir="auto"><a name="p-12092478-step-18-sso-token-41" class="anchor" href="#p-12092478-step-18-sso-token-41" aria-label="标题链接"></a>Step 18: 获取 SSO Token</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /auth/sso-token</code></p>
+<p dir="auto"><strong>请求 (x-www-form-urlencoded)：</strong></p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-ini" data-highlighted="yes"><span class="hljs-attr">authCode</span>=&lt;auth-code&gt;&amp;state=&lt;state&gt;&amp;orgId=view
+</code></pre>
+<p dir="auto"><strong>Headers：</strong></p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-css" data-highlighted="yes"><span class="hljs-attribute">x</span>-amz-sso-csrf-token: &lt;login-csrf-token&gt;
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"token"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;user-session-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"redirectUrl"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;url&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-19-42" class="anchor" href="#p-12092478-step-19-42" aria-label="标题链接"></a>Step 19: 接受设备授权</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /device_authorization/accept_user_code</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"userCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;user-code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"userSessionId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;session-id&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"deviceContext"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>
+    <span class="hljs-attr">"clientId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-id&gt;"</span><span class="hljs-punctuation">,</span>
+    <span class="hljs-attr">"deviceContextId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;context-id&gt;"</span>
+  <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-20-token-43" class="anchor" href="#p-12092478-step-20-token-43" aria-label="标题链接"></a>Step 20: 关联 Token</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /device_authorization/associate_token</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"deviceContext"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span>...<span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"userSessionId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;session-id&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h4 dir="auto"><a name="p-12092478-step-21-token-44" class="anchor" href="#p-12092478-step-21-token-44" aria-label="标题链接"></a>Step 21: 获取最终 Token</h4>
+<p dir="auto"><strong>端点：</strong> <code>POST /token</code></p>
+<p dir="auto"><strong>请求：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"clientId"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-id&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"clientSecret"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;client-secret&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"deviceCode"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;device-code&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"grantType"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"urn:ietf:params:oauth:grant-type:device_code"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<p dir="auto"><strong>轮询处理：</strong></p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li><code>authorization_pending</code>: 等待 2 秒重试</li>
+<li><code>slow_down</code>: 等待 5 秒重试</li>
+</ul>
+<p dir="auto"><strong>成功响应：</strong></p>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"accessToken"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"&lt;access-token&gt;"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"refreshToken"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"aor-&lt;refresh-token&gt;"</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<h2 dir="auto"><a name="p-12092478-h-45" class="anchor" href="#p-12092478-h-45" aria-label="标题链接"></a>关键技术点</h2>
+<h3 dir="auto"><a name="p-12092478-h-1-cookie-46" class="anchor" href="#p-12092478-h-1-cookie-46" aria-label="标题链接"></a>1. Cookie 管理</h3>
+<div class="md-table fullscreen-table-wrapper" dir="auto" data-table-index="0">
+<div class="fullscreen-table-wrapper__buttons"></div><table>
+<thead>
+<tr>
+<th>Cookie 名称</th>
+<th>域</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>awsccc</code></td>
+<td>signin.aws</td>
+<td>用户同意信息 (Base64 编码)</td>
+</tr>
+<tr>
+<td><code>awsd2c-token-c</code></td>
+<td>signin.aws</td>
+<td>D2C Token (JWT)</td>
+</tr>
+<tr>
+<td><code>login-interview-token</code></td>
+<td>signin.aws</td>
+<td>登录会话 Token</td>
+</tr>
+<tr>
+<td><code>aws-usi-authn</code></td>
+<td>signin.aws</td>
+<td>认证 Token</td>
+</tr>
+<tr>
+<td><code>workflow-step-id</code></td>
+<td>signin.aws</td>
+<td>当前工作流步骤</td>
+</tr>
+<tr>
+<td><code>directory-csrf-token</code></td>
+<td>signin.aws</td>
+<td>CSRF 保护</td>
+</tr>
+<tr>
+<td><code>workflow-csrf-token</code></td>
+<td>signin.aws</td>
+<td>工作流 CSRF 保护</td>
+</tr>
+</tbody>
+</table>
+</div><h3 dir="auto"><a name="p-12092478-h-2-47" class="anchor" href="#p-12092478-h-2-47" aria-label="标题链接"></a>2. 状态管理</h3>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-scss" data-highlighted="yes">workflowStateHandle → 工作流状态句柄 (URL 参数)
+login-interview-token → 登录会话 Token (Cookie)
+signInState → 登录状态 (Base64 编码的 JSON)
+workflowState → 工作流状态 (加密字符串)
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-3-48" class="anchor" href="#p-12092478-h-3-48" aria-label="标题链接"></a>3. 请求头模拟</h3>
+<pre data-code-wrap="http" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-http" data-unknown-hljs-lang="http">User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ...
+sec-ch-ua: "Google Chrome";v="143", "Chromium";v="143", "Not A(Brand";v="24"
+sec-ch-ua-mobile: ?0
+sec-ch-ua-platform: "Windows"
+sec-fetch-dest: empty
+sec-fetch-mode: cors
+sec-fetch-site: same-origin
+</code></pre>
+<h3 dir="auto"><a name="p-12092478-h-4-49" class="anchor" href="#p-12092478-h-4-49" aria-label="标题链接"></a>4. 错误处理</h3>
+<div class="md-table fullscreen-table-wrapper" dir="auto" data-table-index="1">
+<div class="fullscreen-table-wrapper__buttons"></div><table>
+<thead>
+<tr>
+<th>错误码</th>
+<th>含义</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ENTITY_DOES_NOT_EXIST</code></td>
+<td>用户不存在</td>
+<td>继续注册流程</td>
+</tr>
+<tr>
+<td><code>SIGNIN_BAD_REQUEST_ERROR</code></td>
+<td>请求格式错误</td>
+<td>检查 Cookie/Header</td>
+</tr>
+<tr>
+<td><code>authorization_pending</code></td>
+<td>授权待处理</td>
+<td>轮询重试</td>
+</tr>
+<tr>
+<td><code>slow_down</code></td>
+<td>请求过快</td>
+<td>增加等待时间</td>
+</tr>
+</tbody>
+</table>
+</div><h2 dir="auto"><a name="p-12092478-h-50" class="anchor" href="#p-12092478-h-50" aria-label="标题链接"></a>安全考虑</h2>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li><strong>密码传输：</strong> 使用 JWE 加密，RSA-OAEP-256 + A256GCM</li>
+<li><strong>CSRF 保护：</strong> 多层 CSRF Token 验证</li>
+<li><strong>指纹验证：</strong> 浏览器指纹用于反欺诈</li>
+<li><strong>会话管理：</strong> 多个 Token 协同工作</li>
+</ol>
+<h2 dir="auto"><a name="p-12092478-h-51" class="anchor" href="#p-12092478-h-51" aria-label="标题链接"></a>版本演进</h2>
+<div class="md-table fullscreen-table-wrapper" dir="auto" data-table-index="2">
+<div class="fullscreen-table-wrapper__buttons"></div><table>
+<thead>
+<tr>
+<th>版本</th>
+<th>关键修复</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V7</td>
+<td>awsccc Cookie Base64 编码、D2C Token 获取时机</td>
+</tr>
+<tr>
+<td>V8</td>
+<td>SIGNUP 流程 workflowStateHandle 保存</td>
+</tr>
+<tr>
+<td>V9</td>
+<td>signin_visitor_id 一致性</td>
+</tr>
+<tr>
+<td>V10</td>
+<td>aws-usi-authn Cookie 更新</td>
+</tr>
+<tr>
+<td>V13-V16</td>
+<td>Cookie 顺序、CSRF Token 处理</td>
+</tr>
+<tr>
+<td>V20-V21</td>
+<td>重复 Cookie 清理、手动构建 Cookie Header</td>
+</tr>
+<tr>
+<td>V22</td>
+<td>JWE 加密使用服务器返回的 issuer/audience</td>
+</tr>
+<tr>
+<td>V24-V25</td>
+<td>登录完成流程、SSO Token 获取</td>
+</tr>
+</tbody>
+</table>
+</div><h2 dir="auto"><a name="p-12092478-h-52" class="anchor" href="#p-12092478-h-52" aria-label="标题链接"></a>流程图</h2>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-auto">┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  OIDC 注册   │────▶│  设备授权    │────▶│  邮箱创建    │
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                 │
+                                                 ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Workflow    │◀────│  Signin 页面 │◀────│  Portal 登录 │
+│  初始化      │     │  访问        │     │  初始化      │
+└──────────────┘     └──────────────┘     └──────────────┘
+       │
+       ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  邮箱提交    │────▶│  SIGNUP      │────▶│  Profile     │
+│  (SUBMIT)    │     │  进入注册    │     │  创建        │
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                 │
+                                                 ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  身份创建    │◀────│  验证码获取  │◀────│  发送 OTP    │
+└──────────────┘     └──────────────┘     └──────────────┘
+       │
+       ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  密码页面    │────▶│  设置密码    │────▶│  登录完成    │
+│  初始化      │     │  (JWE 加密)  │     │              │
+└──────────────┘     └──────────────┘     └──────────────┘
+                                                 │
+                                                 ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│  Token 关联  │◀────│  设备授权    │◀────│  SSO Token   │
+│              │     │  确认        │     │  获取        │
+└──────────────┘     └──────────────┘     └──────────────┘
+       │
+       ▼
+┌──────────────┐
+│  获取最终    │
+│  Refresh     │
+│  Token       │
+└──────────────┘
+</code></pre>
+<h2 dir="auto"><a name="p-12092478-h-53" class="anchor" href="#p-12092478-h-53" aria-label="标题链接"></a>依赖库</h2>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li><code>requests</code>: HTTP 请求</li>
+<li><code>cryptography</code>: JWE 加密 (RSA-OAEP-256, A256GCM)</li>
+<li><code>gzip</code>: 响应解压</li>
+</ul>
+<hr>
+<p dir="auto"><em>本文档仅供技术学习研究使用</em></p>
+<p dir="auto">关于tes的研究，各位大佬看一下吧</p>
+<aside class="quote quote-modified" data-post="1" data-topic="1400311" data-expanded="false">
+    
+  
+        
+      <div class="title" data-has-quote-controls="" data-can-toggle-quote="">
+    
+    <img alt="图片" width="24" height="24" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767624011199-wpuyngw_img_0_1767624011213.png" class="avatar" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767624011199-wpuyngw_img_0_1767624011213.png" data-github-sha="a80dff9a6049696365198e907226fcb7c3bbe2aa">
+    <div class="quote-title__text-content">
+      <a href="https://linux.do/t/topic/1400311">浅析aws fingerprint生成</a> <a class="badge-category__wrapper " href="/c/develop/develop-lv3/88"><span data-category-id="88" style="--category-badge-color: #FF0000; --category-badge-text-color: #FFFFFF; --parent-category-badge-color: #32c3c3;" data-parent-category-id="4" data-drop-close="true" class="badge-category --style-icon --has-parent" title="此处为 3级用户 可见空间。"><svg class="fa d-icon svg-icon svg-node" aria-hidden="true"><svg id="code" viewBox="0 0 640 512">
+  <path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z"></path>
+</svg></svg>
+<span class="badge-category__name">开发调优, Lv3</span></span></a>
+    </div>
+  <div class="quote-controls">
+    
+    <button class="btn no-text btn-flat quote-toggle" aria-controls="quote-id-1400311-1-0" aria-expanded="false" title="展开" aria-label="展开" type="button">
+<!----><!---->
+<svg class="fa d-icon d-icon-chevron-down svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#chevron-down"></use></svg>
+
+<!---->    </button>
+  
+  <!----></div></div>
+      <blockquote id="quote-id-1400311-1-0">
+    <div class="post__contents-cooked-quote">
+    来l站好久了第一次写技术文章，不对的地方大家可以指出 
+看大家元旦都在协议kiro，包里存在fingerprint这样一个参数，逆向js可知应为TEA系列（0x9E3779B9） 
+写了一个解密的脚本供大家参考学习 
+const KEY = {
+    identifier: "ECdITeCs",
+    material: [1888420705, 2576816180, 2347232058…
+  </div><!---->
+  </blockquote>
+    
+
+  </aside>
+<div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
