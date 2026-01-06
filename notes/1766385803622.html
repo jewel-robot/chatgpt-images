@@ -1,4 +1,69 @@
-<div class="message-block role-user"><div class="message-role">用户</div><div class="message-content"><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766385803622_img_0_1766385803651.png" alt="Uploaded image" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1766385803622_img_0_1766385803651.png" data-github-sha="a2e7b2d42e5a88b4850c64b10d1eed9df3cd53a6">更换控制器后，传感器的端口好像都发生改变了，之前是这样的，我要怎么看现在正确的端口呢</div></div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>查找正确端口</title>
+  <meta name="created-at" content="1766385806022">
+  <meta name="updated-at" content="1766385806022">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>查找正确端口</h1>
+  <div class="message-block role-user"><div class="message-role">用户</div><div class="message-content"><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766385803622_img_0_1766385803651.png" alt="Uploaded image" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1766385803622_img_0_1766385803651.png" data-github-sha="a2e7b2d42e5a88b4850c64b10d1eed9df3cd53a6">更换控制器后，传感器的端口好像都发生改变了，之前是这样的，我要怎么看现在正确的端口呢</div></div>
 <div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="178">可以的。你现在要做的事，本质上是把 <strong data-start="18" data-end="108">“物理相机/传感器” ↔ “系统里对应的 USB 拓扑端口(比如 10-3)” ↔ “/dev/videoX 或 /dev/v4l/by-path/... symlink”</strong> 重新对应起来。换了控制器后，PCI 地址/USB root hub 变了，所以之前写死的 <code data-start="154" data-end="170">10-3 / 2-1 ...</code> 很可能都会变。</p>
 <p data-start="180" data-end="218">下面给你一套最稳的排查方法（从快到稳），你照着跑就能得到“现在正确的端口”。</p>
 <hr data-start="220" data-end="223">
@@ -414,3 +479,5 @@ find </span><span><span class="hljs-string">"/sys/bus/usb/devices/<span class="h
 <p data-start="1223" data-end="1306">而你脚本里的 <code data-start="1230" data-end="1243">*_RGBD_PORT</code> 这类端口号，就是为了固定“这颗 RGBD 设备插在哪个 USB 口”，最匹配的就是这些 USB3 的 Video 设备节点。</p>
 <hr data-start="1308" data-end="1311">
 <p data-start="1313" data-end="1487" data-is-last-node="" data-is-only-node="">如果你想把这个过程做成“自动识别所有深度相机端口”的一条命令（不靠肉眼），也可以：我可以给你一个脚本，自动从 <code data-start="1368" data-end="1392">/sys/bus/usb/devices/*</code> 里筛出 <code data-start="1397" data-end="1438">bDeviceClass / driver / speed / product</code>，再输出端口号 + serial，让你直接做 FRONT/BACK/LEFT/RIGHT 的映射。</p></div></div>
+</body>
+</html>
