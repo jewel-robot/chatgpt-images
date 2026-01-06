@@ -1,4 +1,69 @@
-<div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">Cloudflare Turnstile的免费图形验证码怎么配置</div></div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudflare Turnstile配置</title>
+  <meta name="created-at" content="1766401372428">
+  <meta name="updated-at" content="1766401372428">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Cloudflare Turnstile配置</h1>
+  <div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">Cloudflare Turnstile的免费图形验证码怎么配置</div></div>
 <div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="188">下面按“<strong data-start="4" data-end="31">创建 Widget → 前端嵌入 → 后端校验</strong>”给你一套最常用的 Cloudflare Turnstile（免费）配置流程。先说明一下：<strong data-start="76" data-end="108">Turnstile 不是传统“选图/输字符”的图形验证码</strong>；Managed 模式最多让用户“勾选一下”，而且<strong data-start="133" data-end="149">不会出现图片或文字识别题</strong>。 <span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 80px;"><a href="https://developers.cloudflare.com/turnstile/concepts/widget/" target="_blank" rel="noopener" alt="https://developers.cloudflare.com/turnstile/concepts/widget/" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]!" style="max-width: 80px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">Cloudflare Docs</span></span></span></a></span></span></p>
 <hr data-start="190" data-end="193">
 <h2 data-start="195" data-end="261">1) 在 Cloudflare 后台创建 Turnstile Widget（拿到 Site Key / Secret Key）</h2>
@@ -1177,3 +1242,5 @@ Resend 也有专门的“Supabase + Resend SMTP”集成指引。<span class="" 
 </ul>
 <p data-start="1772" data-end="1844">我可以直接告诉你：你现在的“代发”是<strong data-start="1790" data-end="1809">纯 UI 显示（正常不可消除）</strong>，还是因为 <strong data-start="1815" data-end="1833">DKIM/DMARC 没对齐</strong>导致的“警告式代发”。</p>
 </div></div>
+</body>
+</html>
