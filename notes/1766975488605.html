@@ -1,4 +1,69 @@
-<div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">为什么导入的dae格式的文件，里面的模型从正面看是可以看到材质的，但是从背面就会发现看不到材质，跟透明一样。</div></div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>背面剔除与材质问题</title>
+  <meta name="created-at" content="1766975491889">
+  <meta name="updated-at" content="1766975491889">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>背面剔除与材质问题</h1>
+  <div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">为什么导入的dae格式的文件，里面的模型从正面看是可以看到材质的，但是从背面就会发现看不到材质，跟透明一样。</div></div>
 <div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="132">这其实是**“背面剔除（Backface Culling）+ 材质默认单面渲染”<strong data-start="40" data-end="80">导致的典型现象：<br data-start="50" data-end="53">
 很多 DAE/Collada 导入后，模型的面只在</strong>法线（normal）指向的那一侧**渲染，另一侧（背面）会被渲染器直接不画出来，所以看起来就像“透明”。</p>
 <p data-start="134" data-end="167">下面按“原因 → 怎么判断 → 怎么修”给你一套最常用的处理方式：</p>
@@ -376,3 +441,5 @@ Blender 视图里很多情况下会把面“当成双面”来显示（所以你
 <p data-start="776" data-end="847">——<br data-start="778" data-end="781">
 按你当前情况（确认打开 Backface Culling 就消失），直接用 <strong data-start="819" data-end="838">实体化 Solidify 加厚</strong>基本就能一次解决。</p>
 </div></div>
+</body>
+</html>
