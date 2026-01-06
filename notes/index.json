@@ -177,20 +177,9 @@
     },
     {
       "id": 1766975488605,
-      "created": "2025/12/29 10:31:31",
       "title": "背面剔除与材质问题",
-      "count": 10,
-      "hasImages": true,
-      "imageInfos": [
-        {
-          "path": "images/note_1766975488605_img_0_1766975490329.png",
-          "sha": "e9ce19013554b01590339554c048ed3835187737",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766975488605_img_0_1766975490329.png"
-        }
-      ],
-      "updatedAt": 1766975491889,
-      "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
+      "updatedAt": 1766975491889
     }
   ],
-  "updated": 1767671276750
+  "updated": 1767671279150
 }
