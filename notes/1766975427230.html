@@ -1,4 +1,69 @@
-<div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">can dump指令怎么指定只查看201帧</div></div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAN dump 指令用法</title>
+  <meta name="created-at" content="1766975427231">
+  <meta name="updated-at" content="1766975427231">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>CAN dump 指令用法</h1>
+  <div class="message-block role-user"><div class="message-role">Jewel</div><div class="message-content">can dump指令怎么指定只查看201帧</div></div>
 <div class="message-block role-ai"><div class="message-role">AI</div><div class="message-content"><p data-start="0" data-end="65">你说的“can dump”如果是 <strong data-start="17" data-end="42">SocketCAN 的 <code data-start="31" data-end="40">candump</code></strong>，常见有两种“201帧”的理解，我都给你写法：</p>
 <h2 data-start="67" data-end="99">1) 只看 <strong data-start="76" data-end="90">ID = 0x201</strong> 的报文（最常见）</h2>
 <p data-start="100" data-end="124">过滤语法是在接口名后面加 <code data-start="113" data-end="123">,ID:MASK</code>：</p>
@@ -99,3 +164,5 @@ candump can0 | awk </span><span><span class="hljs-string">'NR==201'</span></span
 <p data-start="469" data-end="525">就是：只保留 <strong data-start="476" data-end="485">0x201</strong> 这个 ID 的报文里，<strong data-start="497" data-end="508">第一个数据字节</strong>是 <code data-start="510" data-end="514">01</code> 或 <code data-start="517" data-end="521">02</code> 的行。</p>
 <p data-start="527" data-end="623">小提醒：如果你开了 <code data-start="537" data-end="549">candump -t</code>（带时间戳）或其他格式选项，列的位置可能会变，<code data-start="572" data-end="576">$4</code> 就不一定还是第一个数据字节了。你要是把你实际输出的一行贴出来，我可以帮你确认该用 <code data-start="618" data-end="622">$几</code>。</p>
 </div></div>
+</body>
+</html>
