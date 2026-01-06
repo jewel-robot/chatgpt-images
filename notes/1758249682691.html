@@ -1,4 +1,69 @@
-<div style="margin-bottom:16px;"><strong>用户:</strong><br>我先描述一下，我的A、B设备有一个算法程序，我的设备A会有一个网页应用，它将与设备A的算法进行通信，也将和设备B的算法进行通信，进行mqtt通信时，根据ip不同来区分，但是端口使用的都是1883。但这是在设备A和设备B有网络连接时候才进行的。
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蓝牙传输方案</title>
+  <meta name="created-at" content="1767671201112">
+  <meta name="updated-at" content="1766383247000">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>蓝牙传输方案</h1>
+  <div style="margin-bottom:16px;"><strong>用户:</strong><br>我先描述一下，我的A、B设备有一个算法程序，我的设备A会有一个网页应用，它将与设备A的算法进行通信，也将和设备B的算法进行通信，进行mqtt通信时，根据ip不同来区分，但是端口使用的都是1883。但这是在设备A和设备B有网络连接时候才进行的。
 但是现在没有网络连接，只有蓝牙连接。该怎么做，能够达到和我原来一样的效果。
 mqtt的本意还是想传输字符串（json格式数据转成的字符串）。
 那是否还有其他方法能够达到同样的效果呢。</div>
@@ -1741,3 +1806,5 @@ client.loop_forever()
 </ul>
 <hr data-start="914" data-end="917">
 <p data-start="919" data-end="998" data-is-last-node="" data-is-only-node="">要不要我帮你写一个 <strong data-start="929" data-end="939">双端测试方案</strong>（A 端运行什么命令、B 端运行什么命令），确保你能完整验证从 B 发 JSON → A 收到 MQTT 的整个链路？</p></div>
+</body>
+</html>
