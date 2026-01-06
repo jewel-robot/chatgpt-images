@@ -1,4 +1,69 @@
-<div style="margin-bottom:16px;"><strong>用户:</strong><br>我现在的应用场景是它们会长时间保持连接，但是存在可能约30分钟短时的断开，然后需要它能够可以自动重连，并且保证连接上时，数据通信的稳定性。</div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蓝牙通信场景</title>
+  <meta name="created-at" content="1767671201802">
+  <meta name="updated-at" content="1766383249000">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>蓝牙通信场景</h1>
+  <div style="margin-bottom:16px;"><strong>用户:</strong><br>我现在的应用场景是它们会长时间保持连接，但是存在可能约30分钟短时的断开，然后需要它能够可以自动重连，并且保证连接上时，数据通信的稳定性。</div>
 <div style="margin-bottom:16px;"><strong>ChatGPT:</strong><br><p data-start="0" data-end="23">了解 ✅，你这个场景非常典型，可以归纳为：</p>
 <ul data-start="25" data-end="129">
 <li data-start="25" data-end="53">
@@ -16,7 +81,7 @@
 </ul>
 <p data-start="131" data-end="141">我分层帮你分析一下：</p>
 <hr data-start="143" data-end="146">
-<h1 data-start="148" data-end="163">🔹 1. 蓝牙层面的特性</h1>
+
 <h3 data-start="164" data-end="186">经典蓝牙（RFCOMM/L2CAP）</h3>
 <ul data-start="187" data-end="317">
 <li data-start="187" data-end="230">
@@ -191,3 +256,5 @@
 </ul>
 <hr data-start="1799" data-end="1802">
 <p data-start="1804" data-end="1882" data-is-last-node="" data-is-only-node="">要不要我帮你写一个 <strong data-start="1814" data-end="1829">自动重连 + 心跳检测</strong> 的伪代码（比如 Python 版，用 PyBluez 的 RFCOMM），让你直观看看这个机制怎么实现？</p></div>
+</body>
+</html>
