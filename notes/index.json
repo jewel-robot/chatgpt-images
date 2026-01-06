@@ -158,41 +158,6 @@
     {
       "id": 1766388498064,
       "title": "年轻男孩肖像画",
-      "created": "2025/12/22 15:28:30",
-      "count": 10,
-      "hasImages": true,
-      "imageInfos": [
-        {
-          "path": "images/note_1766388498064_img_0_1766388498089.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388498089.png",
-          "sha": "53d4acbf111c60467ada58dcd60bb816d40df38a"
-        },
-        {
-          "path": "images/note_1766388498064_img_0_1766388500923.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388500923.png",
-          "sha": "91b48838e9269888454ccc471cfd56905a3aa7e3"
-        },
-        {
-          "path": "images/note_1766388498064_img_0_1766388503245.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388503245.png",
-          "sha": "c06166520a37487b2a2bd841373273299a51f8fc"
-        },
-        {
-          "path": "images/note_1766388498064_img_0_1766388505346.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388505346.png",
-          "sha": "60ef219565ea3d9ed81bb5e918a8775796e8418a"
-        },
-        {
-          "path": "images/note_1766388498064_img_0_1766388507282.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388507282.png",
-          "sha": "14d16554c27051c0d9e517399cf2ee1803f5121a"
-        },
-        {
-          "path": "images/note_1766388498064_img_0_1766388508765.png",
-          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388508765.png",
-          "sha": "c539d97288ae68644f38000b43457a7e571e0e96"
-        }
-      ],
       "updatedAt": 1766388510928
     },
     {
@@ -241,5 +206,5 @@
       "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
     }
   ],
-  "updated": 1767671266556
+  "updated": 1767671269025
 }
