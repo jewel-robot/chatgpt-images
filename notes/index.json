@@ -163,10 +163,6 @@
     {
       "id": 1766322232123,
       "title": "更新 Codex 方法",
-      "created": "2025/12/21 21:03:52",
-      "count": 2,
-      "hasImages": false,
-      "imageInfos": [],
       "updatedAt": 1766322232123
     },
     {
@@ -206,5 +202,5 @@
       "noteSha": "b7d312294bcd9208a0f0a90fd90f68453dfc907e"
     }
   ],
-  "updated": 1767671269025
+  "updated": 1767671271433
 }
