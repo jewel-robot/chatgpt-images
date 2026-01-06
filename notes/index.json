@@ -1,185 +1,661 @@
 {
   "notes": [
     {
-      "id": "1767666632641-ilfof8y",
-      "title": "Gazebo模型配置建议",
-      "updatedAt": 1767666632643
-    },
-    {
       "id": "1767624011199-wpuyngw",
       "title": "kiro 协议注册流程分析 - 开发调优 / 开发调优, Lv3 - LINUX DO",
-      "updatedAt": 1767624014231
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1767624011199-wpuyngw_img_0_1767624011213.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767624011199-wpuyngw_img_0_1767624011213.png",
+          "sha": "a80dff9a6049696365198e907226fcb7c3bbe2aa"
+        }
+      ],
+      "source": {
+        "favicon": "https://linux.do/uploads/default/optimized/4X/c/c/d/ccd8c210609d498cbeb3d5201d4c259348447562_2_32x32.png",
+        "siteName": "linuxdo",
+        "type": "linuxdo",
+        "url": "https://linux.do/t/topic/1403024"
+      },
+      "createdAt": 1767624014231,
+      "updatedAt": 1767624014231,
+      "noteSha": "d0224b7923a5f9d972a27ce7d58d05cfef1eca6f"
     },
     {
       "id": "1767117593757-ykwq4p3",
       "title": "为什么几乎所有教科书上对微分的讲解都不明不白？ - 知乎",
-      "updatedAt": 1767117593761
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "source": {
+        "favicon": "https://static.zhihu.com/heifetz/favicon.ico",
+        "siteName": "zhihu",
+        "type": "zhihu",
+        "url": "https://www.zhihu.com/question/438795295/answer/1989001841367864615"
+      },
+      "createdAt": 1767117593761,
+      "updatedAt": 1767117593761,
+      "noteSha": "da6bbea0623740ce6451b31740dbd70904afb881"
     },
     {
       "id": "1767116737661-so7km6v",
       "title": "非精确搜索算法",
-      "updatedAt": 1767116737664
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1767636274604,
+      "updatedAt": 1767116737664,
+      "noteSha": "ba34b224ca11d4a3498b34b0c5421563a68dd349"
     },
     {
       "id": "1767113767990-kra42vq",
       "title": "机械臂参数辨识 - 知乎",
-      "updatedAt": 1767113767993
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "source": {
+        "favicon": "https://static.zhihu.com/heifetz/favicon.ico",
+        "siteName": "zhihu",
+        "type": "zhihu",
+        "url": "https://zhuanlan.zhihu.com/p/1988007077843580810"
+      },
+      "createdAt": 1767113767993,
+      "updatedAt": 1767113767993,
+      "noteSha": "6459063768bad36c2da8218af0cce491b9f53e1b"
     },
     {
       "id": "1767032900134-1aowjhk",
       "title": "优化算法中的非精确搜索",
-      "updatedAt": 1767032900135
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "source": {
+        "favicon": "https://www.gstatic.com/lamda/images/gemini_sparkle_aurora_33f86dc0c0257da337c63.svg",
+        "siteName": "gemini",
+        "type": "gemini",
+        "url": "https://gemini.google.com/app/d8cfee95a3b86640"
+      },
+      "createdAt": 1767032900135,
+      "updatedAt": 1767032900135,
+      "noteSha": "17095e64a3b30079e1363bc7d59d63f4347d56ed"
     },
     {
       "id": "1767029576524-7qv6ai6",
       "title": "命令行提示符配置",
-      "updatedAt": 1767029584463
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1767029576524-7qv6ai6_img_0_1767029576538.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767029576524-7qv6ai6_img_0_1767029576538.png",
+          "sha": "eeede73e820bbfe4f61539f6325b5366364f4a0e"
+        },
+        {
+          "path": "images/note_1767029576524-7qv6ai6_img_1_1767029580396.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767029576524-7qv6ai6_img_1_1767029580396.png",
+          "sha": "eeede73e820bbfe4f61539f6325b5366364f4a0e"
+        },
+        {
+          "path": "images/note_1767029576524-7qv6ai6_img_2_1767029582440.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767029576524-7qv6ai6_img_2_1767029582440.png",
+          "sha": "a42d865f76806a6334b3c3ab217481738664c582"
+        }
+      ],
+      "source": {
+        "favicon": "https://chatgpt.com/cdn/assets/favicon-eex17e9e.ico",
+        "siteName": "chatgpt",
+        "type": "chatgpt",
+        "url": "https://chatgpt.com/c/69523cda-cbb8-8323-889b-9e947b5c4911"
+      },
+      "createdAt": 1767029584463,
+      "updatedAt": 1767029584463,
+      "noteSha": "85042b8c1f976296017fdc4ebd55e929b88c5a13"
     },
     {
       "id": "1767029526557-mco6f0q",
       "title": "获取QQ音乐进度条提示文本方法 - DeepSeek",
-      "updatedAt": 1767029526559
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "source": {
+        "favicon": "https://chat.deepseek.com/favicon.svg",
+        "siteName": "deepseek",
+        "type": "deepseek",
+        "url": "https://chat.deepseek.com/a/chat/s/6d42e481-9cd8-4bd6-9595-f62430a5859e"
+      },
+      "createdAt": 1767029526559,
+      "updatedAt": 1767029526559,
+      "noteSha": "243c7a66c6f05f106dc9006062296b07b6cc45b1"
     },
     {
       "id": "1767016737303-5movm71",
       "title": "背面剔除与材质问题",
-      "updatedAt": 1767016740531
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1767016737303-5movm71_img_0_1767016737312.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767016737303-5movm71_img_0_1767016737312.png",
+          "sha": "e78c56e994bf3ba7fe0dcbf0f8ac45840b545a39"
+        }
+      ],
+      "source": {
+        "favicon": "https://chatgpt.com/favicon.ico",
+        "siteName": "chatgpt",
+        "type": "chatgpt",
+        "url": "https://chatgpt.com/c/6951e111-3260-8326-a11f-2c83b2814eda"
+      },
+      "createdAt": 1767016740531,
+      "updatedAt": 1767017750915,
+      "noteSha": "9d9955142e1eb67bdf40bbe6d6f16bfe0303cf9c"
     },
     {
       "id": "1766984937938-3dim72y",
       "title": ".clipper-dock.dragging .clipper-floating-button { ...",
-      "updatedAt": 1766984937944
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "source": {
+        "favicon": "https://gemini.google.com/favicon.ico",
+        "siteName": "gemini",
+        "type": "gemini",
+        "url": "https://gemini.google.com/app/744b7490bf0e5829"
+      },
+      "createdAt": 1766984937944,
+      "updatedAt": 1766984937944,
+      "noteSha": "536bfcf1b706e2ac46fab461bcce75209980e9be"
     },
     {
-      "id": 1766322601622,
-      "title": "Cloudflare Turnstile配置",
-      "updatedAt": 1766401372428
-    },
-    {
-      "id": 1757416544044,
-      "title": "变分法与最优控制（1）",
-      "updatedAt": 1766383239000
-    },
-    {
-      "id": 1757418432810,
-      "title": "变分法与最优控制（2）",
-      "updatedAt": 1766383241000
-    },
-    {
-      "id": 1757501605450,
-      "title": "Ubuntu 热点配置解释",
-      "updatedAt": 1766383242000
-    },
-    {
-      "id": 1757908160146,
-      "title": "变分法与最优控制（3）",
-      "updatedAt": 1766383243000
-    },
-    {
-      "id": 1758081310474,
-      "title": "使用bluetoothctl连接设备",
-      "updatedAt": 1766383244000
-    },
-    {
-      "id": 1758182831270,
-      "title": "蓝牙通信报错分析",
-      "updatedAt": 1766383246000
-    },
-    {
-      "id": 1758249682691,
-      "title": "蓝牙传输方案",
-      "updatedAt": 1766383247000
-    },
-    {
-      "id": 1758251258855,
-      "title": "蓝牙通信场景",
-      "updatedAt": 1766383249000
-    },
-    {
-      "id": 1758252103647,
-      "title": "蓝牙RFCOMM通信方式介绍",
-      "updatedAt": 1766383250000
-    },
-    {
-      "id": 1758271662704,
-      "title": "蓝牙MQTT桥接方案",
-      "updatedAt": 1766383251000
-    },
-    {
-      "id": 1758784755714,
-      "title": "蓝牙连接稳定性分析",
-      "updatedAt": 1766383252000
-    },
-    {
-      "id": 1759051765393,
-      "title": "克隆指定版本",
-      "updatedAt": 1766383254000
-    },
-    {
-      "id": 1761188876390,
-      "title": "使用rg查找文件或文件内容",
-      "updatedAt": 1766383255000
-    },
-    {
-      "id": 1761364160401,
-      "title": "windows程序开机自启动",
-      "updatedAt": 1766383256000
-    },
-    {
-      "id": 1761648575530,
-      "title": "Iptables端口配置指南",
-      "updatedAt": 1766383257000
-    },
-    {
-      "id": 1763351209594,
-      "title": "防火墙规则优化",
-      "updatedAt": 1766383258000
-    },
-    {
-      "id": 1764152402510,
-      "title": "使用Flow2API在Chatbox",
-      "updatedAt": 1766383260000
-    },
-    {
-      "id": 1765421275126,
-      "title": "终端的VPN访问问题",
-      "updatedAt": 1766388571278
-    },
-    {
-      "id": 1766371463560,
-      "title": "断开git远程连接",
-      "updatedAt": 1766387294782
-    },
-    {
-      "id": 1766385803622,
-      "title": "查找正确端口",
-      "updatedAt": 1766385806022
-    },
-    {
-      "id": 1766388498064,
-      "title": "年轻男孩肖像画",
-      "updatedAt": 1766388510928
-    },
-    {
-      "id": 1766322232123,
-      "title": "更新 Codex 方法",
-      "updatedAt": 1766322232123
-    },
-    {
-      "id": 1766644023529,
-      "title": "Gazebo cmd_vel问题分析",
-      "updatedAt": 1766644023530
-    },
-    {
-      "id": 1766975427230,
-      "title": "CAN dump 指令用法",
-      "updatedAt": 1766975427231
-    },
-    {
-      "id": 1766975488605,
+      "id": "1766975488605",
       "title": "背面剔除与材质问题",
-      "updatedAt": 1766975491889
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1766975488605_img_0_1766975490329.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766975488605_img_0_1766975490329.png",
+          "sha": "e9ce19013554b01590339554c048ed3835187737"
+        }
+      ],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766975488605,
+      "updatedAt": 1766975491889,
+      "noteSha": "9fb0bfc072da2a0494210a24c3bd201c603d1f1c"
+    },
+    {
+      "id": "1766975427230",
+      "title": "CAN dump 指令用法",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766975427230,
+      "updatedAt": 1766975427231,
+      "noteSha": "6eca5efac889043225256e96c9acb5e4fb3f3953"
+    },
+    {
+      "id": "1766644023529",
+      "title": "Gazebo cmd_vel问题分析",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766644023529,
+      "updatedAt": 1766644023530,
+      "noteSha": "297a954bd1395f12463570d01563af117985030c"
+    },
+    {
+      "id": "1766322601622",
+      "title": "Cloudflare Turnstile配置",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1766322601622_img_0_1766322601650.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766322601622_img_0_1766322601650.png",
+          "sha": "aa571368a7ae46494b9d3d5c45ed123184b5581e"
+        },
+        {
+          "path": "images/note_1766322601622_img_0_1766322603909.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766322601622_img_0_1766322603909.png",
+          "sha": "8886dbe6af6f0b16fb66e11011dbe1aa6317c28d"
+        }
+      ],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766322601622,
+      "updatedAt": 1766401372428,
+      "noteSha": "522c15cb046bc07f234853afec6daebef8826192"
+    },
+    {
+      "id": "1765421275126",
+      "title": "终端的VPN访问问题",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1765421275126,
+      "updatedAt": 1766388571278,
+      "noteSha": "46dbf604202d7e86331a9df13e1ff5c36f453ec8"
+    },
+    {
+      "id": "1766388498064",
+      "title": "年轻男孩肖像画",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1766388498064_img_0_1766388498089.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388498089.png",
+          "sha": "53d4acbf111c60467ada58dcd60bb816d40df38a"
+        },
+        {
+          "path": "images/note_1766388498064_img_0_1766388500923.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388500923.png",
+          "sha": "91b48838e9269888454ccc471cfd56905a3aa7e3"
+        },
+        {
+          "path": "images/note_1766388498064_img_0_1766388503245.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388503245.png",
+          "sha": "c06166520a37487b2a2bd841373273299a51f8fc"
+        },
+        {
+          "path": "images/note_1766388498064_img_0_1766388505346.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388505346.png",
+          "sha": "60ef219565ea3d9ed81bb5e918a8775796e8418a"
+        },
+        {
+          "path": "images/note_1766388498064_img_0_1766388507282.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388507282.png",
+          "sha": "14d16554c27051c0d9e517399cf2ee1803f5121a"
+        },
+        {
+          "path": "images/note_1766388498064_img_0_1766388508765.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766388498064_img_0_1766388508765.png",
+          "sha": "c539d97288ae68644f38000b43457a7e571e0e96"
+        }
+      ],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766388498064,
+      "updatedAt": 1766388510928,
+      "noteSha": "9a0510fc3282caab69849f3558bf18a332aa4956"
+    },
+    {
+      "id": "1766371463560",
+      "title": "断开git远程连接",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766371463560,
+      "updatedAt": 1766387294782,
+      "noteSha": "59662b28dbe7d4b24fd6c428d219ee00e2fe7340"
+    },
+    {
+      "id": "1766385803622",
+      "title": "查找正确端口",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "imageInfos": [
+        {
+          "path": "images/note_1766385803622_img_0_1766385803651.png",
+          "rawUrl": "https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1766385803622_img_0_1766385803651.png",
+          "sha": "a2e7b2d42e5a88b4850c64b10d1eed9df3cd53a6"
+        }
+      ],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766385803622,
+      "updatedAt": 1766385806022,
+      "noteSha": "1b0f8286897b7e49953dd66e62d3cef9684194b4"
+    },
+    {
+      "id": "1766322232123",
+      "title": "更新 Codex 方法",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1766322232123,
+      "updatedAt": 1766322232123,
+      "noteSha": "6979e125685ae073b6a6ae5c59c8822b3d78e107"
+    },
+    {
+      "id": "1764152402510",
+      "title": "使用Flow2API在Chatbox",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1764152402510,
+      "updatedAt": 1764152402510,
+      "noteSha": "1df0a09215269774b221ac4549e095f5cc094ca9"
+    },
+    {
+      "id": "1763351209594",
+      "title": "防火墙规则优化",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1763351209594,
+      "updatedAt": 1763351209594,
+      "noteSha": "149abd441befd338ab6fc34fe9793703ea619b62"
+    },
+    {
+      "id": "1761648575530",
+      "title": "Iptables端口配置指南",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1761648575530,
+      "updatedAt": 1761648575530,
+      "noteSha": "47f5ee6c0aaf8783f0a706ecb88b630ffeb50268"
+    },
+    {
+      "id": "1761364160401",
+      "title": "windows程序开机自启动",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1761364160401,
+      "updatedAt": 1761364160401,
+      "noteSha": "d351f7867eb168f6166aa01b661bfa81a330f9f1"
+    },
+    {
+      "id": "1761188876390",
+      "title": "使用rg查找文件或文件内容",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1761188876390,
+      "updatedAt": 1761188876390,
+      "noteSha": "11daa6f9ebee725d365588876fb5cba1ae4a6bce"
+    },
+    {
+      "id": "1759051765393",
+      "title": "克隆指定版本",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1759051765393,
+      "updatedAt": 1759051765393,
+      "noteSha": "a34493c2523da5a0756ea3e18ee3a7bd628417f1"
+    },
+    {
+      "id": "1758784755714",
+      "title": "蓝牙连接稳定性分析",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758784755714,
+      "updatedAt": 1758784755714,
+      "noteSha": "116e26671f04bdb50f53efcb4dae4003f5830a93"
+    },
+    {
+      "id": "1758271662704",
+      "title": "蓝牙MQTT桥接方案",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758271662704,
+      "updatedAt": 1758271662704,
+      "noteSha": "d25af4328274d345f8cc00d2463643522b9a68d6"
+    },
+    {
+      "id": "1758252103647",
+      "title": "蓝牙RFCOMM通信方式介绍",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758252103647,
+      "updatedAt": 1758252103647,
+      "noteSha": "a491d56bb12eb911cababf5d8a3a0ff96e79fcfb"
+    },
+    {
+      "id": "1758251258855",
+      "title": "蓝牙通信场景",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758251258855,
+      "updatedAt": 1758251258855,
+      "noteSha": "d0332af701241a704dd3d75ef931c2935230d060"
+    },
+    {
+      "id": "1758249682691",
+      "title": "蓝牙传输方案",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758249682691,
+      "updatedAt": 1758249682691,
+      "noteSha": "16f58d8c31e3aadc0bfdcfbffcc0e14f29922bdb"
+    },
+    {
+      "id": "1758182831270",
+      "title": "蓝牙通信报错分析",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758182831270,
+      "updatedAt": 1758182831270,
+      "noteSha": "f03c5aac55d9985d994ee87245e1289ada2dd4ee"
+    },
+    {
+      "id": "1758081310474",
+      "title": "使用bluetoothctl连接设备",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1758081310474,
+      "updatedAt": 1758081310474,
+      "noteSha": "ee15116a9f5fd86be497df1ca229cb2dac6424e8"
+    },
+    {
+      "id": "1757908160146",
+      "title": "变分法与最优控制（3）",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1757908160146,
+      "updatedAt": 1757908160146,
+      "noteSha": "1f531b71e397e0a255d2e885e550a6f5851ca3c0"
+    },
+    {
+      "id": "1757501605450",
+      "title": "Ubuntu 热点配置解释",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1757501605450,
+      "updatedAt": 1757501605450,
+      "noteSha": "9d004f0886e749bea101aa6054027905c517c861"
+    },
+    {
+      "id": "1757418432810",
+      "title": "变分法与最优控制（2）",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1757418432810,
+      "updatedAt": 1757418432810,
+      "noteSha": "84fa2c6346f80f52a1936f911045c75fbf8f903c"
+    },
+    {
+      "id": "1757416544044",
+      "title": "变分法与最优控制（1）",
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "imageInfos": [],
+      "source": {
+        "type": "chatgpt",
+        "url": ""
+      },
+      "createdAt": 1757416544044,
+      "updatedAt": 1757416544044,
+      "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1767671279150
+  "folders": [],
+  "tags": [],
+  "updated": 1767677445489,
+  "version": "2.0"
 }
