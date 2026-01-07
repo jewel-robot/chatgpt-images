@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>浅析aws fingerprint生成</title>
+  <meta name="created-at" content="1767753801575">
+  <meta name="updated-at" content="1767753801575">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/1400311">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>浅析aws fingerprint生成</h1>
+  <div class="message-block role-user">
+          <div class="message-role">zcrdwx #1</div>
+          <div class="message-content"><p dir="auto">来l站好久了第一次写技术文章，不对的地方大家可以指出<br>
+看大家元旦都在协议kiro，包里存在fingerprint这样一个参数，逆向js可知应为TEA系列（0x9E3779B9）<br>
+写了一个解密的脚本供大家参考学习</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-auto">const KEY = {
+    identifier: "ECdITeCs",
+    material: [1888420705, 2576816180, 2347232058, 874813317]
+};
+
+// Base64 解码
+function base64Decode(str) {
+    if (typeof atob === 'function') {
+        return atob(str);
+    }
+    return Buffer.from(str, 'base64').toString('binary');
+}
+
+// XXTEA 解密
+function xxteaDecrypt(str, key) {
+    if (str.length === 0) return "";
+    
+    const DELTA = 0x9E3779B9;
+    
+    // 字符串转 32 位整数数组
+    const len = Math.ceil(str.length / 4);
+    const v = new Array(len);
+    for (let i = 0; i &lt; len; i++) {
+        v[i] = (str.charCodeAt(4 * i) &amp; 0xFF) +
+               ((str.charCodeAt(4 * i + 1) &amp; 0xFF) &lt;&lt; 8) +
+               ((str.charCodeAt(4 * i + 2) &amp; 0xFF) &lt;&lt; 16) +
+               ((str.charCodeAt(4 * i + 3) &amp; 0xFF) &lt;&lt; 24);
+    }
+    
+    // XXTEA 解密 (逆向加密过程)
+    const rounds = Math.floor(6 + 52 / len);
+    let sum = (rounds * DELTA) &gt;&gt;&gt; 0;
+    let z, y = v[0];
+    
+    for (let i = 0; i &lt; rounds; i++) {
+        const e = (sum &gt;&gt;&gt; 2) &amp; 3;
+        for (let p = len - 1; p &gt;= 0; p--) {
+            z = v[(p + len - 1) % len];
+            v[p] = (v[p] - (((z &gt;&gt;&gt; 5 ^ y &lt;&lt; 2) + (y &gt;&gt;&gt; 3 ^ z &lt;&lt; 4)) ^ ((sum ^ y) + (key[3 &amp; p ^ e] ^ z)))) &gt;&gt;&gt; 0;
+            y = v[p];
+        }
+        sum = (sum - DELTA) &gt;&gt;&gt; 0;
+    }
+    
+    // 整数数组转字符串
+    const result = [];
+    for (let i = 0; i &lt; len; i++) {
+        result.push(
+            String.fromCharCode(v[i] &amp; 0xFF),
+            String.fromCharCode((v[i] &gt;&gt;&gt; 8) &amp; 0xFF),
+            String.fromCharCode((v[i] &gt;&gt;&gt; 16) &amp; 0xFF),
+            String.fromCharCode((v[i] &gt;&gt;&gt; 24) &amp; 0xFF)
+        );
+    }
+    return result.join("").replace(/\0+$/, ''); // 移除末尾的 null 字符
+}
+
+// 解码指纹
+function decodeFingerprint(fingerprint) {
+    // 分离前缀和数据
+    const [prefix, encoded] = fingerprint.split(':');
+    
+    if (prefix !== KEY.identifier) {
+        console.log(`警告: 前缀不匹配 (期望: ${KEY.identifier}, 实际: ${prefix})`);
+    }
+    
+    console.log(`前缀: ${prefix}`);
+    console.log(`Base64 长度: ${encoded.length} 字符`);
+    
+    // Base64 解码
+    const encrypted = base64Decode(encoded);
+    console.log(`加密数据长度: ${encrypted.length} 字节`);
+    
+    // XXTEA 解密
+    const decrypted = xxteaDecrypt(encrypted, KEY.material);
+    console.log(`解密数据长度: ${decrypted.length} 字符`);
+    
+    // 尝试解析 JSON
+    try {
+        const json = JSON.parse(decrypted);
+        return json;
+    } catch (e) {
+        console.log("JSON 解析失败，返回原始字符串");
+        console.log("前 500 字符:", decrypted.substring(0, 500));
+        return decrypted;
+    }
+}
+
+// 实际指纹
+const fingerprint = ``;
+
+console.log("=== 解码 AWS fwcim 指纹 ===\n");
+const result = decodeFingerprint(fingerprint);
+console.log("\n=== 解码结果 ===");
+console.log(JSON.stringify(result, null, 2));
+</code></pre>
+<p dir="auto">说明aws对于行为风控还是很详细的，包括鼠标点击次数，键盘按压次数等等<br>
+如果协议防封更推荐使用指纹池的方式</p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
