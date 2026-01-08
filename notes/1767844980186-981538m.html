@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>讲解一下什么是 CDN、为什么要使用 CDN，以及 CDN 的基本工作过程吧</title>
+  <meta name="created-at" content="1767844980197">
+  <meta name="updated-at" content="1767844980197">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/1419029">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>讲解一下什么是 CDN、为什么要使用 CDN，以及 CDN 的基本工作过程吧</h1>
+  <div class="message-block role-user">
+          <div class="message-role">Rosna #1</div>
+          <div class="message-content"><p dir="auto">关于 CDN 这个词，想来大家都听到过也有一知半解，对于它的理解很可能就是有“有熟悉感又陌生”的感觉。 最近我对cdn进行了深入的学习，才知道cdn在现代互联网中的地位是多么重要 的。</p>
+<p dir="auto"><strong>那么今天就让我带大家一探究竟什么是CDN，为什么要用CDN，以及CDN的基本工作流程。</strong></p>
+<p dir="auto">一：用户在浏览器中输入要访问的网站域名；浏览器会向本地DNS服务器请求该域名的解析结果，若本地DNS服务器已经持有该域名解析记录，则可直接返回相应的IP，否则本地DNS服务器则会递归向整个DNS系统查询，然后将结果返回用户。 浏览器获得域名解析结果，其实就是获取目标服务器的IP 地址。</p>
+<p dir="auto">浏览器向这个IP发起对服务器内容的请求;服务器把请求的内容最终回传给浏览器,浏览器再将内容渲染成网页, 就可以在浏览器中看到网页内容了。 但需注意，现实际上是数据传输过程要比看上去复杂得多。 为了便于大家更直观的理解它，我们可以简单把 这个过程看作三个节点。</p>
+<p dir="auto">二：服务器数据传输过程：如果在没有 CDN 的情况下，网站数据的传输路径通常是，网站的服务器 → 公网出口 → 长途骨干网 → 用户所在的城域网 → 接入网 → 用户的局域网 → 用户的浏览器，其中，长途骨干网的传输是最耗时以及成本最高的部分。 数据是需要跨越服务器所在机房、骨干网络、用户所在地区网络等多个层级的，物理距离通常来说是非常遥远的。</p>
+<p dir="auto">三：在这种情况下，如果：访问的用户数量非常巨大，这很容易引发网络延迟、页面加载缓慢等问题，严重影响用户体验。 同时，每一次请求都会进一步加重长途骨干网络的负载。 一个典型的例子就是中国春运期间的抢票场景： 在春运高峰期，访问 12306 网站的用户数量可高达十亿级别。 然而，页面中大量的图片和静态资源对所有用户而言实际上是完全相同的。 试想一下，如果有 1 亿人同时请求同一张图片，而每一次请求都需要回源服务器重新获取，那么就意味着会产生 1 亿次跨网络的数据传输。 对于全国互联网基础设施来说，这几乎是一场“灾难”。</p>
+<p dir="auto">但令人惊讶的是，12306 并没有因此而瘫痪。 那么，它是如何应对如此极端的流量场景的呢？ 答案就在于 CDN（内容分发网络）。</p>
+<p dir="auto"><strong>那么什么是CDN呢？</strong></p>
+<p dir="auto">CDN是英文Content Delivery Network的缩写，直译是内容分发网络，CDN全称内容分发网络</p>
+<p dir="auto">通俗点说CDN就是以一种最简化的形式让用户体验的核心思想。 这样就可以避免数据 反复穿越远程骨干网，达到: 缓解骨干网压力、降低访问网络时的延迟、提升访问速度和整体稳定性。 如果没有 CDN，每次请求都必须从源服务器出发，经过公网上出口和长 途骨干网最终到达用户浏览器。 而在引入 CDN 之后，访问路径会发生变化。</p>
+<p dir="auto"><strong>CDN缓存服务器的作用</strong></p>
+<p dir="auto">浏览器在请求图片等静态资源时，优先导向 CDN 缓存服务器；该节点如果存在相应资源，将直接返回给用户；仅在无缓存 的情况下，请求才回流，经由长途骨干网访问源站服务器。</p>
+<p dir="auto">简单来说，就是把网站的资源提前放到离用户更近的 CDN 节点上，这样用户访问时就不用再跨省、甚至跨区域去请求源服务器了，自然网络延迟更低，整体流量成本也会大幅下降。</p>
+<p dir="auto">乍一看，CDN 好像只是帮你在用户和源站之间多加了一层服务器，但它并不是“多了一台机器”这么简单。 因为用户遍布全国各地，如果大家都同时去请求同一个中心服务器，网络肯定会变慢，体验也会很差。</p>
+<p dir="auto">所以，CDN 通常会部署大量分布在各个地区的缓存节点，比如华北、华东、华南、西南等。 用户访问时，系统会自动让他们就近访问最近的节点，从而又快又稳。 当用户发起请求时，系统会自动把请求调度到距离最近、网络状况最好的 CDN 节点，避免数据在全国范围内“来回跑半个中国”的情况。 CDN 本质上是一种内容分发网络，由大量分布在全国甚至全球各地的缓存服务器节点组成。 每一次用户访问，都会被智能地引导到离用户最近的节点来获取内容，从而保证访问过程又快又稳定。</p>
+<p dir="auto"><strong>CDN 是如何工作的呢？</strong></p>
+<p dir="auto">说到这里，相信大家已经清楚CDN的作用及价值了。 不过在实际应用中，CDN是怎样配合DNS机制进行就近调度的，其内部流程其实相对复杂。 这部分内容我们将在后面继续详细讲解。</p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
