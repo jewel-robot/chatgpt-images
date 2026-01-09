@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>小白也能看懂的自建Cloudflare临时邮箱教程（域名邮箱）</title>
+  <meta name="created-at" content="1767969141414">
+  <meta name="updated-at" content="1767969141414">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/316819">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>小白也能看懂的自建Cloudflare临时邮箱教程（域名邮箱）</h1>
+  <div class="message-block role-user">
+          <div class="message-role">XiaoHuang #1</div>
+          <div class="message-content"><div data-theme-toc="true" dir="auto"> </div>
+<h3 dir="auto"><a name="p-3040413-h-1" class="anchor" href="#p-3040413-h-1" aria-label="标题链接"></a>写在前面</h3>
+<p dir="auto">我一开始也没怎么用过Cloudflare，就最早的时候是用它来部署过Openai的接口中转，防止被墙（已经是很早很早之前的事情了，已经失效了），然后呢那天我打开<a href="https://temp-mail-docs.awsl.uk/" rel="noopener nofollow ugc" data-clicks="687" aria-label="cloudflare临时邮箱项目的官方教程文档 链接已点击 687 次">cloudflare临时邮箱项目的官方教程文档</a>，给我搞的一脸懵的，不过好在最后是成功搭建好了！写这个教程，也是为了帮助那些想搭，但是弄不明白的佬友，希望可以帮到你！</p>
+<h3 dir="auto"><a name="p-3040413-h-2" class="anchor" href="#p-3040413-h-2" aria-label="标题链接"></a>注意</h3>
+<p dir="auto">此为临时邮箱，<strong>如果你需要注册自己觉得比较重要的平台且账号数据需要保留的情况下，请不要使用临时邮箱注册！！！</strong> 除非你打算一直使用你的域名邮箱！且自己有能力一直维护自己的邮箱服务！</p>
+<h3 dir="auto"><a name="p-3040413-h-3" class="anchor" href="#p-3040413-h-3" aria-label="标题链接"></a>我为什么想搭临时邮箱？</h3>
+<p dir="auto">起初是一天晚上，半夜没睡着，然后不知道抽什么风，就想去域名注册看看，看能不能弄个好看点的域名，然后我试啊试，最终注册了一个<code>goai.love</code>，我想着不浪费的情况下，用它来做点什么，于是首先想到的就是搭建临时邮箱供给自己的朋友们一起使用，<strong>对打算搭个私有的临时邮箱</strong></p>
+<h3 dir="auto"><a name="p-3040413-h-4" class="anchor" href="#p-3040413-h-4" aria-label="标题链接"></a>临时邮箱有什么好处？</h3>
+<p dir="auto">我们知道，很多平台注册都会使用到邮箱，我们见过的常用邮箱有 <code>gmail</code>、<code>qq</code>、<code>163</code>等，一般会给一个固定的前缀，例如<code>xiaohuang@qq.com</code>，这时，你会发现注册<code>cursor</code>，<code>openai</code>，<code>claude</code>你只能用一个邮箱来注册，无法多次注册！<strong>说人话就是方便你可以无限注册薅羊毛</strong>（当然我也知道gmail可以有特殊的办法使它前缀不一致发送给同一个邮箱，我没试过就不说啦）</p>
+<h3 dir="auto"><a name="p-3040413-h-5" class="anchor" href="#p-3040413-h-5" aria-label="标题链接"></a>什么是临时邮箱？</h3>
+<p dir="auto">标题上已经写了，它其实就是域名邮箱，只是我们用到的这个项目取名叫做<strong>临时邮箱</strong>，它是通过你自己购买的域名来在Cloudflare上搭建一个邮箱服务来实现的，所以你也可以叫它自建域名邮箱</p>
+<h3 dir="auto"><a name="p-3040413-h-6" class="anchor" href="#p-3040413-h-6" aria-label="标题链接"></a>准备</h3>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>至少一个域名</li>
+<li>Cloudflare账号，你可以注册一个，官网：<a href="https://www.cloudflare.com/" rel="noopener nofollow ugc" data-clicks="444" aria-label="https://www.cloudflare.com/ 链接已点击 444 次">https://www.cloudflare.com/</a></li>
+<li>cloudflare_temp_email项目代码（记得给作者点个star）：<a href="https://github.com/dreamhunter2333/cloudflare_temp_email" class="inline-onebox" rel="noopener nofollow ugc" data-clicks="698" aria-label="GitHub - dreamhunter2333/cloudflare_temp_email: CloudFlare free temp domain email 免费收发 临时域名邮箱 支持附件 IMAP SMTP TelegramBot 链接已点击 698 次">GitHub - dreamhunter2333/cloudflare_temp_email: CloudFlare free temp domain email 免费收发 临时域名邮箱 支持附件 IMAP SMTP TelegramBot</a></li>
+<li>临时邮箱搭建官方文档：<a href="https://temp-mail-docs.awsl.uk/" rel="noopener nofollow ugc" data-clicks="687" aria-label="https://temp-mail-docs.awsl.uk/ 链接已点击 687 次">https://temp-mail-docs.awsl.uk/</a> （佬友也可以去看官方文档搭建）</li>
+</ul>
+<h3 dir="auto"><a name="p-3040413-h-7" class="anchor" href="#p-3040413-h-7" aria-label="标题链接"></a>关于域名</h3>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>你可以寻找便宜的服务商去注册，我一般会在阿里云、腾讯云买域名，比如我为了写教程就买了一个<code>linuxdo.love</code></li>
+<li>如果你想便宜，那就用不常见的后缀且域名前缀给长一点，不要学我，我这个域名续费180一年，18首年！</li>
+<li>在买域名的时候，你可以注意一下之后续费是多少钱一年，如果看不到，你可以尝试把1年加到2年一般就可以看到之后续费的价格了</li>
+</ul>
+<h3 dir="auto"><a name="p-3040413-h-8" class="anchor" href="#p-3040413-h-8" aria-label="标题链接"></a>项目原作者</h3>
+<aside class="quote no-group" data-username="awsl" data-post="68" data-topic="316819" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-316819-68-0" style="">
+    <div class="post__contents-cooked-quote">
+<p dir="auto">赞，文档链接到这篇教程了，<a href="https://temp-mail-docs.awsl.uk/zh/guide/quick-start.html" rel="noopener nofollow ugc">快速开始 | 临时邮箱文档</a></p>
+</div><!---->
+  </blockquote>
+    
+
+  </aside>
+<h3 dir="auto"><a name="p-3040413-cloudflare-9" class="anchor" href="#p-3040413-cloudflare-9" aria-label="标题链接"></a>第一步，将域名交给Cloudflare托管</h3>
+<h4 dir="auto"><a name="p-3040413-clouflare-10" class="anchor" href="#p-3040413-clouflare-10" aria-label="标题链接"></a>打开Clouflare，配置转移域</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_0_1767968983482.png" alt="image" data-base62-sha1="obvI35xYHeLuQHQ2tab1NSocrg2" width="690" height="353" srcset="https://linux.do/uploads/default/optimized/4X/a/9/8/a9814c155afe545d275c5d5d048f066aacaab66e_2_690x353.png, https://linux.do/uploads/default/optimized/4X/a/9/8/a9814c155afe545d275c5d5d048f066aacaab66e_2_1035x529.png 1.5x, https://linux.do/uploads/default/optimized/4X/a/9/8/a9814c155afe545d275c5d5d048f066aacaab66e_2_1380x706.png 2x" data-dominant-color="E9EFF8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_0_1767968983482.png" data-github-sha="ca63b367d2b796d6f146fbf13ef2fba38e697f29"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_1_1767968988771.png" alt="image" data-base62-sha1="kBWCIIN97rd5bA7kjaUUMA4FCWQ" width="690" height="432" srcset="https://linux.do/uploads/default/optimized/4X/9/0/7/90758f146a4e889c366d31c698b269933e25fe50_2_690x432.png, https://linux.do/uploads/default/optimized/4X/9/0/7/90758f146a4e889c366d31c698b269933e25fe50_2_1035x648.png 1.5x, https://linux.do/uploads/default/optimized/4X/9/0/7/90758f146a4e889c366d31c698b269933e25fe50_2_1380x864.png 2x" data-dominant-color="FAF8F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_1_1767968988771.png" data-github-sha="95fe9e384b699abf469078267ea4938b5fa7b44d"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_2_1767968991207.png" alt="image" data-base62-sha1="gthPNAUzlCXacv7Ely8RzHsOCt6" width="690" height="494" srcset="https://linux.do/uploads/default/optimized/4X/7/3/7/7372518d0521803b1186a2aaa6306e8dd5a504b4_2_690x494.png, https://linux.do/uploads/default/optimized/4X/7/3/7/7372518d0521803b1186a2aaa6306e8dd5a504b4_2_1035x741.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/3/7/7372518d0521803b1186a2aaa6306e8dd5a504b4_2_1380x988.png 2x" data-dominant-color="F8F9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_2_1767968991207.png" data-github-sha="a909bd107d5cb726c681927bcff4a6be20fc3b87"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_3_1767968993241.png" alt="image" data-base62-sha1="gR4PrPyQcWOTtAcV6hCu4AgLbWy" width="690" height="356" srcset="https://linux.do/uploads/default/optimized/4X/7/6/2/7622c464f089c194dee73fd884be0a75b507d162_2_690x356.png, https://linux.do/uploads/default/optimized/4X/7/6/2/7622c464f089c194dee73fd884be0a75b507d162_2_1035x534.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/6/2/7622c464f089c194dee73fd884be0a75b507d162_2_1380x712.png 2x" data-dominant-color="F7F6F7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_3_1767968993241.png" data-github-sha="69ddd48b41581f7a769a1222eafb5a6e1ffedbfa"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_4_1767968995310.png" alt="image" data-base62-sha1="dA76EJsEBHJtcKGiUL4jxqO0BJB" width="641" height="500" srcset="https://linux.do/uploads/default/optimized/4X/5/f/3/5f315b7c9e5459b355378af5908b1d7b8a66e33f_2_641x500.png, https://linux.do/uploads/default/optimized/4X/5/f/3/5f315b7c9e5459b355378af5908b1d7b8a66e33f_2_961x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/5/f/3/5f315b7c9e5459b355378af5908b1d7b8a66e33f_2_1282x1000.png 2x" data-dominant-color="F6F7F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_4_1767968995310.png" data-github-sha="f0bffcb8c038caae44e93f4749c846333931b254"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-11" class="anchor" href="#p-3040413-h-11" aria-label="标题链接"></a>打开域名服务商，这里以我的腾讯为例，<strong>其它平台都是同理的</strong></h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_5_1767968997175.png" alt="image" data-base62-sha1="f8MI7nb0AXTH6ZDt0YT9LbsEP7W" width="690" height="398" srcset="https://linux.do/uploads/default/optimized/4X/6/a/1/6a1eda112363e93cce9b90f6097308954c9b4118_2_690x398.png, https://linux.do/uploads/default/optimized/4X/6/a/1/6a1eda112363e93cce9b90f6097308954c9b4118_2_1035x597.png 1.5x, https://linux.do/uploads/default/optimized/4X/6/a/1/6a1eda112363e93cce9b90f6097308954c9b4118_2_1380x796.png 2x" data-dominant-color="EAEBEE" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_5_1767968997175.png" data-github-sha="3ef5c6981acfb1a4247e92537ff86bb74d71e141"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_6_1767968998804.png" alt="image" data-base62-sha1="gcxIW6YkiHBrToWmtXBj78pvWzD" width="356" height="411" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_6_1767968998804.png" data-github-sha="0a0694db34f8826a1941f8be185c58517224934f"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_7_1767969000925.png" alt="image" data-base62-sha1="w1r4RupxfO5AodBxdf5bXxIJqtb" width="690" height="218" srcset="https://linux.do/uploads/default/optimized/4X/e/0/6/e06f24e121f3f7b4367c9b3da002c50f294fb1f1_2_690x218.png, https://linux.do/uploads/default/optimized/4X/e/0/6/e06f24e121f3f7b4367c9b3da002c50f294fb1f1_2_1035x327.png 1.5x, https://linux.do/uploads/default/optimized/4X/e/0/6/e06f24e121f3f7b4367c9b3da002c50f294fb1f1_2_1380x436.png 2x" data-dominant-color="FBFBFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_7_1767969000925.png" data-github-sha="58cbea80e0eb5302a4d29fae71da47a442492139"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_8_1767969002777.png" alt="image" data-base62-sha1="75rDC24jn2lcJSUNwQkoHCEKWPx" width="578" height="500" srcset="https://linux.do/uploads/default/optimized/4X/3/1/a/31accf425fd3b51934d1abf73bf489dacedb8473_2_578x500.png, https://linux.do/uploads/default/optimized/4X/3/1/a/31accf425fd3b51934d1abf73bf489dacedb8473_2_867x750.png 1.5x, https://linux.do/uploads/default/original/4X/3/1/a/31accf425fd3b51934d1abf73bf489dacedb8473.png 2x" data-dominant-color="F9F8F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_8_1767969002777.png" data-github-sha="5eb6a06a5d72291f661b3ddfcc0d8bc8f8f9f9f6"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_9_1767969004686.png" alt="image" data-base62-sha1="5dmgT9SPEGHo8F0Hu9Qu2uEXQdL" width="690" height="464" srcset="https://linux.do/uploads/default/optimized/4X/2/4/8/248d769358bb9f769486decb61e9fa125625c98d_2_690x464.png, https://linux.do/uploads/default/optimized/4X/2/4/8/248d769358bb9f769486decb61e9fa125625c98d_2_1035x696.png 1.5x, https://linux.do/uploads/default/original/4X/2/4/8/248d769358bb9f769486decb61e9fa125625c98d.png 2x" data-dominant-color="EEEDF1" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_9_1767969004686.png" data-github-sha="61c2e44d3dff8f4e0da8d85f2b2880c6266ae081"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_10_1767969006231.png" alt="image" data-base62-sha1="xMzR5kHDZWcXKd6414gppCgPBIz" width="516" height="148" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_10_1767969006231.png" data-github-sha="9e46aee2c68ad0fae533c09a0222c44b535f50f2"><p></p>
+<h4 dir="auto"><a name="p-3040413-cloudflare10-12" class="anchor" href="#p-3040413-cloudflare10-12" aria-label="标题链接"></a>回到Cloudflare继续，一般改过之后需要等一阵子才会生效（大概10分钟）</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_11_1767969007776.png" alt="image" data-base62-sha1="gON7TaG63GVrjVYe7kHsLSZAJZL" width="593" height="500" srcset="https://linux.do/uploads/default/optimized/4X/7/5/e/75e0a0c2ddd77356973a7a3fb44e102449a36759_2_593x500.png, https://linux.do/uploads/default/optimized/4X/7/5/e/75e0a0c2ddd77356973a7a3fb44e102449a36759_2_889x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/5/e/75e0a0c2ddd77356973a7a3fb44e102449a36759_2_1186x1000.png 2x" data-dominant-color="F4F6FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_11_1767969007776.png" data-github-sha="0d1f64985f0629ad861c6f4f83851874dbb88ef9"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_12_1767969009637.png" alt="image" data-base62-sha1="3hQTPnM4FpneURkFRLohbsBEg8x" width="538" height="500" srcset="https://linux.do/uploads/default/optimized/4X/1/7/0/170b29f85aa5b28b84806fb504c53e78d2a8f021_2_538x500.png, https://linux.do/uploads/default/optimized/4X/1/7/0/170b29f85aa5b28b84806fb504c53e78d2a8f021_2_807x750.png 1.5x, https://linux.do/uploads/default/original/4X/1/7/0/170b29f85aa5b28b84806fb504c53e78d2a8f021.png 2x" data-dominant-color="F6F1F2" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_12_1767969009637.png" data-github-sha="9be0513c139afe8a654769a671fc1d9fa062a19e"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_13_1767969011726.png" alt="image" data-base62-sha1="nWKpb28FYpA3hlmA78u5gAPTdd4" width="690" height="369" srcset="https://linux.do/uploads/default/optimized/4X/a/7/d/a7d614fcc835c0295aa2828458b8765450fb3bd6_2_690x369.png, https://linux.do/uploads/default/optimized/4X/a/7/d/a7d614fcc835c0295aa2828458b8765450fb3bd6_2_1035x553.png 1.5x, https://linux.do/uploads/default/optimized/4X/a/7/d/a7d614fcc835c0295aa2828458b8765450fb3bd6_2_1380x738.png 2x" data-dominant-color="F8FAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_13_1767969011726.png" data-github-sha="7f6e5286772fd132b37facde072413c8862fdbb4"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_14_1767969014288.png" alt="image" data-base62-sha1="2RaEtLOdo8PvsG5bhl2sZoycPOh" width="655" height="499" srcset="https://linux.do/uploads/default/optimized/4X/1/4/0/14070cac6e5a4c77ebf9681d3c988ee6f4d4e1f9_2_655x499.png, https://linux.do/uploads/default/optimized/4X/1/4/0/14070cac6e5a4c77ebf9681d3c988ee6f4d4e1f9_2_982x748.png 1.5x, https://linux.do/uploads/default/original/4X/1/4/0/14070cac6e5a4c77ebf9681d3c988ee6f4d4e1f9.png 2x" data-dominant-color="FAF8F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_14_1767969014288.png" data-github-sha="437dc58901fd130b2eeb7786569346795cb507c1"><p></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_15_1767969016195.png" alt="image" data-base62-sha1="rv9yilolD6Y9n2szUqU0SHHllpk" width="690" height="323" srcset="https://linux.do/uploads/default/optimized/4X/c/0/c/c0c03e387845aec494dbda7202e3bbedf9131a9e_2_690x323.png, https://linux.do/uploads/default/optimized/4X/c/0/c/c0c03e387845aec494dbda7202e3bbedf9131a9e_2_1035x484.png 1.5x, https://linux.do/uploads/default/original/4X/c/0/c/c0c03e387845aec494dbda7202e3bbedf9131a9e.png 2x" data-dominant-color="F9F7F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_15_1767969016195.png" data-github-sha="341cf2b2bf3b1efc0c04e9333ef8f220f55a7511"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_16_1767969019715.png" alt="image" data-base62-sha1="32qbjWpDGdMmB8KYl2rignNL762" width="677" height="499" srcset="https://linux.do/uploads/default/optimized/4X/1/5/4/154c9e7f44aeb9bfee6493053f532596ae8c204a_2_677x499.png, https://linux.do/uploads/default/optimized/4X/1/5/4/154c9e7f44aeb9bfee6493053f532596ae8c204a_2_1015x748.png 1.5x, https://linux.do/uploads/default/original/4X/1/5/4/154c9e7f44aeb9bfee6493053f532596ae8c204a.png 2x" data-dominant-color="F5F6F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_16_1767969019715.png" data-github-sha="1a5f9eeb0f3f88ba3734537bd80ece283f522e42"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_17_1767969022106.png" alt="image" data-base62-sha1="dCMYjr6AEnow5rb7D0IAsPk0eCk" width="690" height="411" srcset="https://linux.do/uploads/default/optimized/4X/5/f/7/5f7ec64564ac49354086959ff63236a61c14c760_2_690x411.png, https://linux.do/uploads/default/optimized/4X/5/f/7/5f7ec64564ac49354086959ff63236a61c14c760_2_1035x616.png 1.5x, https://linux.do/uploads/default/original/4X/5/f/7/5f7ec64564ac49354086959ff63236a61c14c760.png 2x" data-dominant-color="E5EAF2" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_17_1767969022106.png" data-github-sha="48cf2ed1125a04b8a9d0577f2246b58383d29a5d"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_18_1767969023765.png" alt="image" data-base62-sha1="baesk09ugGxBUadhNaj8xtF3dAP" width="690" height="350" srcset="https://linux.do/uploads/default/optimized/4X/4/e/4/4e400b526591105b7b6f9aa86a33423406474f37_2_690x350.png, https://linux.do/uploads/default/optimized/4X/4/e/4/4e400b526591105b7b6f9aa86a33423406474f37_2_1035x525.png 1.5x, https://linux.do/uploads/default/optimized/4X/4/e/4/4e400b526591105b7b6f9aa86a33423406474f37_2_1380x700.png 2x" data-dominant-color="FAF9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_18_1767969023765.png" data-github-sha="751e3d45d7d76176bcce691b3891f442e36fd6a6"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_19_1767969025569.png" alt="image" data-base62-sha1="aJTUDUNYrvdtKaxB1KPVTeYqKuG" width="690" height="453" srcset="https://linux.do/uploads/default/optimized/4X/4/b/4/4b460f6a7d161bdb7052a39c52b643c542101596_2_690x453.png, https://linux.do/uploads/default/optimized/4X/4/b/4/4b460f6a7d161bdb7052a39c52b643c542101596_2_1035x679.png 1.5x, https://linux.do/uploads/default/original/4X/4/b/4/4b460f6a7d161bdb7052a39c52b643c542101596.png 2x" data-dominant-color="F8F7F7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_19_1767969025569.png" data-github-sha="833673ee41b6276e0e2dc8a63fb2366506e8a5ac"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_20_1767969027284.png" alt="image" data-base62-sha1="ulQfiNIFYvvMtoIRpJTEmeOfzlG" width="690" height="286" srcset="https://linux.do/uploads/default/optimized/4X/d/4/b/d4b94f268e55de3277795b6b15f5c54719c35334_2_690x286.png, https://linux.do/uploads/default/optimized/4X/d/4/b/d4b94f268e55de3277795b6b15f5c54719c35334_2_1035x429.png 1.5x, https://linux.do/uploads/default/original/4X/d/4/b/d4b94f268e55de3277795b6b15f5c54719c35334.png 2x" data-dominant-color="F8F7F7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_20_1767969027284.png" data-github-sha="aee488c534a163b10b0bb06f7e0f9a782b0a1c74"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-13" class="anchor" href="#p-3040413-h-13" aria-label="标题链接"></a>如果你不需要搭临时邮箱服务，只需要自己的域名邮箱</h4>
+<p dir="auto">自此你可以设置成<strong>发送到电子邮件</strong>，也就是说这个<code>xxx所有的邮件@linuxdo.love</code>都会转发到你指定的邮箱里去<br>
+例如：</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>xiaohuang@linuxdo.love → <a href="mailto:xiaohuang@qq.com">xiaohuang@qq.com</a></li>
+<li>ilovelinuxdo@linuxdo.love → <a href="mailto:xiaohuang@qq.com">xiaohuang@qq.com</a><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_21_1767969029024.png" alt="image" data-base62-sha1="yIhpSRVqMLQYa7OYDEZywDfUYm9" width="689" height="368" srcset="https://linux.do/uploads/default/optimized/4X/f/3/4/f34b5449f16bf3e9be3f99ee7d2a21fef13f809d_2_689x368.png, https://linux.do/uploads/default/optimized/4X/f/3/4/f34b5449f16bf3e9be3f99ee7d2a21fef13f809d_2_1033x552.png 1.5x, https://linux.do/uploads/default/original/4X/f/3/4/f34b5449f16bf3e9be3f99ee7d2a21fef13f809d.png 2x" data-dominant-color="FBF9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_21_1767969029024.png" data-github-sha="079d66cda03910fe39595fe15268f0f3c80b644a"></li>
+</ul>
+<p dir="auto">如果你需要继续搭建临时邮箱，<strong>请往下看！</strong></p>
+<h3 dir="auto"><a name="p-3040413-h-14" class="anchor" href="#p-3040413-h-14" aria-label="标题链接"></a>搭建临时邮箱服务</h3>
+<h4 dir="auto"><a name="p-3040413-d1-15" class="anchor" href="#p-3040413-d1-15" aria-label="标题链接"></a>创建D1数据库</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_22_1767969030632.png" alt="image" data-base62-sha1="8CN3SZMZUFsxFx7fyoXr3PaKVos" width="690" height="400" srcset="https://linux.do/uploads/default/optimized/4X/3/c/7/3c73f255108dc3f9920632b2b32b81396b12aae0_2_690x400.png, https://linux.do/uploads/default/optimized/4X/3/c/7/3c73f255108dc3f9920632b2b32b81396b12aae0_2_1035x600.png 1.5x, https://linux.do/uploads/default/optimized/4X/3/c/7/3c73f255108dc3f9920632b2b32b81396b12aae0_2_1380x800.png 2x" data-dominant-color="FBFBFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_22_1767969030632.png" data-github-sha="fdd0cb0fa2bd61cb80b33c280f6156d410617e7c"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_23_1767969032414.png" alt="image" data-base62-sha1="ap0o4VsjdV9K41lyOoYY7hKIRBQ" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/4/8/e/48e960d248fbdb6267144f2d36341c1fe24cd41e_2_690x376.png, https://linux.do/uploads/default/optimized/4X/4/8/e/48e960d248fbdb6267144f2d36341c1fe24cd41e_2_1035x564.png 1.5x, https://linux.do/uploads/default/original/4X/4/8/e/48e960d248fbdb6267144f2d36341c1fe24cd41e.png 2x" data-dominant-color="FAFAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_23_1767969032414.png" data-github-sha="f98386f45ccf4326ff24060499a1c49bc7a98480"><p></p>
+<h4 dir="auto"><a name="p-3040413-dbschemasql-16" class="anchor" href="#p-3040413-dbschemasql-16" aria-label="标题链接"></a>打开项目地址，找到<code>db/schema.sql</code></h4>
+<p dir="auto"><a href="https://github.com/dreamhunter2333/cloudflare_temp_email/blob/main/db/schema.sql" rel="noopener nofollow ugc" data-clicks="990" aria-label="直达请点我 链接已点击 990 次">直达请点我</a></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_24_1767969034214.png" alt="image" data-base62-sha1="2W38hHcr9QPJW46MjgBT5vd2JVk" width="690" height="445" srcset="https://linux.do/uploads/default/optimized/4X/1/4/9/14943b3a7f6a81f3b856a6be0ecf5e05486e2f36_2_690x445.png, https://linux.do/uploads/default/optimized/4X/1/4/9/14943b3a7f6a81f3b856a6be0ecf5e05486e2f36_2_1035x667.png 1.5x, https://linux.do/uploads/default/optimized/4X/1/4/9/14943b3a7f6a81f3b856a6be0ecf5e05486e2f36_2_1380x890.png 2x" data-dominant-color="F6F8FB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_24_1767969034214.png" data-github-sha="940c6dcd0db53014ca8fbc801eb08ffe4eeddef8"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_25_1767969036966.png" alt="image" data-base62-sha1="yEOFIWiOI9paDxIZ6CfEW1cXQss" width="690" height="447" srcset="https://linux.do/uploads/default/optimized/4X/f/2/e/f2e7191508f3eb3b2455ed6aa46b6c6b9aa6c4fc_2_690x447.png, https://linux.do/uploads/default/optimized/4X/f/2/e/f2e7191508f3eb3b2455ed6aa46b6c6b9aa6c4fc_2_1035x670.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/2/e/f2e7191508f3eb3b2455ed6aa46b6c6b9aa6c4fc_2_1380x894.png 2x" data-dominant-color="FAF9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_25_1767969036966.png" data-github-sha="980864ba0f77359ad5cf6bdd96a8d9b4d1d368c4"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_26_1767969038397.png" alt="image" data-base62-sha1="vly9nLHVeyaOkxPqam6so0yBJpP" width="690" height="172" data-dominant-color="F6F4F5" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_26_1767969038397.png" data-github-sha="375e0499fa22ab40a84bfc737a15006af885d465"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_27_1767969040413.png" alt="image" data-base62-sha1="16duulXBpcoJsSZUFSskvdvsYUa" width="690" height="399" srcset="https://linux.do/uploads/default/optimized/4X/0/7/b/07b619d78079130d421173e41c37f1d33dd383ba_2_690x399.png, https://linux.do/uploads/default/optimized/4X/0/7/b/07b619d78079130d421173e41c37f1d33dd383ba_2_1035x598.png 1.5x, https://linux.do/uploads/default/optimized/4X/0/7/b/07b619d78079130d421173e41c37f1d33dd383ba_2_1380x798.png 2x" data-dominant-color="FBFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_27_1767969040413.png" data-github-sha="b7c62c44118bc63afe74f248c21a3c1b59e073ea"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-17" class="anchor" href="#p-3040413-h-17" aria-label="标题链接"></a>部署邮箱服务后端</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_28_1767969043079.png" alt="image" data-base62-sha1="qrd7rw3g51rP29OiVmGXvgZpi6J" width="690" height="382" srcset="https://linux.do/uploads/default/optimized/4X/b/9/4/b94bfb131e8a3e0d5a9074a2c65bed9dcdf89031_2_690x382.png, https://linux.do/uploads/default/optimized/4X/b/9/4/b94bfb131e8a3e0d5a9074a2c65bed9dcdf89031_2_1035x573.png 1.5x, https://linux.do/uploads/default/optimized/4X/b/9/4/b94bfb131e8a3e0d5a9074a2c65bed9dcdf89031_2_1380x764.png 2x" data-dominant-color="F4F7F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_28_1767969043079.png" data-github-sha="f31b1ac0ce08aa3a239d06bba9798d9fd6725df4"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_29_1767969045223.png" alt="image" data-base62-sha1="gTwGi3bSzoDhXcQyCdna13O2p0L" width="690" height="450" srcset="https://linux.do/uploads/default/optimized/4X/7/6/6/7669a4ca1abd46bcd14dee468c724dc128fb5c83_2_690x450.png, https://linux.do/uploads/default/optimized/4X/7/6/6/7669a4ca1abd46bcd14dee468c724dc128fb5c83_2_1035x675.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/6/6/7669a4ca1abd46bcd14dee468c724dc128fb5c83_2_1380x900.png 2x" data-dominant-color="F5F4F5" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_29_1767969045223.png" data-github-sha="9144e716674a62576b3efd9cae11be21fd7437ce"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_30_1767969047525.png" alt="image" data-base62-sha1="6as8MXtp7VGVT72kKuslKEjz535" width="690" height="484" srcset="https://linux.do/uploads/default/optimized/4X/2/b/3/2b3b8fd140f4701dfa1e2a719ab79dfc213d20eb_2_690x484.png, https://linux.do/uploads/default/optimized/4X/2/b/3/2b3b8fd140f4701dfa1e2a719ab79dfc213d20eb_2_1035x726.png 1.5x, https://linux.do/uploads/default/optimized/4X/2/b/3/2b3b8fd140f4701dfa1e2a719ab79dfc213d20eb_2_1380x968.png 2x" data-dominant-color="FBFAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_30_1767969047525.png" data-github-sha="a140f1d75d808dfaebfe21fd0e84bbd68dfb430c"><p></p>
+<h3 dir="auto"><a name="p-3040413-nodejs_compat-18" class="anchor" href="#p-3040413-nodejs_compat-18" aria-label="标题链接"></a><code>nodejs_compat</code>可以在这里复制！</h3>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_31_1767969049590.png" alt="image" data-base62-sha1="8XRGTuYm4gihSk5aQWdt9gzMJtf" width="663" height="500" srcset="https://linux.do/uploads/default/optimized/4X/3/e/d/3ed5cfb42b22da45cf050e1730fe56cd45923e39_2_663x500.png, https://linux.do/uploads/default/optimized/4X/3/e/d/3ed5cfb42b22da45cf050e1730fe56cd45923e39_2_994x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/3/e/d/3ed5cfb42b22da45cf050e1730fe56cd45923e39_2_1326x1000.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_31_1767969049590.png" data-github-sha="7a61c341535aca3b179a2946cf2c4823bf6746da"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_32_1767969051147.png" alt="image" data-base62-sha1="5dU0YTorD8S1g8zpl8TOelOLC3o" width="690" height="350" srcset="https://linux.do/uploads/default/optimized/4X/2/4/9/249d367b1d3256b22bfdd2b7aed09b6cd8bbc8f2_2_690x350.png, https://linux.do/uploads/default/optimized/4X/2/4/9/249d367b1d3256b22bfdd2b7aed09b6cd8bbc8f2_2_1035x525.png 1.5x, https://linux.do/uploads/default/optimized/4X/2/4/9/249d367b1d3256b22bfdd2b7aed09b6cd8bbc8f2_2_1380x700.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_32_1767969051147.png" data-github-sha="7027a03b72868c8fe5b4a1da6682fa21351dd6ab"><p></p>
+<p dir="auto"><a href="https://github.com/dreamhunter2333/cloudflare_temp_email/releases/latest/download/worker.js" rel="noopener nofollow ugc" data-clicks="1.2k" aria-label="代码直达地址，点我！ 链接已点击 1197 次">代码直达地址，点我！</a></p>
+<p dir="auto">下载代码后，<strong>打开代码直接全部复制！</strong></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_33_1767969052914.png" alt="image" data-base62-sha1="d42VqbzPG30VvC5YvePrKkCzxqf" width="690" height="321" srcset="https://linux.do/uploads/default/optimized/4X/5/b/9/5b91616aa36973c2e5387c6364e52b3da6e2cea7_2_690x321.png, https://linux.do/uploads/default/optimized/4X/5/b/9/5b91616aa36973c2e5387c6364e52b3da6e2cea7_2_1035x481.png 1.5x, https://linux.do/uploads/default/optimized/4X/5/b/9/5b91616aa36973c2e5387c6364e52b3da6e2cea7_2_1380x642.png 2x" data-dominant-color="FBFAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_33_1767969052914.png" data-github-sha="8676eee067abd569dad8549b975a8f5846b0a2bd"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_34_1767969054714.png" alt="image" data-base62-sha1="mFOzcOdBL05Dka2pAlcd0WhipHG" width="690" height="332" srcset="https://linux.do/uploads/default/optimized/4X/9/e/e/9ee9e64a38ed0a2134f56205d1b499a8bdc564b8_2_690x332.png, https://linux.do/uploads/default/optimized/4X/9/e/e/9ee9e64a38ed0a2134f56205d1b499a8bdc564b8_2_1035x498.png 1.5x, https://linux.do/uploads/default/optimized/4X/9/e/e/9ee9e64a38ed0a2134f56205d1b499a8bdc564b8_2_1380x664.png 2x" data-dominant-color="FBFAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_34_1767969054714.png" data-github-sha="0fb64dc6157e4f511afdfdb4ef7e62986105df90"><p></p>
+<h4 dir="auto"><a name="p-3040413-d1-19" class="anchor" href="#p-3040413-d1-19" aria-label="标题链接"></a>然后我们返回，继续配置D1数据库！</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_35_1767969056795.png" alt="image" data-base62-sha1="z3g0UPub2D7BfTl9zjFADdCyBDd" width="690" height="339" srcset="https://linux.do/uploads/default/optimized/4X/f/5/a/f5aa60edadd95afe14eab6322b9b5e7c21fdcd83_2_690x339.png, https://linux.do/uploads/default/optimized/4X/f/5/a/f5aa60edadd95afe14eab6322b9b5e7c21fdcd83_2_1035x508.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/5/a/f5aa60edadd95afe14eab6322b9b5e7c21fdcd83_2_1380x678.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_35_1767969056795.png" data-github-sha="c39d03620404c5e5e6798c7ddbf70bd001192777"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_36_1767969058704.png" alt="image" data-base62-sha1="6XtWWJHTev5uTtehMxQUb54xf8W" width="690" height="407" srcset="https://linux.do/uploads/default/optimized/4X/3/0/c/30c661e066e6041fd2fa9596b5cff1afe8e9e9be_2_690x407.png, https://linux.do/uploads/default/optimized/4X/3/0/c/30c661e066e6041fd2fa9596b5cff1afe8e9e9be_2_1035x610.png 1.5x, https://linux.do/uploads/default/optimized/4X/3/0/c/30c661e066e6041fd2fa9596b5cff1afe8e9e9be_2_1380x814.png 2x" data-dominant-color="FDFDFD" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_36_1767969058704.png" data-github-sha="d9c9c1e1aa4faa60773acba03691f71b6fdca6a6"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_37_1767969060408.png" alt="image" data-base62-sha1="i1iY5ySfKaarDgSsCQjEuEyNpEa" width="690" height="427" srcset="https://linux.do/uploads/default/optimized/4X/7/e/4/7e4cec6cc07fb81f07ef5da4abef198c82a99636_2_690x427.png, https://linux.do/uploads/default/optimized/4X/7/e/4/7e4cec6cc07fb81f07ef5da4abef198c82a99636_2_1035x640.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/e/4/7e4cec6cc07fb81f07ef5da4abef198c82a99636_2_1380x854.png 2x" data-dominant-color="FDFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_37_1767969060408.png" data-github-sha="63df1ff99c022f9df70cc6643b4bb71d50743bfe"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_38_1767969062252.png" alt="image" data-base62-sha1="liFg4lPAoDYXrc31oGsAGTQJmc8" width="690" height="457" srcset="https://linux.do/uploads/default/optimized/4X/9/5/4/9549ccd6dd3cc5eec5341439fe9e9abbb35c03c0_2_690x457.png, https://linux.do/uploads/default/optimized/4X/9/5/4/9549ccd6dd3cc5eec5341439fe9e9abbb35c03c0_2_1035x685.png 1.5x, https://linux.do/uploads/default/optimized/4X/9/5/4/9549ccd6dd3cc5eec5341439fe9e9abbb35c03c0_2_1380x914.png 2x" data-dominant-color="FDFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_38_1767969062252.png" data-github-sha="c78d6a6c88fe0a3065a5ccdf27dd5b1207704f1b"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_39_1767969064840.png" alt="image" data-base62-sha1="cCB0Ha7lzcFJqlrqXRhOacdcVa" width="690" height="353" srcset="https://linux.do/uploads/default/optimized/4X/0/1/6/016d46440d57347d81a730c506e20b1a94df6320_2_690x353.png, https://linux.do/uploads/default/optimized/4X/0/1/6/016d46440d57347d81a730c506e20b1a94df6320_2_1035x529.png 1.5x, https://linux.do/uploads/default/original/4X/0/1/6/016d46440d57347d81a730c506e20b1a94df6320.png 2x" data-dominant-color="E1DDDD" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_39_1767969064840.png" data-github-sha="445193753594bf51f5a59d24d54ab490b723d325"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-20" class="anchor" href="#p-3040413-h-20" aria-label="标题链接"></a>接下来，我们设置环境变量</h4>
+<p dir="auto">你可以直接按我给的配置来配，如果你需要额外的配置可以查阅官方文档</p>
+<p dir="auto"><a href="https://temp-mail-docs.awsl.uk/zh/guide/cli/worker.html#%E4%BF%AE%E6%94%B9-wrangler-toml-%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6" rel="noopener nofollow ugc" data-clicks="611" aria-label="文档直达 链接已点击 611 次">文档直达</a></p>
+<p dir="auto"><strong>注意：请不要从表格里直接复制配置，你可以下拉到表格下方去复制，表格内的引号会自动将英文的转成中文的，所以请去下面代码块内复制！ <img src="https://linux.do/uploads/default/original/3X/2/e/2e09f3a3c7b27eacbabe9e9614b06b88d5b06343.png?v=15" title=":tieba_087:" class="emoji emoji-custom" alt=":tieba_087:" loading="lazy" width="20" height="20" style="aspect-ratio: 20 / 20;"></strong></p>
+<p dir="auto"><strong>请仔细查看参数说明，不要直接复制就不管了</strong></p>
+<div class="md-table fullscreen-table-wrapper --editable" dir="auto" data-table-index="0">
+<div class="fullscreen-table-wrapper__buttons"><button class="open-popup-link btn-default btn btn-icon no-text btn-edit-table" title="编辑表"><svg class="fa d-icon d-icon-pencil svg-icon edit-table-icon svg-node" aria-hidden="true"><use href="#pencil"></use></svg></button></div><table style="border-collapse: collapse; width: 100%; margin: 1rem 0px;">
+<thead>
+<tr>
+<th style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px; background: rgb(245, 245, 245); font-weight: 600; text-align: left;">值</th>
+<th style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px; background: rgb(245, 245, 245); font-weight: 600; text-align: left;">类型</th>
+<th style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px; background: rgb(245, 245, 245); font-weight: 600; text-align: left;">值</th>
+<th style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px; background: rgb(245, 245, 245); font-weight: 600; text-align: left;">说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ADMIN_PASSWORDS</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">JSON</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">[“your_password”,“your_password_two”]</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">admin 控制台密码, 不配置则不允许访问控制台，大白话：管理员密码不配置你怎么管理？可以多个，你也可以只配置一个！</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ADMIN_USER_ROLE</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">admin</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">admin 角色配置, 如果用户角色等于 ADMIN_USER_ROLE 则可以访问 admin 控制台 大白话：如果角色是admin的用户就可以直接看到admin控制台</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">DEFAULT_DOMAINS</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">JSON</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">[“”] 或者 [“你自己的域名”]</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">这里给了一个空数组，也就是说没有登录的用户没有可用的域名，如果你想给没有登录的用户使用域名，你可以加上自己的域名[“各自域名”] 它是一个数组也可以多个</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">DOMAINS</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">JSON</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">[“你的域名.love”]</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">这里是用来配置你的域名的，例如我的域名就是linuxdo.love，实际上还可以添加多个，例如[“linuxdo.love”,“goai.love”]，当然配置的域名都得接入cloudflare哈！没接入你配了也没用！</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ENABLE_AUTO_REPLY</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">false</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">是否允许自动回复邮件，官方默认是false，我们也设置为false</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ENABLE_USER_CREATE_EMAIL</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">true</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">是否允许用户随机创建邮箱账户，默认为true就行，这样就可以创建不同的邮件账户啦！</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ENABLE_USER_DELETE_EMAIL</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">true</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">是否允许用户删除邮件，如果你不想用户删除邮件改成false就行</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">JWT_SECRET</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">自己去生成一个！</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">这里需要一个密钥，打开<a href="https://www.librechat.ai/toolkit/creds_generator" class="inline-onebox" rel="noopener nofollow ugc" data-clicks="734" aria-label="GitHub 链接已点击 734 次">GitHub</a> 生成后复制“JWT_SECRET”里的内容</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">NO_LIMIT_SEND_ROLE</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">admin</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">可以无限发送邮件的角色，我设置成了admin，也就是说admin角色的用户可以无限发送邮件了！</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">USER_ROLES</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">JSON</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">[{“domains”:[“你的域名.love”],“prefix”:“”,“role”:“vip”},{“domains”:[“你的域名.love”],“prefix”:“”,“role”:“admin”}] 别从这里复制从表格下的代码块复制这个不然报错</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">设置两个系统角色，一个为vip一个为admin！</td>
+</tr>
+<tr>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">ENABLE_ADDRESS_PASSWORD</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">纯文本</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">true</td>
+<td style="border: 1px solid rgb(221, 221, 221); padding: 8px 12px;">启用邮箱地址密码功能，启用后创建新地址时会自动生成密码，并支持密码登录和修改</td>
+</tr>
+</tbody>
+</table>
+</div><h3 dir="auto"><a name="p-3040413-admin_passwords-21" class="anchor" href="#p-3040413-admin_passwords-21" aria-label="标题链接"></a>ADMIN_PASSWORDS</h3>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">[</span><span class="hljs-string">"your_password"</span><span class="hljs-punctuation">,</span><span class="hljs-string">"your_password_two"</span><span class="hljs-punctuation">]</span>
+</code></pre>
+<h3 dir="auto"><a name="p-3040413-default_domains-22" class="anchor" href="#p-3040413-default_domains-22" aria-label="标题链接"></a>DEFAULT_DOMAINS</h3>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">[</span><span class="hljs-string">""</span><span class="hljs-punctuation">]</span>
+</code></pre>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">[</span><span class="hljs-string">"你自己的域名"</span><span class="hljs-punctuation">]</span>
+</code></pre>
+<h3 dir="auto"><a name="p-3040413-domains-23" class="anchor" href="#p-3040413-domains-23" aria-label="标题链接"></a>DOMAINS</h3>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">[</span><span class="hljs-string">"你的域名.love"</span><span class="hljs-punctuation">]</span>
+</code></pre>
+<h3 dir="auto"><a name="p-3040413-user_roles-24" class="anchor" href="#p-3040413-user_roles-24" aria-label="标题链接"></a>USER_ROLES</h3>
+<pre data-code-wrap="json" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-json hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span><span class="hljs-attr">"domains"</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-string">"你的域名.love"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"prefix"</span><span class="hljs-punctuation">:</span><span class="hljs-string">""</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"role"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"vip"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span><span class="hljs-punctuation">{</span><span class="hljs-attr">"domains"</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-string">"你的域名.love"</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"prefix"</span><span class="hljs-punctuation">:</span><span class="hljs-string">""</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"role"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"admin"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span>
+</code></pre>
+<h4 dir="auto"><a name="p-3040413-h-25" class="anchor" href="#p-3040413-h-25" aria-label="标题链接"></a>如何配置？看图</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_40_1767969066575.png" alt="image" data-base62-sha1="rgsrTYMoCdzCDV1BmmMmhJp978n" width="690" height="370" srcset="https://linux.do/uploads/default/optimized/4X/b/f/1/bf16fd1f60113d689508bc9f9a85aeb48f182b0b_2_690x370.png, https://linux.do/uploads/default/optimized/4X/b/f/1/bf16fd1f60113d689508bc9f9a85aeb48f182b0b_2_1035x555.png 1.5x, https://linux.do/uploads/default/optimized/4X/b/f/1/bf16fd1f60113d689508bc9f9a85aeb48f182b0b_2_1380x740.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_40_1767969066575.png" data-github-sha="0dfc6185ccebc38d550217fbd34154104c03fa8d"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_41_1767969068321.png" alt="image" data-base62-sha1="yq22kznbho8keC2VONZ6OKYBbjl" width="499" height="500" srcset="https://linux.do/uploads/default/optimized/4X/f/1/3/f13b42f348ff0764a77b1232e21d3c0542923233_2_499x500.png, https://linux.do/uploads/default/optimized/4X/f/1/3/f13b42f348ff0764a77b1232e21d3c0542923233_2_748x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/1/3/f13b42f348ff0764a77b1232e21d3c0542923233_2_998x1000.png 2x" data-dominant-color="F9F9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_41_1767969068321.png" data-github-sha="d9917ed207020812334ef10c79ed0123fdec7afb"><p></p>
+<p dir="auto">一次性<strong>可以配置多个哈！</strong></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_42_1767969070858.png" alt="image" data-base62-sha1="t6Y87ucPnIldvaDVYKulzTQL27F" width="690" height="387" srcset="https://linux.do/uploads/default/optimized/4X/c/c/0/cc08bda2f39b53474666aafa7f6627e27a392c0b_2_690x387.png, https://linux.do/uploads/default/original/4X/c/c/0/cc08bda2f39b53474666aafa7f6627e27a392c0b.png 1.5x, https://linux.do/uploads/default/original/4X/c/c/0/cc08bda2f39b53474666aafa7f6627e27a392c0b.png 2x" data-dominant-color="E3DDDD" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_42_1767969070858.png" data-github-sha="2ba6acafebaba883c6d8e771a593ee3c221e97af"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_43_1767969072228.png" alt="image" data-base62-sha1="mweh7xrYBYusYAC8CaD6wlmZtgZ" width="690" height="466" data-dominant-color="FBFBFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_43_1767969072228.png" data-github-sha="797d1d71014795b951fe4e2ac495ada8b84b2e73"><p></p>
+<h4 dir="auto"><a name="p-3040413-kv-26" class="anchor" href="#p-3040413-kv-26" aria-label="标题链接"></a>配置KV缓存</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_44_1767969073683.png" alt="image" data-base62-sha1="eX0OmfZEI9aDcIE3rmufjVTyrCU" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/6/8/c/68ca2c7c848f971b87ef0c95a09810a55bc1bf58_2_690x376.png, https://linux.do/uploads/default/optimized/4X/6/8/c/68ca2c7c848f971b87ef0c95a09810a55bc1bf58_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/6/8/c/68ca2c7c848f971b87ef0c95a09810a55bc1bf58_2_1380x752.png 2x" data-dominant-color="F9FAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_44_1767969073683.png" data-github-sha="e8eba0af65aaeeb4de0c5e061011921c3dbb5eba"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_45_1767969075468.png" alt="image" data-base62-sha1="qzkhoqEPKg9XiTYqa2kuJtRa0MP" width="690" height="339" srcset="https://linux.do/uploads/default/optimized/4X/b/a/3/ba36d447404457092a887ca4e7301344f783f973_2_690x339.png, https://linux.do/uploads/default/optimized/4X/b/a/3/ba36d447404457092a887ca4e7301344f783f973_2_1035x508.png 1.5x, https://linux.do/uploads/default/original/4X/b/a/3/ba36d447404457092a887ca4e7301344f783f973.png 2x" data-dominant-color="F8F8FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_45_1767969075468.png" data-github-sha="1bcec136325db55d2aa0021ddf3dfb17191f2868"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_46_1767969078011.png" alt="image" data-base62-sha1="rnSXiIbRONiWHeXNrDZygNG5GB4" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/b/f/e/bfededb738740f983e259134ea319767ccc644fa_2_690x376.png, https://linux.do/uploads/default/optimized/4X/b/f/e/bfededb738740f983e259134ea319767ccc644fa_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/b/f/e/bfededb738740f983e259134ea319767ccc644fa_2_1380x752.png 2x" data-dominant-color="F8F8F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_46_1767969078011.png" data-github-sha="27a74a2824da8d589dcdf4f330dc2da78e43960f"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_47_1767969080109.png" alt="image" data-base62-sha1="z8NBPzJ1fonG8W9S6ftR1vDynwH" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/f/6/4/f64ac0288518185ed975e20b01803bbdbafa1587_2_690x376.png, https://linux.do/uploads/default/optimized/4X/f/6/4/f64ac0288518185ed975e20b01803bbdbafa1587_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/6/4/f64ac0288518185ed975e20b01803bbdbafa1587_2_1380x752.png 2x" data-dominant-color="FAFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_47_1767969080109.png" data-github-sha="609c1cf57c9d5040f54cabd449cd59669a3d7484"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_48_1767969081953.png" alt="image" data-base62-sha1="3aS58I5uzqJApitGN5YsRf9Zhw2" width="515" height="500" srcset="https://linux.do/uploads/default/optimized/4X/1/6/4/164125d78e7a0684b9b04c095434877ff7d8440e_2_515x500.png, https://linux.do/uploads/default/optimized/4X/1/6/4/164125d78e7a0684b9b04c095434877ff7d8440e_2_772x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/1/6/4/164125d78e7a0684b9b04c095434877ff7d8440e_2_1030x1000.png 2x" data-dominant-color="FAFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_48_1767969081953.png" data-github-sha="ea3907d31fbcf75089f62e325c7d106c3fc93110"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_49_1767969083855.png" alt="image" data-base62-sha1="bRTlrQXmgyU4OgZSFYQnrALmgQW" width="281" height="500" srcset="https://linux.do/uploads/default/optimized/4X/5/3/2/532f79be014a7f2fa0a4b419a861318848a7d012_2_281x500.png, https://linux.do/uploads/default/optimized/4X/5/3/2/532f79be014a7f2fa0a4b419a861318848a7d012_2_421x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/5/3/2/532f79be014a7f2fa0a4b419a861318848a7d012_2_562x1000.png 2x" data-dominant-color="FAFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_49_1767969083855.png" data-github-sha="b7499dc9656313a99f67cb37649d3fcdce256556"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-27" class="anchor" href="#p-3040413-h-27" aria-label="标题链接"></a>配置邮件转发【非常重要，必须配置】</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_50_1767969085269.png" alt="image" data-base62-sha1="uBguQZxGFmRuCTGlsSuHRQfnl3Z" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/d/6/7/d677a2d1e644d6d63c1c09154e377f0e4b5604c3_2_690x376.png, https://linux.do/uploads/default/optimized/4X/d/6/7/d677a2d1e644d6d63c1c09154e377f0e4b5604c3_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/d/6/7/d677a2d1e644d6d63c1c09154e377f0e4b5604c3_2_1380x752.png 2x" data-dominant-color="F8F9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_50_1767969085269.png" data-github-sha="fb634da62fcf3b58175e198332bbb711e272b63f"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_51_1767969087003.png" alt="image" data-base62-sha1="q2YeYBlTI3PLC7D6IG8sZb8OJnC" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/b/6/8/b68e846f17dd33c122465705e19f57d37da32e3c_2_690x376.png, https://linux.do/uploads/default/optimized/4X/b/6/8/b68e846f17dd33c122465705e19f57d37da32e3c_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/b/6/8/b68e846f17dd33c122465705e19f57d37da32e3c_2_1380x752.png 2x" data-dominant-color="F7F7F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_51_1767969087003.png" data-github-sha="46bb1bd9fa2d8736ef39eb2c6d692c440b858abb"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_52_1767969088773.png" alt="image" data-base62-sha1="xhxGoTqy0WZ1vp7n2mktzGRMpN" width="690" height="473" srcset="https://linux.do/uploads/default/optimized/4X/0/3/c/03c326dea19af381f3a17c33f6664219bc1171d7_2_690x473.png, https://linux.do/uploads/default/optimized/4X/0/3/c/03c326dea19af381f3a17c33f6664219bc1171d7_2_1035x709.png 1.5x, https://linux.do/uploads/default/original/4X/0/3/c/03c326dea19af381f3a17c33f6664219bc1171d7.png 2x" data-dominant-color="F8F6F7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_52_1767969088773.png" data-github-sha="292f503f617d05597a431ebdf277185d9ea819d0"><p></p>
+<p dir="auto">自此！<strong>恭喜你！临时邮箱后端服务搭建完成！</strong></p>
+<h3 dir="auto"><a name="p-3040413-h-28" class="anchor" href="#p-3040413-h-28" aria-label="标题链接"></a>搭建前端服务，也就是操作界面！</h3>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_53_1767969090826.png" alt="image" data-base62-sha1="7b9DxBfHc6Zv3xJ0SDWrjoICs7I" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/3/2/5/32520990f7b39dc0e3f12f31adf2c53ff403021e_2_690x376.png, https://linux.do/uploads/default/optimized/4X/3/2/5/32520990f7b39dc0e3f12f31adf2c53ff403021e_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/3/2/5/32520990f7b39dc0e3f12f31adf2c53ff403021e_2_1380x752.png 2x" data-dominant-color="F8F8F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_53_1767969090826.png" data-github-sha="aa5a52e26dbd0aa521190d832b4803db523c72fe"><p></p>
+<p dir="auto">我们需要生成前端代码，打开官方文档，一个生成器！</p>
+<p dir="auto"><a href="https://temp-mail-docs.awsl.uk/zh/guide/ui/pages.html" rel="noopener nofollow ugc" data-clicks="934" aria-label="直达地址 链接已点击 934 次">直达地址</a></p>
+<h3 dir="auto"><a name="p-3040413-h-29" class="anchor" href="#p-3040413-h-29" aria-label="标题链接"></a>【注意】这里图片里打错字了，图片里说的是“自定义域”，我打成了“兹定于”</h3>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_54_1767969092827.png" alt="image" data-base62-sha1="e3KTOyAvVnjHwkJKhmlIUpA1PFv" width="680" height="500" srcset="https://linux.do/uploads/default/optimized/4X/6/2/8/628b24165c1147d6b483d75cbe6c7ed24ce542f1_2_680x500.png, https://linux.do/uploads/default/optimized/4X/6/2/8/628b24165c1147d6b483d75cbe6c7ed24ce542f1_2_1020x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/6/2/8/628b24165c1147d6b483d75cbe6c7ed24ce542f1_2_1360x1000.png 2x" data-dominant-color="C0BEBF" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_54_1767969092827.png" data-github-sha="6f026e436fd2f3821cc2a2fdd18e23a9aec96d98"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_55_1767969094270.png" alt="image" data-base62-sha1="yIR1sKUmTsr1SRF9lWOInscN3hD" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/f/3/5/f35bf2c2c47f7fe7911fd15eba007f69871849c9_2_690x376.png, https://linux.do/uploads/default/optimized/4X/f/3/5/f35bf2c2c47f7fe7911fd15eba007f69871849c9_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/3/5/f35bf2c2c47f7fe7911fd15eba007f69871849c9_2_1380x752.png 2x" data-dominant-color="F6F9FB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_55_1767969094270.png" data-github-sha="4d2fee030546b76f77e9350fa77534a576c129fe"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_56_1767969096605.png" alt="image" data-base62-sha1="2x08R9zqNtiFNZEqOSSkG2zBrNk" width="690" height="376" srcset="https://linux.do/uploads/default/optimized/4X/1/1/b/11bf60d07e0fe59f528aa6e716a151ecfada83a6_2_690x376.png, https://linux.do/uploads/default/optimized/4X/1/1/b/11bf60d07e0fe59f528aa6e716a151ecfada83a6_2_1035x564.png 1.5x, https://linux.do/uploads/default/optimized/4X/1/1/b/11bf60d07e0fe59f528aa6e716a151ecfada83a6_2_1380x752.png 2x" data-dominant-color="FBFAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_56_1767969096605.png" data-github-sha="8daece11a1702f3212097b02d409a31296337c59"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_57_1767969098356.png" alt="image" data-base62-sha1="j1f4ttuRSvb7qnWs2StEEMYadaC" width="690" height="227" srcset="https://linux.do/uploads/default/optimized/4X/8/5/4/854d4751a42444a96e25e2e5bc2573d6c7251036_2_690x227.png, https://linux.do/uploads/default/optimized/4X/8/5/4/854d4751a42444a96e25e2e5bc2573d6c7251036_2_1035x340.png 1.5x, https://linux.do/uploads/default/original/4X/8/5/4/854d4751a42444a96e25e2e5bc2573d6c7251036.png 2x" data-dominant-color="FBFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_57_1767969098356.png" data-github-sha="794a06c1cfa152703806d08967f5ac690d546061"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_58_1767969100154.png" alt="image" data-base62-sha1="5yLICAQ6iiKRHkDnyQWSCcWWg3K" width="690" height="336" srcset="https://linux.do/uploads/default/optimized/4X/2/6/f/26f90b726c92cc104e81dc12328c612f3aa43ff8_2_690x336.png, https://linux.do/uploads/default/optimized/4X/2/6/f/26f90b726c92cc104e81dc12328c612f3aa43ff8_2_1035x504.png 1.5x, https://linux.do/uploads/default/optimized/4X/2/6/f/26f90b726c92cc104e81dc12328c612f3aa43ff8_2_1380x672.png 2x" data-dominant-color="FBFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_58_1767969100154.png" data-github-sha="fc1a2f43b9da62a2771dce054668888c3394a685"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_59_1767969102399.png" alt="image" data-base62-sha1="jw54tfc87wM4xUzfhjPlcbMlpRv" width="690" height="378" srcset="https://linux.do/uploads/default/optimized/4X/8/8/c/88c9b2b55c116602f078b109f96146f4ec0431d1_2_690x378.png, https://linux.do/uploads/default/optimized/4X/8/8/c/88c9b2b55c116602f078b109f96146f4ec0431d1_2_1035x567.png 1.5x, https://linux.do/uploads/default/optimized/4X/8/8/c/88c9b2b55c116602f078b109f96146f4ec0431d1_2_1380x756.png 2x" data-dominant-color="FBFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_59_1767969102399.png" data-github-sha="b76af1589e4c67dfd3e60ddff0b4043d679ec91a"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_60_1767969104304.png" alt="image" data-base62-sha1="mkPFPC4GhDMDjLBcgQGhElPOvCD" width="690" height="374" srcset="https://linux.do/uploads/default/optimized/4X/9/c/8/9c8ab64cea2575bd35c5bd20af3a15ff029f7f57_2_690x374.png, https://linux.do/uploads/default/optimized/4X/9/c/8/9c8ab64cea2575bd35c5bd20af3a15ff029f7f57_2_1035x561.png 1.5x, https://linux.do/uploads/default/original/4X/9/c/8/9c8ab64cea2575bd35c5bd20af3a15ff029f7f57.png 2x" data-dominant-color="FBFAFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_60_1767969104304.png" data-github-sha="533c7c4fad188c63a8553202b5a6f7b83421b908"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_61_1767969106356.png" alt="image" data-base62-sha1="hnBWhTtB9Q2nefUIzfOy9aT5LKY" width="690" height="388" srcset="https://linux.do/uploads/default/optimized/4X/7/9/d/79d03f1f18df3427c22fea759e29109a3da44f64_2_690x388.png, https://linux.do/uploads/default/optimized/4X/7/9/d/79d03f1f18df3427c22fea759e29109a3da44f64_2_1035x582.png 1.5x, https://linux.do/uploads/default/original/4X/7/9/d/79d03f1f18df3427c22fea759e29109a3da44f64.png 2x" data-dominant-color="FAFBFB" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_61_1767969106356.png" data-github-sha="047ebe9f7150d4eabcbb14b4b068ffa3eae54052"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_62_1767969107757.png" alt="image" data-base62-sha1="yv7Pf271gf6ZW9cufLc5iaBYAJO" width="690" height="267" srcset="https://linux.do/uploads/default/optimized/4X/f/1/c/f1cea7a882dd96ceb1e451fe2298ed7271eba6d8_2_690x267.png, https://linux.do/uploads/default/optimized/4X/f/1/c/f1cea7a882dd96ceb1e451fe2298ed7271eba6d8_2_1035x400.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/1/c/f1cea7a882dd96ceb1e451fe2298ed7271eba6d8_2_1380x534.png 2x" data-dominant-color="FAF7F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_62_1767969107757.png" data-github-sha="9eacccc7fccdb8a4fe4be2497987712643b1d7fd"><p></p>
+<p dir="auto"><strong>也许也不需要等十分钟</strong>，你可以用无痕浏览器，或者别的浏览器访问一下，看是否可以访问了！</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_63_1767969109311.png" alt="image" data-base62-sha1="zK3ChSHowHAvQST3ZVMmHMCR3Bf" width="520" height="500" srcset="https://linux.do/uploads/default/optimized/4X/f/a/8/fa80f0503ddaff982bfd5442e6c1307294601989_2_520x500.png, https://linux.do/uploads/default/optimized/4X/f/a/8/fa80f0503ddaff982bfd5442e6c1307294601989_2_780x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/a/8/fa80f0503ddaff982bfd5442e6c1307294601989_2_1040x1000.png 2x" data-dominant-color="F9F8F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_63_1767969109311.png" data-github-sha="1414fc5600d61f6660df7c606be3fbdd576203bc"><p></p>
+<h3 dir="auto"><a name="p-3040413-h-30" class="anchor" href="#p-3040413-h-30" aria-label="标题链接"></a>测试是否正常</h3>
+<h4 dir="auto"><a name="p-3040413-h-31" class="anchor" href="#p-3040413-h-31" aria-label="标题链接"></a>创建用户</h4>
+<aside class="quote no-group" data-username="awsl" data-post="63" data-topic="316819" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-316819-63-1" style="">
+    <div class="post__contents-cooked-quote">
+<p dir="auto">admin 后台可以点击五次 logo 进入 <img src="https://linux.do/images/emoji/twemoji/stuck_out_tongue.png?v=15" title=":stuck_out_tongue:" class="emoji" alt=":stuck_out_tongue:" loading="lazy" width="20" height="20" style="aspect-ratio: 20 / 20;"></p>
+</div><!---->
+  </blockquote>
+    
+
+  </aside>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_64_1767969111088.png" alt="image" data-base62-sha1="l4re81re8v9X6tT1uPrI1fCFEpe" width="690" height="439" data-dominant-color="FAEEED" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_64_1767969111088.png" data-github-sha="1e505ece04670dfedb892d8ac72ea6c5284550eb"><p></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_65_1767969113045.png" alt="image" data-base62-sha1="sZeJn6BkryM2k8QxwI0KvaDWXCx" width="572" height="500" srcset="https://linux.do/uploads/default/optimized/4X/c/b/2/cb28fb9afe0af122e713c5c610eee23a814d1d61_2_572x500.png, https://linux.do/uploads/default/optimized/4X/c/b/2/cb28fb9afe0af122e713c5c610eee23a814d1d61_2_858x750.png 1.5x, https://linux.do/uploads/default/original/4X/c/b/2/cb28fb9afe0af122e713c5c610eee23a814d1d61.png 2x" data-dominant-color="ADA8A7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_65_1767969113045.png" data-github-sha="6e9503d6aebe9651b620f7b5cedb1383f90a69d7"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_66_1767969115886.png" alt="image" data-base62-sha1="A18Dy5s9KotqT3ybJ5dcRcv02Hj" width="690" height="391" srcset="https://linux.do/uploads/default/optimized/4X/f/c/6/fc6f3b9e0b05f348bfd79c215513495abf031735_2_690x391.png, https://linux.do/uploads/default/optimized/4X/f/c/6/fc6f3b9e0b05f348bfd79c215513495abf031735_2_1035x586.png 1.5x, https://linux.do/uploads/default/optimized/4X/f/c/6/fc6f3b9e0b05f348bfd79c215513495abf031735_2_1380x782.png 2x" data-dominant-color="A6A5A5" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_66_1767969115886.png" data-github-sha="7778687445d5f22a2f77cbfc265c0117eda9c7fe"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_67_1767969117609.png" alt="image" data-base62-sha1="oV0P4pVqq4d6L1gFxNXU2fzQOBa" width="690" height="184" srcset="https://linux.do/uploads/default/optimized/4X/a/e/a/aea60ad0a623f2d16f0ac9ca821e8069f7fa9ff8_2_690x184.png, https://linux.do/uploads/default/optimized/4X/a/e/a/aea60ad0a623f2d16f0ac9ca821e8069f7fa9ff8_2_1035x276.png 1.5x, https://linux.do/uploads/default/optimized/4X/a/e/a/aea60ad0a623f2d16f0ac9ca821e8069f7fa9ff8_2_1380x368.png 2x" data-dominant-color="FCF9F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_67_1767969117609.png" data-github-sha="d5724312fc5258b9200d03061a98d60ce9788d1d"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_68_1767969119307.png" alt="image" data-base62-sha1="udk6cQNbSMf9msR2tgatSs6MlSa" width="690" height="244" srcset="https://linux.do/uploads/default/optimized/4X/d/3/c/d3c2cc6a3aa298caa34f176e8294a15c5fb080d2_2_690x244.png, https://linux.do/uploads/default/optimized/4X/d/3/c/d3c2cc6a3aa298caa34f176e8294a15c5fb080d2_2_1035x366.png 1.5x, https://linux.do/uploads/default/optimized/4X/d/3/c/d3c2cc6a3aa298caa34f176e8294a15c5fb080d2_2_1380x488.png 2x" data-dominant-color="ADA6A5" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_68_1767969119307.png" data-github-sha="1b1ae2c7a900173956bcdf01e5b013ecf9de6d35"><p></p>
+<h4 dir="auto"><a name="p-3040413-h-32" class="anchor" href="#p-3040413-h-32" aria-label="标题链接"></a>测试接收邮件</h4>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_69_1767969120874.png" alt="image" data-base62-sha1="uIubZkao6XnFhu6ojH3dz68Pq3Q" width="690" height="407" srcset="https://linux.do/uploads/default/optimized/4X/d/7/4/d74898b276443cf2e2d51633149ae7eae206b1be_2_690x407.png, https://linux.do/uploads/default/optimized/4X/d/7/4/d74898b276443cf2e2d51633149ae7eae206b1be_2_1035x610.png 1.5x, https://linux.do/uploads/default/original/4X/d/7/4/d74898b276443cf2e2d51633149ae7eae206b1be.png 2x" data-dominant-color="F9F7F7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_69_1767969120874.png" data-github-sha="a6dbe35ec00e7aa0b83f216d064bb04dd36dd249"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_70_1767969122476.png" alt="image" data-base62-sha1="lvcJXImISh4CxdWl89joNE9IlUP" width="690" height="295" srcset="https://linux.do/uploads/default/optimized/4X/9/6/b/96b4aff3792b0e23f63c9ae19e568214435ee887_2_690x295.png, https://linux.do/uploads/default/optimized/4X/9/6/b/96b4aff3792b0e23f63c9ae19e568214435ee887_2_1035x442.png 1.5x, https://linux.do/uploads/default/optimized/4X/9/6/b/96b4aff3792b0e23f63c9ae19e568214435ee887_2_1380x590.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_70_1767969122476.png" data-github-sha="af9a60f0d9886b00e3c9bbc07b96a77f0bb03b59"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_71_1767969124451.png" alt="image" data-base62-sha1="9lvxMdci7TcKQD8TxX9bnTEx2pf" width="690" height="348" srcset="https://linux.do/uploads/default/optimized/4X/4/1/8/4181fe44a40636240892c05a7559456ef1c96cfd_2_690x348.png, https://linux.do/uploads/default/optimized/4X/4/1/8/4181fe44a40636240892c05a7559456ef1c96cfd_2_1035x522.png 1.5x, https://linux.do/uploads/default/optimized/4X/4/1/8/4181fe44a40636240892c05a7559456ef1c96cfd_2_1380x696.png 2x" data-dominant-color="F9FAFA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_71_1767969124451.png" data-github-sha="8d45b98950e309d6e7e8ab4077857d2967d6e6e8"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_72_1767969126746.png" alt="image" data-base62-sha1="urTeOakx6hOEFWG4B5rP1Oyf6gW" width="690" height="434" srcset="https://linux.do/uploads/default/optimized/4X/d/5/6/d56855df766934b36a2ec45e4ce8b45176572a5a_2_690x434.png, https://linux.do/uploads/default/optimized/4X/d/5/6/d56855df766934b36a2ec45e4ce8b45176572a5a_2_1035x651.png 1.5x, https://linux.do/uploads/default/optimized/4X/d/5/6/d56855df766934b36a2ec45e4ce8b45176572a5a_2_1380x868.png 2x" data-dominant-color="F9F9FA" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_72_1767969126746.png" data-github-sha="89b79e7a910d3dc4d3505de66d916ea9499b122d"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_73_1767969128368.png" alt="image" data-base62-sha1="6RRzMPxPhtnwQFzYDa0ur7NWn0J" width="690" height="314" srcset="https://linux.do/uploads/default/optimized/4X/3/0/2/3023c7b885d15edaeeeee70d9eec122df1800ba9_2_690x314.png, https://linux.do/uploads/default/optimized/4X/3/0/2/3023c7b885d15edaeeeee70d9eec122df1800ba9_2_1035x471.png 1.5x, https://linux.do/uploads/default/original/4X/3/0/2/3023c7b885d15edaeeeee70d9eec122df1800ba9.png 2x" data-dominant-color="0C0C0C" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_73_1767969128368.png" data-github-sha="d1c733d37b4feeac542d79b9cac55b9ea564ac58"><p></p>
+<h3 dir="auto"><a name="p-3040413-api-33" class="anchor" href="#p-3040413-api-33" aria-label="标题链接"></a>调用API创建邮件获取邮件（请根据实际情况去修改代码！这是之前测试用的代码！）</h3>
+<pre data-code-wrap="python" dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon svg-string" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-python hljs language-python" data-highlighted="yes"><span class="hljs-keyword">import</span> requests
+<span class="hljs-keyword">import</span> json
+<span class="hljs-keyword">from</span> time <span class="hljs-keyword">import</span> sleep
+<span class="hljs-keyword">import</span> random
+<span class="hljs-keyword">import</span> string
+<span class="hljs-keyword">import</span> re
+
+<span class="hljs-comment"># 配置信息</span>
+WORKER_DOMAIN = <span class="hljs-string">""</span>  <span class="hljs-comment"># 替换为你的后台域名，比如我的，apimail.linuxdo.love</span>
+EMAIL_DOMAIN = <span class="hljs-string">""</span> <span class="hljs-comment"># 你的域名地址</span>
+ADMIN_PASSWORD = <span class="hljs-string">""</span> <span class="hljs-comment"># 你的管理员密码</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">generate_random_name</span>():
+    <span class="hljs-string">"""生成随机邮箱名称"""</span>
+    letters1 = <span class="hljs-string">''</span>.join(random.choices(string.ascii_lowercase, k=<span class="hljs-number">5</span>))  <span class="hljs-comment"># 5个小写字母</span>
+    numbers = <span class="hljs-string">''</span>.join(random.choices(string.digits, k=random.randint(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>)))  <span class="hljs-comment"># 1-3个数字</span>
+    letters2 = <span class="hljs-string">''</span>.join(random.choices(string.ascii_lowercase, k=random.randint(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>)))  <span class="hljs-comment"># 1-3个小写字母</span>
+    <span class="hljs-keyword">return</span> letters1 + numbers + letters2
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">create_test_email</span>():
+    <span class="hljs-string">"""创建测试邮箱"""</span>
+    <span class="hljs-keyword">try</span>:
+        random_name = generate_random_name()
+        res = requests.post(
+            <span class="hljs-string">f"https://<span class="hljs-subst">{WORKER_DOMAIN}</span>/admin/new_address"</span>,
+            json={
+                <span class="hljs-string">"enablePrefix"</span>: <span class="hljs-literal">True</span>,
+                <span class="hljs-string">"name"</span>: random_name,
+                <span class="hljs-string">"domain"</span>: EMAIL_DOMAIN,
+            },
+            headers={
+                <span class="hljs-string">'x-admin-auth'</span>: ADMIN_PASSWORD,
+                <span class="hljs-string">"Content-Type"</span>: <span class="hljs-string">"application/json"</span>
+            }
+        )
+        
+        <span class="hljs-keyword">if</span> res.status_code == <span class="hljs-number">200</span>:
+            data = res.json()
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">"创建邮箱成功："</span>)
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f"JWT: <span class="hljs-subst">{data.get(<span class="hljs-string">'jwt'</span>)}</span>"</span>)
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f"邮箱地址: <span class="hljs-subst">{data.get(<span class="hljs-string">'address'</span>)}</span>"</span>)
+            <span class="hljs-keyword">return</span> data.get(<span class="hljs-string">'jwt'</span>), data.get(<span class="hljs-string">'address'</span>)
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f"创建邮箱失败: <span class="hljs-subst">{res.status_code}</span>"</span>)
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>
+    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">f"创建邮箱出错: <span class="hljs-subst">{e}</span>"</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>, <span class="hljs-literal">None</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">check_verification_code</span>(<span class="hljs-params">jwt</span>):
+    <span class="hljs-string">"""查看验证码"""</span>
+    <span class="hljs-keyword">try</span>:
+        limit = <span class="hljs-number">10</span>
+        offset = <span class="hljs-number">0</span>
+        res = requests.get(
+            <span class="hljs-string">f"https://<span class="hljs-subst">{WORKER_DOMAIN}</span>/api/mails"</span>,
+            params={
+                <span class="hljs-string">"limit"</span>: limit,
+                <span class="hljs-string">"offset"</span>: offset
+            },
+            headers={
+                <span class="hljs-string">"Authorization"</span>: <span class="hljs-string">f"Bearer <span class="hljs-subst">{jwt}</span>"</span>,
+                <span class="hljs-string">"Content-Type"</span>: <span class="hljs-string">"application/json"</span>
+            }
+        )
+        
+        <span class="hljs-keyword">if</span> res.status_code == <span class="hljs-number">200</span>:
+            data = res.json()
+            <span class="hljs-comment"># print("\n收到的邮件：")</span>
+            <span class="hljs-comment"># print(json.dumps(data, indent=2))</span>
+            
+            <span class="hljs-comment"># 使用正则表达式提取验证码</span>
+            <span class="hljs-keyword">if</span> data.get(<span class="hljs-string">'results'</span>) <span class="hljs-keyword">and</span> <span class="hljs-built_in">len</span>(data[<span class="hljs-string">'results'</span>]) &gt; <span class="hljs-number">0</span>:
+                raw_content = data[<span class="hljs-string">'results'</span>][<span class="hljs-number">0</span>].get(<span class="hljs-string">'raw'</span>, <span class="hljs-string">''</span>)  <span class="hljs-comment"># 获取最新邮件的raw内容</span>
+                <span class="hljs-comment"># 使用更简单的正则表达式，直接匹配数字</span>
+                code_matches = re.findall(<span class="hljs-string">r'code is: (\d{6})'</span>, raw_content)
+                <span class="hljs-keyword">if</span> code_matches:
+                    verification_code = code_matches[<span class="hljs-number">0</span>]  <span class="hljs-comment"># 获取第一个匹配的6位数字</span>
+                    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"\n提取到的验证码: <span class="hljs-subst">{verification_code}</span>"</span>)
+                    <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>, verification_code
+                <span class="hljs-keyword">else</span>:
+                    <span class="hljs-comment"># 尝试另一种匹配方式</span>
+                    code_matches = re.findall(<span class="hljs-string">r'code is:\s*(\d{6})'</span>, raw_content)
+                    <span class="hljs-keyword">if</span> code_matches:
+                        verification_code = code_matches[<span class="hljs-number">0</span>]
+                        <span class="hljs-built_in">print</span>(<span class="hljs-string">f"\n提取到的验证码: <span class="hljs-subst">{verification_code}</span>"</span>)
+                        <span class="hljs-keyword">return</span> <span class="hljs-literal">True</span>, verification_code
+                    <span class="hljs-built_in">print</span>(<span class="hljs-string">"未找到验证码"</span>)
+                    <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>, <span class="hljs-literal">None</span>
+            <span class="hljs-keyword">else</span>:
+                <span class="hljs-built_in">print</span>(<span class="hljs-string">"邮件列表为空"</span>)
+                <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>, <span class="hljs-literal">None</span>
+        <span class="hljs-keyword">else</span>:
+            <span class="hljs-built_in">print</span>(<span class="hljs-string">f"获取邮件失败: <span class="hljs-subst">{res.status_code}</span>"</span>)
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>, <span class="hljs-literal">None</span>
+            
+    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">f"获取邮件出错: <span class="hljs-subst">{e}</span>"</span>)
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">False</span>, <span class="hljs-literal">None</span>
+
+<span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():
+    <span class="hljs-comment"># 1. 创建测试邮箱</span>
+    jwt, address = create_test_email()
+    <span class="hljs-keyword">if</span> <span class="hljs-keyword">not</span> jwt <span class="hljs-keyword">or</span> <span class="hljs-keyword">not</span> address:
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">"无法继续测试"</span>)
+        <span class="hljs-keyword">return</span>
+        
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">"\n创建的邮箱信息："</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"JWT: <span class="hljs-subst">{jwt}</span>"</span>)
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">f"邮箱地址: <span class="hljs-subst">{address}</span>"</span>)
+        
+    <span class="hljs-comment"># 2. 等待一会儿，让邮件有时间送达</span>
+    <span class="hljs-built_in">print</span>(<span class="hljs-string">"\n等待10秒钟让邮件送达..."</span>)
+    sleep(<span class="hljs-number">10</span>)
+    
+    <span class="hljs-comment"># 3. 查看验证码</span>
+    success, code = check_verification_code(jwt)
+    <span class="hljs-keyword">if</span> success:
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">f"成功获取验证码: <span class="hljs-subst">{code}</span>"</span>)
+    <span class="hljs-keyword">else</span>:
+        <span class="hljs-built_in">print</span>(<span class="hljs-string">"获取验证码失败"</span>)
+</code></pre>
+<h3 dir="auto"><a name="p-3040413-h-34" class="anchor" href="#p-3040413-h-34" aria-label="标题链接"></a>关于发送邮件</h3>
+<p dir="auto">由于我一直在弄自己的学习，然后平常也就上L站看看，一直没有空写发邮件的教程，今天看到有佬友写了一篇有关发送邮件的配置，贴在这里哈！感谢佬友的教程！</p><aside class="quote quote-modified" data-post="1" data-topic="515642" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-515642-1-2" style="">
+    <div class="post__contents-cooked-quote">
+    书接上回： 
+
+
+看的大佬的帖子，就像是窜稀一般的顺滑，一会就整下来了，但是我发现我这个邮箱发不了邮件，于是就去爬楼看看有没有人跟我一样，结果是大佬没写这一点的实现（估计是大佬想考验我们了 <img width="20" height="20" src="https://linux.do/uploads/default/original/3X/9/4/949d4d71290d75c51e81e4fc70d23246e4a9214c.png?v=15" title="bili_017" alt="bili_017" class="emoji emoji-custom" loading="lazy" style="aspect-ratio: 20 / 20;">） 
+首先看看官方怎么描述的： 
+ <a class="lightbox" href="https://linux.do/uploads/default/original/4X/0/c/d/0cd4409dc3b043b6bd1af7c733d4c0e9887cbada.png" data-download-href="https://linux.do/uploads/default/0cd4409dc3b043b6bd1af7c733d4c0e9887cbada" title="image" dir="auto" data-target-width="955" data-target-height="2588">[image]</a> 
+总而言之，言而总之，就三步： 
+首先去<a href="https://resend.com" rel="noopener nofollow ugc" dir="auto">https://resend.com</a> 注册一个账号 
+ <a class="lightbox" href="https://linux.do/uploads/default/original/4X/6/4/f/64f13fc1c00d7464d4e88075f953e45bf975e273.png" data-download-href="https://linux.do/uploads/default/64f13fc1c00d7464d4e88075f953e45bf975e273" title="image" dir="auto" data-target-width="374" data-target-height="580">[image]</a>、 
+点击 API KEYS …
+  </div><!---->
+  </blockquote>
+    
+
+  </aside>
+
+<h3 dir="auto"><a name="p-3040413-h-35" class="anchor" href="#p-3040413-h-35" aria-label="标题链接"></a>另外一个佬友写的发送邮件教程</h3>
+<aside class="quote quote-modified" data-post="1" data-topic="675030" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-675030-1-3" style="">
+    <div class="post__contents-cooked-quote">
+    <a class="lightbox" href="https://linux.do/uploads/default/original/4X/b/3/2/b323b0021a1e164eeefd98547c44b1d31c2139a9.png" data-download-href="https://linux.do/uploads/default/b323b0021a1e164eeefd98547c44b1d31c2139a9" title="image" dir="auto" data-target-width="1347" data-target-height="905">[image]</a> 
+论坛有很详细的教程了，走了一遍，总结下，说下几个小坑 
+<a name="p-6106138-h-1" class="anchor" href="#p-6106138-h-1" aria-label="标题链接"></a>优点
+
+拥有属于自己的大量邮箱
+接收邮件
+发送邮件
+UI登陆和注册界面
+能够开放给其他用户，并限制用户注册的邮箱个数
+…
+
+<a name="p-6106138-h-2" class="anchor" href="#p-6106138-h-2" aria-label="标题链接"></a>要求
+
+有一个DNS解析了的域名 (绑定了某个服务器的一个域名)
+
+<a name="p-6106138-h-3" class="anchor" href="#p-6106138-h-3" aria-label="标题链接"></a>原理
+基于cloudflare_temp_email 
+<a href="https://temp-mail-docs.awsl.uk/" rel="noopener nofollow ugc" data-clicks="687" aria-label="https://temp-mail-docs.awsl.uk/ 链接已点击 687 次" dir="auto">https://temp-mail-docs.awsl.uk/</a> 
+<a href="https://github.com/dreamhunter2333/cloudflare_temp_email" rel="noopener nofollow ugc" data-clicks="698" aria-label="htt… 链接已点击 698 次" dir="auto">htt…</a>
+  </div><!---->
+  </blockquote>
+    
+
+  </aside>
+
+<h3 dir="auto"><a name="p-3040413-resend-36" class="anchor" href="#p-3040413-resend-36" aria-label="标题链接"></a>另类方式实现自有域名无限收码（只能收不能发，发还是得依靠resend之类第三方）</h3>
+<p dir="auto">如果你有自己的域名，你只是为了接收邮件，有个更简单的方式，使用cloudflare的 Email Routing 即可。<br>
+如图，选择你托管在cf上的域名，然后点击这个<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_74_1767969130122.png" alt="image" data-base62-sha1="q6ekna0fzgxkCd2n6hEwMDkLj5u" width="362" height="500" srcset="https://linux.do/uploads/default/optimized/4X/b/6/e/b6ecd73bee39203c419794db8ac1184fa8a21488_2_362x500.png, https://linux.do/uploads/default/optimized/4X/b/6/e/b6ecd73bee39203c419794db8ac1184fa8a21488_2_543x750.png 1.5x, https://linux.do/uploads/default/original/4X/b/6/e/b6ecd73bee39203c419794db8ac1184fa8a21488.png 2x" data-dominant-color="F5F2F3" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_74_1767969130122.png" data-github-sha="f86fe3ef3765397d7cad05af0aab04bea67e1c0a"><br>
+然后 （有冲突的地方记得删掉）<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_75_1767969131942.png" alt="image" data-base62-sha1="gqPIq5kk7o88O4z2YA1vDH9Taw6" width="690" height="214" data-dominant-color="ECE5EF" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_75_1767969131942.png" data-github-sha="3ad5e7f144e1116103ad3fe21910ddfbc596cbec"><br>
+然后到这地方设置下全转发，把你域名下的所有邮件统一转到你私有的某个邮箱。<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_76_1767969133628.png" alt="image" data-base62-sha1="lz5fgmwIjBYqIj0EAnqB4RwmCvy" width="689" height="249" srcset="https://linux.do/uploads/default/optimized/4X/9/7/2/9724f12f9dc27eb2c247f42b767f60ec47485d6c_2_689x249.png, https://linux.do/uploads/default/optimized/4X/9/7/2/9724f12f9dc27eb2c247f42b767f60ec47485d6c_2_1033x373.png 1.5x, https://linux.do/uploads/default/optimized/4X/9/7/2/9724f12f9dc27eb2c247f42b767f60ec47485d6c_2_1378x498.png 2x" data-dominant-color="F7F5F5" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_76_1767969133628.png" data-github-sha="15bf1aec09c515b9f334e04ecb5e2b37684afa55"><br>
+然后你就拥有无限多的邮箱来收验证码了。<br>
+即任何发往这个域名的邮件都会转到你设置的那个私有邮箱中。<br>
+举例 “xx@域名 admin@域名”…… 最终都会被cf大善人给你转发到你设置的那个邮箱中。<br>
+设置完了记得启用下。<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_77_1767969135190.png" alt="image" data-base62-sha1="vJMiTI76mdQ2Ogn5lEc3MEMt7sQ" width="326" height="210" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_77_1767969135190.png" data-github-sha="579a2e363cdb3277b3289c81dbdb2ca1f47a053b"><p></p>
+<h3 dir="auto"><a name="p-3040413-h-37" class="anchor" href="#p-3040413-h-37" aria-label="标题链接"></a>问题收集</h3>
+<h4 dir="auto"><a name="p-3040413-h-404-38" class="anchor" href="#p-3040413-h-404-38" aria-label="标题链接"></a>关于刷新后404问题</h4>
+<aside class="quote no-group quote-modified" data-username="kuschzzp" data-post="613" data-topic="316819" data-full="true" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-316819-613-4" style="">
+    <div class="post__contents-cooked-quote">
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_78_1767969137193.png" alt="image" data-base62-sha1="wMjlj1zsTTDZtBNI6KrtmAcBM1g" width="690" height="430" srcset="https://linux.do/uploads/default/optimized/4X/e/5/b/e5bba22d410c10a295c58e540343238e32537926_2_690x430.png, https://linux.do/uploads/default/optimized/4X/e/5/b/e5bba22d410c10a295c58e540343238e32537926_2_1035x645.png 1.5x, https://linux.do/uploads/default/optimized/4X/e/5/b/e5bba22d410c10a295c58e540343238e32537926_2_1380x860.png 2x" data-dominant-color="F7F6F6" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_78_1767969137193.png" data-github-sha="44b2cae951b7e39056ca25d042a0205c800da386"><p></p>
+<p dir="auto">新版 CF 页面需要标记它是单页面应用，我记得以前是没有这个选项的，估计是新加的配置项。</p>
+<aside class="quote no-group" data-username="kuschzzp" data-post="600" data-topic="316819" data-expanded="false" style="margin: 1rem 0px; padding: 0.75rem 1rem; border-left: 3px solid rgb(52, 152, 219); background: rgb(248, 249, 250); border-radius: 0px 4px 4px 0px;">
+    
+  
+        
+      
+      <blockquote id="quote-id-316819-600-0" style="">
+    <div class="post__contents-cooked-quote">
+<p dir="auto">以前nginx部署vue项目 刷新 404，在nginx上加个 tryfile 配置就行，cf部署我还真不知道咋整</p>
+</div><!---->
+  </blockquote>
+    
+
+  </aside>
+</div><!---->
+  </blockquote>
+    
+
+  </aside>
+<h3 dir="auto"><a name="p-3040413-h-39" class="anchor" href="#p-3040413-h-39" aria-label="标题链接"></a>结束</h3>
+<p dir="auto">啊，从21点写到现在01点03分，终于写完了，希望能帮到佬友，发送邮件我就不写了，需要的可以去看看官方文档，第一次写教程，如果有错误或者欠缺的地方，欢迎佬友们补充！我去睡觉了！我还说我调整作息呢…又熬到1点了<br>
+访问地址：<a href="https://mail.linuxdo.love/" rel="noopener nofollow ugc" data-clicks="395" aria-label="https://mail.linuxdo.love/ 链接已点击 395 次">https://mail.linuxdo.love/</a></p>
+<h3 dir="auto"><a name="p-3040413-h-40" class="anchor" href="#p-3040413-h-40" aria-label="标题链接"></a>最后接好运</h3>
+<p dir="auto">昨天中了40 <a href="https://linux.do/t/topic/314805/6" class="inline-onebox" data-clicks="7" aria-label="5块钱中了40块钱！自己买疯狂星期四！ - #6，来自 XiaoHuang 链接已点击 7 次">5块钱中了40块钱！自己买疯狂星期四！ - #6，来自 XiaoHuang</a><br>
+今天中了50<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1767968982960-nj3zmhd_img_79_1767969139458.png" alt="19d7641cdf17bff85e8ac81c41eb128f" data-base62-sha1="bH8bLtOfHTDXNIZOiuHBZ5WQuEn" width="666" height="500" srcset="https://linux.do/uploads/default/optimized/4X/5/1/f/51f81529bb3468753cee39fa259ea2989d66715f_2_666x500.jpeg, https://linux.do/uploads/default/optimized/4X/5/1/f/51f81529bb3468753cee39fa259ea2989d66715f_2_999x750.jpeg 1.5x, https://linux.do/uploads/default/optimized/4X/5/1/f/51f81529bb3468753cee39fa259ea2989d66715f_2_1332x1000.jpeg 2x" data-dominant-color="6F7B77" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1767968982960-nj3zmhd_img_79_1767969139458.png" data-github-sha="3ac0b781f0e33e14c415120abdebe7b9182b7df9"><p></p>
+<h3 dir="auto"><a name="p-3040413-h-41" class="anchor" href="#p-3040413-h-41" aria-label="标题链接"></a>祝佬友们也好运连连！</h3>
+<blockquote dir="auto">
+<p>本教程允许搬运，但请标注出处，谢谢</p>
+</blockquote><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
