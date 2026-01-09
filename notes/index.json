@@ -82,22 +82,6 @@
       "noteSha": "da6bbea0623740ce6451b31740dbd70904afb881"
     },
     {
-      "id": "1767116737661-so7km6v",
-      "title": "非精确搜索算法",
-      "tags": [],
-      "status": "inbox",
-      "starred": false,
-      "hasImages": false,
-      "imageInfos": [],
-      "source": {
-        "type": "chatgpt",
-        "url": ""
-      },
-      "createdAt": 1767636274604,
-      "updatedAt": 1767116737664,
-      "noteSha": "ba34b224ca11d4a3498b34b0c5421563a68dd349"
-    },
-    {
       "id": "1767113767990-kra42vq",
       "title": "机械臂参数辨识 - 知乎",
       "tags": [],
@@ -694,5 +678,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1767963137231
+  "updated": 1767964826812
 }
