@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>你们都是怎么做量化的？ - 知乎</title>
+  <meta name="created-at" content="1768619611845">
+  <meta name="updated-at" content="1768619611845">
+  <meta name="source-type" content="zhihu">
+  <meta name="source-url" content="https://www.zhihu.com/question/467705986/answer/1952497032494310189">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>你们都是怎么做量化的？ - 知乎</h1>
+  <div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><h1>你们都是怎么做量化的？</h1>
+<div class="css-376mun"><span id="content"><span class="RichText ztext CopyrightRichText-richText css-10o75c2" options="[object Object]" itemprop="text"><h3 data-first-child="">告别空想，即刻开始：我的A股量化入门实践一周纪实</h3><p data-pid="fNCe5yjb">大家好，我是一个喜欢写代码、也对投资充满好奇的普通程序员。最近终于没再只停留在“想学量化”的阶段，而是用了一个周末加几个晚上，真正从零搭建了一个能跑通的A股量化回测系统。</p><p data-pid="UoCR_rU9">我把它命名为 <b>financial</b>，不是什么高深模型，也没想秒杀市场，纯粹是一个<b>帮你我这样的小白快速上手的入门工具</b>。代码全部开源在GitHub上：<a href="https://github.com/CJ-LI-CHINA/financial.git" data-draft-title="https://github.com/CJ-LI-CHINA/financial" class=" wrap external" target="_blank" rel="nofollow noreferrer" data-za-detail-view-id="1043">https://github.com/CJ-LI-CHINA/financial</a></p><p data-pid="RV4XW5VW">这篇文章，就想和大家聊聊我这一周的实践心得，也顺便分享这个项目怎么帮你跨出量化的第一步。</p><hr><h3>一、为什么说“开始比完美更重要”？</h3><p data-pid="rpXsqmtX">我以前总陷在一个循环里：想等学会高级统计学、等看懂所有技术指标、等一个“完美时机”再开始做量化。结果呢？一年过去了，我还在收藏夹里吃灰。</p><p data-pid="SmfFUD0l">直到上周末我顿悟了：<b>量化真正迷人的不是结果多牛，而是整个过程——数据清洗、策略设计、回测验证、迭代优化——是一个可以不断学习的闭环</b>。哪怕最初策略简单到只是两条均线交叉，真正跑通全程带来的成就感，远胜于一年空想。</p><p data-pid="a6JlDDpR">所以，别怕起步简陋。<b>真正的高手，也都是从简单的<code>print("Hello, Quant")</code>开始的。</b></p><hr><h3>二、我的项目：finacidal · 极简A股量化入门框架</h3><p data-pid="93RChwMW">这不是一个“黑箱神器”，而是一个<b>高度透明、代码可拆、便于修改</b>的教学型项目。主要包含这几个模块：</p><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="MZjhNEoO" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>数据模块</b>：基于AKShare公开数据源（合规免费），实现A股历史行情数据的自动下载与存储（支持CSV/PostgreSQL）。</li><li data-pid="l9Bt_Pcc" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>策略模块</b>：内置了一个经典的<b>双均线交叉策略</b>（金叉买入死叉卖出）作为示例，代码完全开放，你完全可以替换成自己的逻辑。</li><li data-pid="FkFfYxKT" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>回测引擎</b>：可计算收益曲线、夏普比率、最大回撤等基础指标，并支持可视化输出（使用Matplotlib绘制K线及买卖点）。</li><li data-pid="Vqz8xsKm" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>详细注释</b>：几乎每一行代码都写了注释，尤其适合Python和量化刚入门的朋友边运行边学习。</li></ul><p data-pid="fjQBaJsr">Git仓库里主要结构如下：</p><div class="highlight"><pre><code class="language-text">finacidal/
+├── main.py              # 主程序入口：数据更新、回测、绘图
+├── settings.py          # 数据库和策略参数配置
+├── requirements.txt     # 依赖包列表
+├── data/                # 本地数据存储目录
+└── utils/               # 工具函数：指标计算、绘图等</code></pre></div><hr><h3>三、5分钟快速上手：附详细操作指南</h3><p data-pid="AbyOWeWf">如果你也想要亲自运行一遍，感受一下“自己的第一个量化策略”，可以按下面步骤来（假设你已有Python基础环境）：</p><ol style="list-style-type: decimal; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="0fNujQv9" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>克隆项目</b>：<br> git clone <a href="https://github.com/CJ-LI-CHINA/finacidal.git" class=" external" target="_blank" rel="nofollow noreferrer"><span class="invisible">https://</span><span class="visible">github.com/CJ-LI-CHINA/</span><span class="invisible">finacidal.git</span><span class="ellipsis"></span></a> </li><li data-pid="fYjiIxgK" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">cd finacidal</li><li data-pid="gVDh7eZ0" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>安装依赖</b>：<br> pip install -r requirements.txt</li><li data-pid="HaJ4FU8v" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>安装并配置PostgreSQL</b>（如果不用数据库，也可修改代码存为CSV，这个后面再加）<br>修改 <code>settings.py</code> 中的数据库连接字符串。</li><li data-pid="8CB0y6G7" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>运行数据更新</b>：<br> python main.py --update</li><li data-pid="2hVG_e3g" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;"><b>执行回测策略</b>：<br> python main.py --backtest</li></ol><p data-pid="tt7ZT6wN">如果顺利，你就会看到第一张收益曲线图——可能绿油油，也可能红彤彤，但这都不重要，重要的是：<b>你完成了从0到1的闭环</b>。</p><blockquote data-pid="MQuZ77HT"> 遇到问题欢迎在评论区提出，我会尽力帮忙 debug～ </blockquote><hr><h3>四、一些真心话：量化不是魔术，是持续迭代</h3><p data-pid="flvTKF2B">我第一版回测出来的曲线也不太好看——但这就是真实的起步阶段。通过回测我发现：</p><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="hnBuI4or" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">过度拟合过去数据很容易“看上去很美”；</li><li data-pid="r7PB9xRY" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">交易费用和滑点对小资金策略影响很大；</li><li data-pid="aCS7DqfG" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">没有普适的策略，只有不断适配市场的模型。</li></ul><p data-pid="S-UblKFC">而这些认知，只有真正动手做的人才会有。</p><hr><h3>五、邀请你一起前行：开源、互动、共同成长</h3><p data-pid="9ZQrijqn">我把自己这个项目定义为“<b>开放实验室</b>”，而不是什么权威产品。因此非常希望：</p><ul style="list-style-type: disc; padding-left: 1.5em; margin-left: 0px; margin-top: 0.5em; margin-bottom: 0.5em;"><li data-pid="D_mQliX6" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">你<b>Fork / Star项目</b>，自己尝试修改策略参数甚至重写策略；</li><li data-pid="Vijyp8jA" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">在<b>GitHub Issue区</b>提出建议或问题，我们可以一起讨论；</li><li data-pid="bM2KvZmz" style="display: list-item; margin-top: 0.25em; margin-bottom: 0.25em;">如果你也写量化小笔记，<b>欢迎@我或发Pull Request</b>，期待更多人贡献代码和思路。</li></ul><p data-pid="LW4imwge">最后想说的是：<b>真正阻碍我们的从来不是技术多难，而是开始的勇气</b>。不管你是程序员还是投资爱好者，只要你想系统性地理解市场、练习纪律性投资，都可以从这样一个小项目起步。</p><hr><p data-pid="ikhHSOYD"><b>一起上路吧，量化路上有个伴儿，总能走得更远。</b></p><p data-pid="8sdJolrL">（风险提示：本项目为学习交流目的，不构成任何投资建议。市场有风险，投资需谨慎。）</p><hr><p data-pid="DgUGyBKF"> #量化交易 #Python量化 #A股投资 #开源项目 #量化入门 #回测系统</p></span><span id="VirtualCatalogAnchorPoint"></span></span></div></div>
+        </div>
+</body>
+</html>
