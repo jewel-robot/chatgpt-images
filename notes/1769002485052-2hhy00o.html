@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>手把手教你怎么写2API</title>
+  <meta name="created-at" content="1769002495010">
+  <meta name="updated-at" content="1769002495010">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/841319">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>手把手教你怎么写2API</h1>
+  <div class="message-block role-user">
+          <div class="message-role">hzruo #1</div>
+          <div class="message-content"><h1 dir="auto"><a name="p-7682637-h-1" class="anchor" href="#p-7682637-h-1" aria-label="Heading link"></a>名词解释</h1>
+<p dir="auto">“2api”里的“2（two）”就是英文单词 <strong>to</strong> 的谐音。 所以 <strong>2api = to api</strong>，意思是“把 A 接口转成（to）B 接口”——通常是 <strong>把各种非标准接口转成 OpenAI 标准接口</strong>。</p>
+<h1 dir="auto"><a name="p-7682637-h-2" class="anchor" href="#p-7682637-h-2" aria-label="Heading link"></a>关键接口</h1>
+<p dir="auto">一般来说只要封装两个关键接口：</p>
+<p dir="auto">GET <strong>/v1/models</strong><br>
+POST <strong>/v1/chat/completions</strong></p>
+<blockquote dir="auto">
+<p><code>/v1/models</code>非必需，封装是为了自动获取模型列表</p>
+</blockquote>
+<h3 dir="auto"><a name="p-7682637-v1models-3" class="anchor" href="#p-7682637-v1models-3" aria-label="Heading link"></a>/v1/models</h3>
+<blockquote dir="auto">
+<p>作用：列出当前账号可用的全部模型（包括微调、已删除但仍在 TTL 内的模型）。</p>
+</blockquote>
+<p dir="auto">请求 HTTP 方法：GET Headers（必需）： Authorization: Bearer &lt;YOUR_API_KEY&gt; Content-Type: application/json（可省）</p>
+<p dir="auto">示例： curl <a href="https://api.openai.com/v1/models" rel="noopener nofollow ugc" data-clicks="10" aria-label="https://api.openai.com/v1/models 链接已点击 10 次" class="normal-external-link-icon">https://api.openai.com/v1/models</a> \ -H “Authorization: Bearer $OPENAI_API_KEY”</p>
+<p dir="auto">返回体（200 OK）</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-perl" data-highlighted="yes">{
+    <span class="hljs-string">"object"</span>: <span class="hljs-string">"list"</span>,
+    <span class="hljs-string">"data"</span>: [
+        {
+            <span class="hljs-string">"id"</span>: <span class="hljs-string">"gpt-4-turbo-2024-04-09"</span>,
+            <span class="hljs-string">"object"</span>: <span class="hljs-string">"model"</span>,
+            <span class="hljs-string">"created"</span>: <span class="hljs-number">1712601600</span>,
+            <span class="hljs-regexp">//</span>Unix时间戳，秒<span class="hljs-string">"owned_by"</span>: <span class="hljs-string">"openai"</span>,
+            <span class="hljs-regexp">//</span>或<span class="hljs-string">"organization-user-xxxx"</span><span class="hljs-string">"permission"</span>: [
+                {
+                    ...
+                }
+            ],
+            <span class="hljs-regexp">//</span>权限对象数组，通常无需关心<span class="hljs-string">"root"</span>: <span class="hljs-string">"gpt-4-turbo"</span>,
+            <span class="hljs-regexp">//</span>当为别名/快照时指向根模型<span class="hljs-string">"parent"</span>: null//如果是微调模型，parent指微调前的基模型
+        },
+        ...
+    ]
+}
+</code></pre>
+<h3 dir="auto"><a name="p-7682637-v1chatcompletions-4" class="anchor" href="#p-7682637-v1chatcompletions-4" aria-label="Heading link"></a>/v1/chat/completions</h3>
+<blockquote dir="auto">
+<p>作用：基于对话上下文生成回复</p>
+</blockquote>
+<p dir="auto">请求 POST <a href="https://api.openai.com/v1/chat/completions" rel="noopener nofollow ugc" data-clicks="5" aria-label="https://api.openai.com/v1/chat/completions 链接已点击 5 次" class="normal-external-link-icon">https://api.openai.com/v1/chat/completions</a> Content-Type: application/json Authorization: Bearer &lt;YOUR_API_KEY&gt;</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>请求体：</li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"messages"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span>
+    <span class="hljs-punctuation">{</span>
+      <span class="hljs-attr">"role"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"user"</span><span class="hljs-punctuation">,</span>
+      <span class="hljs-attr">"content"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"你好，介绍一下你自己"</span>
+    <span class="hljs-punctuation">}</span>
+  <span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"model"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"DeepSeek-V3-0324"</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"seed"</span><span class="hljs-punctuation">:</span> <span class="hljs-number">54321</span>
+<span class="hljs-punctuation">}</span>
+</code></pre>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>返回体（200 OK）
+<ul style="list-style-type: disc; padding-left: 1.5em;">
+<li>非流式示例（stream=false）：</li>
+</ul>
+</li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-csharp" data-highlighted="yes">{
+    <span class="hljs-string">"id"</span>: <span class="hljs-string">"chatcmpl-123456789"</span>,
+    <span class="hljs-string">"object"</span>: <span class="hljs-string">"chat.completion"</span>,
+    <span class="hljs-string">"created"</span>: <span class="hljs-number">1712601600</span>,
+    <span class="hljs-string">"model"</span>: <span class="hljs-string">"gpt-4-turbo-2024-04-09"</span>,
+    <span class="hljs-string">"choices"</span>: [
+        {
+            <span class="hljs-string">"index"</span>: <span class="hljs-number">0</span>,
+            <span class="hljs-string">"message"</span>: {
+                <span class="hljs-string">"role"</span>: <span class="hljs-string">"assistant"</span>,
+                <span class="hljs-string">"content"</span>: <span class="hljs-string">"The current weather in Paris is sunny, 22 °C."</span>,
+                <span class="hljs-string">"refusal"</span>: <span class="hljs-literal">null</span>,
+            },
+            <span class="hljs-string">"finish_reason"</span>: <span class="hljs-string">"stop"</span><span class="hljs-comment">//stop,</span>
+            length,
+            tool_calls,
+            content_filter
+        }
+    ],
+    <span class="hljs-string">"usage"</span>: {
+        <span class="hljs-string">"prompt_tokens"</span>: <span class="hljs-number">30</span>,
+        <span class="hljs-string">"completion_tokens"</span>: <span class="hljs-number">20</span>,
+        <span class="hljs-string">"total_tokens"</span>: <span class="hljs-number">50</span>,
+        <span class="hljs-string">"completion_tokens_details"</span>: {
+            <span class="hljs-comment">//新版可选"reasoning_tokens": 10</span>
+        }
+    },
+    <span class="hljs-string">"system_fingerprint"</span>: <span class="hljs-string">"fp_123abc"</span>
+}
+</code></pre>
+<p dir="auto">流式（stream=true） 返回 Content-Type: text/event-stream，每行：</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-css" data-highlighted="yes">data: {"choices":[{...}],"created":...,<span class="hljs-string">"id"</span>:<span class="hljs-string">"..."</span>,<span class="hljs-string">"model"</span>:<span class="hljs-string">"..."</span>,<span class="hljs-string">"object"</span>:<span class="hljs-string">"chat.completion.chunk"</span>}
+</code></pre>
+<p dir="auto">最后以 <code>data: [DONE]</code> 结束</p>
+<blockquote dir="auto">
+<p>如果还清楚，可以直接问AI，让AI详细解释标准的openai chat 接口详细参数都是什么意思，<strong>弄清楚原理是为了知道为什么要这么做</strong>，其实你也可以直接让AI帮你封装成标准的openai 格式它会自己处理好。</p>
+</blockquote>
+<h1 dir="auto"><a name="p-7682637-h-5" class="anchor" href="#p-7682637-h-5" aria-label="Heading link"></a>实现接口</h1>
+<p dir="auto">挑选你熟悉的编程语言实现接口即可，你可以选择 <strong>Python/JS / Go / Java / PHP</strong> 任意编程语言的RESTFULL框架实现上述接口。如： python + fastapi</p>
+<p dir="auto">如果你不知道选啥，全程vibe code 那我推荐 JS 的方案，毕竟可以很方便的部署到 deno 、cf worker.</p>
+<h1 dir="auto"><a name="p-7682637-h-6" class="anchor" href="#p-7682637-h-6" aria-label="Heading link"></a>实例</h1>
+<p dir="auto">现在我们挑个简单的例子来实现一下，就用EdgeOne 的Demo 吧 ：<a href="https://ai-chatbot-starter.edgeone.app/" rel="noopener nofollow ugc" data-clicks="133" aria-label="https://ai-chatbot-starter.edgeone.app/ 链接已点击 133 次" class="normal-external-link-icon">https://ai-chatbot-starter.edgeone.app/</a> ，因为它足够简单，不需要验签、不需要Cookies 认证。</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>我们F12 打开浏览器调试工具，发送个消息看看，请求是什么样子<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002485052-2hhy00o_img_0_1769002485065.png" alt="image" data-base62-sha1="lMDDzUYSIF7Yzu0jaaTI2Smy38l" width="690" height="241" srcset="https://linux.do/uploads/default/optimized/4X/9/8/a/98ad313cebc23839e2006b006f993e45243d5421_2_690x241.jpeg, https://linux.do/uploads/default/optimized/4X/9/8/a/98ad313cebc23839e2006b006f993e45243d5421_2_1035x361.jpeg 1.5x, https://linux.do/uploads/default/optimized/4X/9/8/a/98ad313cebc23839e2006b006f993e45243d5421_2_1380x482.jpeg 2x" data-dominant-color="F4F6F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002485052-2hhy00o_img_0_1769002485065.png" data-github-sha="25dfa6fcf0235cc8d21586c30ad363afb93e53a7"></li>
+</ul>
+<p dir="auto">很好，我们看到它还支持流式输出 Responese 就是接口的返回</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>Payload 就是它的入参<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002485052-2hhy00o_img_1_1769002490292.png" alt="image" data-base62-sha1="aT4QgPPaerbO6C7GNHZbHWzvYV7" width="690" height="145" srcset="https://linux.do/uploads/default/optimized/4X/4/c/4/4c4f9b2afb1c2f3785cabd6ffac8acac5c3b49fd_2_690x145.png, https://linux.do/uploads/default/original/4X/4/c/4/4c4f9b2afb1c2f3785cabd6ffac8acac5c3b49fd.png 1.5x, https://linux.do/uploads/default/original/4X/4/c/4/4c4f9b2afb1c2f3785cabd6ffac8acac5c3b49fd.png 2x" data-dominant-color="F5F6F8" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002485052-2hhy00o_img_1_1769002490292.png" data-github-sha="15291ec50932d4e08b0739548e17cecc2d985377"></li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-json" data-highlighted="yes"><span class="hljs-punctuation">{</span><span class="hljs-attr">"model"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"deepseek-chat"</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"messages"</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-punctuation">{</span><span class="hljs-attr">"role"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"user"</span><span class="hljs-punctuation">,</span><span class="hljs-attr">"content"</span><span class="hljs-punctuation">:</span><span class="hljs-string">"你好"</span><span class="hljs-punctuation">}</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">}</span>
+</code></pre>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>
+<p>Headers 可以看到请求头和相关 Request URL<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002485052-2hhy00o_img_2_1769002491782.png" alt="image" data-base62-sha1="bB7L1cu98JtnxKGMeSTtxOniYm2" width="690" height="104" srcset="https://linux.do/uploads/default/optimized/4X/5/1/4/514a40675eb0dd3566f8b2e0732a409dd07bc7a6_2_690x104.png, https://linux.do/uploads/default/original/4X/5/1/4/514a40675eb0dd3566f8b2e0732a409dd07bc7a6.png 1.5x, https://linux.do/uploads/default/original/4X/5/1/4/514a40675eb0dd3566f8b2e0732a409dd07bc7a6.png 2x" data-dominant-color="F1F3F6" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002485052-2hhy00o_img_2_1769002491782.png" data-github-sha="b24111b6723fc34aa748ea76794b5677e1a19747"><p></p>
+</li>
+<li>
+<p><a href="https://ai-chatbot-starter.edgeone.app/api/ai" rel="noopener nofollow ugc" data-clicks="20" aria-label="https://ai-chatbot-starter.edgeone.app/api/ai 链接已点击 20 次" class="normal-external-link-icon">https://ai-chatbot-starter.edgeone.app/api/ai</a></p>
+</li>
+<li>
+<p>右键把整个请求拷贝出来，等下有大用<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002485052-2hhy00o_img_3_1769002493389.png" alt="image" data-base62-sha1="gBvO6txxXyjPZznSn7rylhD9EnH" width="521" height="394" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002485052-2hhy00o_img_3_1769002493389.png" data-github-sha="67f444b795bf265b5369a8c23a39e6f3d69eaf57"><p></p>
+</li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-swift" data-highlighted="yes">curl 'https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app/api/ai' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'accept: <span class="hljs-operator">*/*</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'accept<span class="hljs-operator">-</span>language: zh<span class="hljs-operator">-</span><span class="hljs-type">CN</span>,zh;q<span class="hljs-operator">=</span><span class="hljs-number">0.9</span>,en<span class="hljs-operator">-</span><span class="hljs-type">US</span>;q<span class="hljs-operator">=</span><span class="hljs-number">0.8</span>,en;q<span class="hljs-operator">=</span><span class="hljs-number">0.7</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'content<span class="hljs-operator">-</span>type: application<span class="hljs-operator">/</span>json' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'origin: https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'priority: u<span class="hljs-operator">=</span><span class="hljs-number">1</span>, i' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'referer: https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app/' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua: <span class="hljs-string">"Not)A;Brand"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"8"</span>, <span class="hljs-string">"Chromium"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"138"</span>, <span class="hljs-string">"Google Chrome"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"138"</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua<span class="hljs-operator">-</span>mobile: <span class="hljs-operator">?</span><span class="hljs-number">0</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua<span class="hljs-operator">-</span>platform: <span class="hljs-string">"macOS"</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>dest: empty' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>mode: cors' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>site: same<span class="hljs-operator">-</span>origin' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>gpc: <span class="hljs-number">1</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'user<span class="hljs-operator">-</span>agent: <span class="hljs-type">Mozilla</span><span class="hljs-regexp">/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/</span><span class="hljs-number">537.36</span> (<span class="hljs-type">KHTML</span>, like <span class="hljs-type">Gecko</span>) <span class="hljs-type">Chrome</span><span class="hljs-regexp">/138.0.0.0 Safari/</span><span class="hljs-number">537.36</span>' \
+  <span class="hljs-operator">--</span>data<span class="hljs-operator">-</span>raw '{<span class="hljs-string">"model"</span>:<span class="hljs-string">"deepseek-chat"</span>,<span class="hljs-string">"messages"</span>:[{<span class="hljs-string">"role"</span>:<span class="hljs-string">"user"</span>,<span class="hljs-string">"content"</span>:<span class="hljs-string">"你好"</span>}]}'
+</code></pre>
+<p dir="auto">好啦，我们已经拿到chat接口的信息了，其实它这个请求就是标准的openai 格式，但是它不提供API，这也就是很多时候我们要2API的原因之一。</p>
+<p dir="auto">经过观察，发现这个平台没有 <code>v1/modles</code> 接口，不过没关系我们切不同模型发送下消息，很快就发现平台的两个模型如下：</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>deepseek-reasoner 对应 DeepSeek-R1</li>
+<li>deepseek-chat 对应 DeepSeek-V3<br>
+我们自己封装成 <code>v1/modles</code></li>
+</ul>
+<p dir="auto">具体实现（部分代码片段）：</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>封装 <code>v1/modles</code></li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-javascript" data-highlighted="yes"><span class="hljs-comment">// 支持的模型列表</span>
+
+<span class="hljs-keyword">const</span> <span class="hljs-variable constant_">SUPPORTED_MODELS</span> = [
+
+<span class="hljs-string">'deepseek-chat'</span>,
+
+<span class="hljs-string">'deepseek-reasoner'</span>,
+
+];
+
+  
+
+<span class="hljs-comment">// 处理 /v1/models 接口</span>
+
+<span class="hljs-keyword">export</span> <span class="hljs-keyword">async</span> <span class="hljs-keyword">function</span> <span class="hljs-title function_">handleModels</span>(<span class="hljs-params">c: Context&lt;{ Bindings: CloudflareWorkerEnv; Variables: { apiKey?: string } }&gt;</span>) {
+
+<span class="hljs-keyword">const</span> currentTimestamp = <span class="hljs-title class_">Math</span>.<span class="hljs-title function_">floor</span>(<span class="hljs-title class_">Date</span>.<span class="hljs-title function_">now</span>() / <span class="hljs-number">1000</span>);
+
+<span class="hljs-keyword">const</span> <span class="hljs-attr">modelsResponse</span>: <span class="hljs-title class_">OpenAIModelsResponse</span> = {
+
+<span class="hljs-attr">object</span>: <span class="hljs-string">'list'</span>,
+
+<span class="hljs-attr">data</span>: <span class="hljs-variable constant_">SUPPORTED_MODELS</span>.<span class="hljs-title function_">map</span>(<span class="hljs-function"><span class="hljs-params">modelId</span> =&gt;</span> ({
+
+<span class="hljs-attr">id</span>: modelId,
+
+<span class="hljs-attr">object</span>: <span class="hljs-string">'model'</span>,
+
+<span class="hljs-attr">created</span>: currentTimestamp,
+
+<span class="hljs-attr">owned_by</span>: <span class="hljs-string">'deepseek'</span>,
+
+})),
+
+};
+
+<span class="hljs-keyword">return</span> c.<span class="hljs-title function_">json</span>(modelsResponse);
+
+}
+</code></pre>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>处理 /v1/chat/completions 接口</li>
+</ul>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-auto">// 处理 /v1/chat/completions 接口
+
+export async function handleChatCompletions(c: Context&lt;{ Bindings: CloudflareWorkerEnv; Variables: { apiKey?: string } }&gt;) {
+
+try {
+
+// 解析请求体
+
+const body = await c.req.json() as OpenAIChatCompletionRequest;
+
+// 验证必要字段
+
+if (!body.model) {
+
+return c.json({
+
+error: {
+
+message: 'Missing required field: model',
+
+type: 'invalid_request_error',
+
+code: 'missing_required_field',
+
+},
+
+}, 400);
+
+}
+
+  
+
+if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+
+return c.json({
+
+error: {
+
+message: 'Missing required field: messages',
+
+type: 'invalid_request_error',
+
+code: 'missing_required_field',
+
+},
+
+}, 400);
+
+}
+
+  
+
+// 验证模型
+
+if (!isValidModel(body.model)) {
+
+return c.json({
+
+error: {
+
+message: `Model ${body.model} not found`,
+
+type: 'invalid_request_error',
+
+code: 'model_not_found',
+
+},
+
+}, 404);
+
+}
+
+  
+
+// 获取上游API地址
+
+const upstreamUrl = c.env.UPSTREAM_API_URL;
+
+if (!upstreamUrl) {
+
+return c.json({
+
+error: {
+
+message: 'Upstream API URL not configured',
+
+type: 'server_error',
+
+code: 'configuration_error',
+
+},
+
+}, 500);
+
+}
+
+  
+
+// 准备转发的请求体
+
+const forwardBody = {
+
+model: body.model,
+
+messages: body.messages,
+
+temperature: body.temperature,
+
+max_tokens: body.max_tokens,
+
+top_p: body.top_p,
+
+frequency_penalty: body.frequency_penalty,
+
+presence_penalty: body.presence_penalty,
+
+stop: body.stop,
+
+// 重要：确保向上游也发送流式请求参数
+
+stream: body.stream,
+
+};
+
+  
+
+// 生成随机请求头，避免风控
+
+const headers = generateRandomHeaders();
+
+  
+
+// 发起请求到上游API
+
+const response = await fetch(upstreamUrl, {
+
+method: 'POST',
+
+headers,
+
+body: JSON.stringify(forwardBody),
+
+});
+
+  
+
+if (!response.ok) {
+
+// 尝试解析上游API的错误响应
+
+let upstreamError: any = null;
+
+try {
+
+upstreamError = await response.json();
+
+} catch {
+
+upstreamError = null;
+
+}
+
+  
+
+// 检查是否是使用限制错误
+
+if (upstreamError?.error &amp;&amp; typeof upstreamError.error === 'string' &amp;&amp;
+
+upstreamError.error.includes('Daily usage limit exceeded')) {
+
+return c.json({
+
+error: {
+
+message: 'API调用次数已达每日限制，请明天再试。如需更多使用量，请联系服务提供商。',
+
+type: 'quota_exceeded',
+
+code: 'daily_limit_exceeded',
+
+details: upstreamError.error,
+
+remaining: upstreamError.remaining || 0
+
+},
+
+}, 429); // 使用429状态码表示限流
+
+}
+
+  
+
+// 其他上游错误
+
+const errorMessage = upstreamError?.error || upstreamError?.message ||
+
+`Upstream API error: ${response.status} ${response.statusText}`;
+
+return c.json({
+
+error: {
+
+message: errorMessage,
+
+type: 'server_error',
+
+code: 'upstream_error',
+
+status: response.status
+
+},
+
+}, response.status as any);
+
+}
+
+  
+
+// 检查是否为流式响应
+
+const isStreaming = body.stream === true;
+
+if (isStreaming) {
+
+// 流式响应处理 - 立即开始流式转发
+
+c.header('Content-Type', 'text/plain; charset=utf-8');
+
+c.header('Content-Encoding', 'Identity');
+
+c.header('Cache-Control', 'no-cache');
+
+c.header('Connection', 'keep-alive');
+
+c.header('Access-Control-Allow-Origin', '*');
+
+return stream(c, async (streamWriter) =&gt; {
+
+if (!response.body) {
+
+await streamWriter.write('data: [DONE]\n\n');
+
+return;
+
+}
+
+  
+
+const reader = response.body.getReader();
+
+const decoder = new TextDecoder();
+
+  
+
+try {
+
+while (true) {
+
+const { done, value } = await reader.read();
+
+if (done) {
+
+break;
+
+}
+
+  
+
+// 立即解码并转发数据块，不等待
+
+const chunk = decoder.decode(value, { stream: true });
+
+await streamWriter.write(chunk);
+
+}
+
+} catch (error) {
+
+// 静默处理错误，避免影响流式输出
+
+await streamWriter.write('data: [DONE]\n\n');
+
+} finally {
+
+reader.releaseLock();
+
+}
+
+});
+
+} else {
+
+// 非流式响应
+
+const responseData = await response.json();
+
+// 设置响应头
+
+c.header('Content-Type', 'application/json');
+
+return c.json(responseData as any);
+
+}
+
+  
+
+} catch (error) {
+
+console.error('Chat completions error:', error);
+
+return c.json({
+
+error: {
+
+message: 'Internal server error',
+
+type: 'server_error',
+
+code: 'internal_error',
+
+},
+
+}, 500);
+
+}
+
+}
+</code></pre>
+<p dir="auto">恭喜你，已经学会怎么2API ，试着把上面的代码片段完成吧</p>
+<p dir="auto">进阶：</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>添加一个 API_KEY 用于 2API的验证，添加随机UA</li>
+<li>部署写好的服务到Deno 或 CF Worker</li>
+<li>学会处理历史记录和上下文</li>
+<li>学习下论坛其他大佬复杂的2api都是怎么写的，现在你应该能看懂了他们做了啥了</li>
+</ul>
+<h1 dir="auto"><a name="p-7682637-h-7" class="anchor" href="#p-7682637-h-7" aria-label="Heading link"></a>最后</h1>
+<p dir="auto">其实还有更快的方式，你只要抓取相关请求，然后扔给AI实现就好了，还记得上面我们复制出来的完整请求吗</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-swift" data-highlighted="yes">基于以下请求封装标准的openai接口，采用<span class="hljs-type">JS</span> 方案，方便我部署deno.dev，需要实现 v1<span class="hljs-regexp">/models 、/</span>v1<span class="hljs-regexp">/chat/</span>completions ，其中模型主要有这两个：deepseek<span class="hljs-operator">-</span>reasoner 对应 <span class="hljs-type">DeepSeek</span><span class="hljs-operator">-</span><span class="hljs-type">R1</span><span class="hljs-operator">、</span> deepseek<span class="hljs-operator">-</span>chat 对应 <span class="hljs-type">DeepSeek</span><span class="hljs-operator">-</span><span class="hljs-type">V3；chat</span> 接口的请求如下：curl 'https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app/api/ai' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'accept: <span class="hljs-operator">*/*</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'accept<span class="hljs-operator">-</span>language: zh<span class="hljs-operator">-</span><span class="hljs-type">CN</span>,zh;q<span class="hljs-operator">=</span><span class="hljs-number">0.9</span>,en<span class="hljs-operator">-</span><span class="hljs-type">US</span>;q<span class="hljs-operator">=</span><span class="hljs-number">0.8</span>,en;q<span class="hljs-operator">=</span><span class="hljs-number">0.7</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'content<span class="hljs-operator">-</span>type: application<span class="hljs-operator">/</span>json' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'origin: https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'priority: u<span class="hljs-operator">=</span><span class="hljs-number">1</span>, i' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'referer: https:<span class="hljs-comment">//ai-chatbot-starter.edgeone.app/' \</span>
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua: <span class="hljs-string">"Not)A;Brand"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"8"</span>, <span class="hljs-string">"Chromium"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"138"</span>, <span class="hljs-string">"Google Chrome"</span>;v<span class="hljs-operator">=</span><span class="hljs-string">"138"</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua<span class="hljs-operator">-</span>mobile: <span class="hljs-operator">?</span><span class="hljs-number">0</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>ch<span class="hljs-operator">-</span>ua<span class="hljs-operator">-</span>platform: <span class="hljs-string">"macOS"</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>dest: empty' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>mode: cors' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>fetch<span class="hljs-operator">-</span>site: same<span class="hljs-operator">-</span>origin' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'sec<span class="hljs-operator">-</span>gpc: <span class="hljs-number">1</span>' \
+  <span class="hljs-operator">-</span><span class="hljs-type">H</span> 'user<span class="hljs-operator">-</span>agent: <span class="hljs-type">Mozilla</span><span class="hljs-regexp">/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/</span><span class="hljs-number">537.36</span> (<span class="hljs-type">KHTML</span>, like <span class="hljs-type">Gecko</span>) <span class="hljs-type">Chrome</span><span class="hljs-regexp">/138.0.0.0 Safari/</span><span class="hljs-number">537.36</span>' \
+  <span class="hljs-operator">--</span>data<span class="hljs-operator">-</span>raw '{<span class="hljs-string">"model"</span>:<span class="hljs-string">"deepseek-chat"</span>,<span class="hljs-string">"messages"</span>:[{<span class="hljs-string">"role"</span>:<span class="hljs-string">"user"</span>,<span class="hljs-string">"content"</span>:<span class="hljs-string">"你好"</span>}]}'
+</code></pre>
+<p dir="auto">成品：<a href="https://eo.toyai.dpdns.org/" rel="noopener nofollow ugc" data-clicks="298" aria-label="https://eo.toyai.dpdns.org/ 链接已点击 298 次" class="normal-external-link-icon">https://eo.toyai.dpdns.org/</a></p>
+<h2 dir="auto"><a name="p-7682637-h-8" class="anchor" href="#p-7682637-h-8" aria-label="Heading link"></a><strong>谢绝转载，谢绝一切自媒体洗稿否则问候你全家</strong></h2>
+<p dir="auto">下期预告：手把手教你写注册机<span class="spoiled spoiler-blurred" role="button" tabindex="0" data-spoiler-state="blurred" aria-expanded="false" aria-label="显示隐藏内容" aria-live="polite">（不一定有空写，注册机教程写了也会放三级）</span></p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
