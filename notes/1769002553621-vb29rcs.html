@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>闲来无事，写个kiro反代的教程吧（有写如何无限qq号）</title>
+  <meta name="created-at" content="1769002576338">
+  <meta name="updated-at" content="1769002576338">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/1418287">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>闲来无事，写个kiro反代的教程吧（有写如何无限qq号）</h1>
+  <div class="message-block role-user">
+          <div class="message-role">LTctfer #1</div>
+          <div class="message-content"><p dir="auto">1.首先是反代项目选择，我个人用的是2api，也就是下面这个项目</p>
+<aside class="onebox githubrepo" data-onebox-src="https://github.com/justlovemaki/AIClient-2-API" dir="auto">
+  <header class="source">
+
+      <a href="https://github.com/justlovemaki/AIClient-2-API" target="_blank" rel="noopener nofollow ugc" class="normal-external-link-icon">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_0_1769002553634.png" class="thumbnail" data-dominant-color="EDEDE9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_0_1769002553634.png" data-github-sha="d3873c4587bebb698a522720b8ab479243a0ca86" alt="图片">
+
+  <h3><a href="https://github.com/justlovemaki/AIClient-2-API" target="_blank" rel="noopener nofollow ugc" data-clicks="156" aria-label="GitHub - justlovemaki/AIClient-2-API: Simulates Gemini CLI, Antigravity, Qwen Code, and... 链接已点击 156 次" class="normal-external-link-icon">GitHub - justlovemaki/AIClient-2-API: Simulates Gemini CLI, Antigravity, Qwen Code, and...</a></h3>
+
+    <p><span class="github-repo-description">Simulates Gemini CLI, Antigravity, Qwen Code, and Kiro client requests, compatible with the OpenAI API. It supports thousands of Gemini model requests per day and offers free use of the built-in Claude model in Kiro. Easily connect to any client via the API, making AI development more efficient!</span></p>
+</div>
+
+  </article>
+
+  
+
+  <div style="clear: both"></div>
+</aside>
+
+<p dir="auto">项目部署比较简单，docker一键部署即可，部署在自己本机或者虚拟机上都可以，贴个docker命令给大家</p>
+<p dir="auto">docker run -d -p 3000:3000 -p 8085:8085 -p 8086:8086 -p 19876-19880:19876-19880 --restart=always -v “./config:/app/configs” --name aiclient2api justlikemaki/aiclient-2-api</p>
+<p dir="auto">部署完成后需要去web端完成下一步，地址：<a href="http://localhost:3000/" rel="noopener nofollow ugc" data-clicks="14" aria-label="http://localhost:3000/ 链接已点击 14 次">http://localhost:3000/</a></p>
+<p dir="auto">2.然后是如何进行反代</p>
+<p dir="auto">进入web端后进入下面的界面，选择模型提供商（反代kiro的话就Claude Kiro OAuth）,其他的如果是自用就不用修改</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_1_1769002557749.png" alt="image" data-base62-sha1="gI4ML0NFnevjhRIPh0Id3EbYKr0" width="565" height="500" srcset="https://linux.do/uploads/default/optimized/4X/7/5/1/751e4d639effa69041d656835651fbe3d5990152_2_565x500.png, https://linux.do/uploads/default/optimized/4X/7/5/1/751e4d639effa69041d656835651fbe3d5990152_2_847x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/7/5/1/751e4d639effa69041d656835651fbe3d5990152_2_1130x1000.png 2x" data-dominant-color="232D3B" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_1_1769002557749.png" data-github-sha="7a769cb4705abb809e77e2942b13916e00e83fe1"><p></p>
+<p dir="auto">接着进入提供商池管理，在这里进行kiro的注册和授权</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_2_1769002559968.png" alt="image" data-base62-sha1="pmaP4V8QWOOm86pqMjSc4TqmckW" width="623" height="500" srcset="https://linux.do/uploads/default/optimized/4X/b/1/b/b1b80b294791593ee28bda01d0b5a339e9613c52_2_623x500.png, https://linux.do/uploads/default/optimized/4X/b/1/b/b1b80b294791593ee28bda01d0b5a339e9613c52_2_934x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/b/1/b/b1b80b294791593ee28bda01d0b5a339e9613c52_2_1246x1000.png 2x" data-dominant-color="232A35" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_2_1769002559968.png" data-github-sha="a20e9f92ad43b56eb422a8dcac2c82e8909af551"><br>
+点击这个生成授权<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_3_1769002563434.png" alt="image" data-base62-sha1="vx2dvdvqQ9anjDXlGDjHSDzdi7Z" width="690" height="123" srcset="https://linux.do/uploads/default/optimized/4X/d/c/f/dcff6449b2689c6a30e70e48e634ed612176051f_2_690x123.png, https://linux.do/uploads/default/optimized/4X/d/c/f/dcff6449b2689c6a30e70e48e634ed612176051f_2_1035x184.png 1.5x, https://linux.do/uploads/default/original/4X/d/c/f/dcff6449b2689c6a30e70e48e634ed612176051f.png 2x" data-dominant-color="202D3A" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_3_1769002563434.png" data-github-sha="fee1554eed3f615c90a0c2cd1507a07b5883f866"><p></p>
+<p dir="auto">会跳转到这个<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_4_1769002565045.png" alt="image" data-base62-sha1="4RZC5uDdjya0MC0XFK2isfrBnA6" width="550" height="329" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_4_1769002565045.png" data-github-sha="d056d2fdbaa4ac8b1e02629aae985175eed812a1"><p></p>
+<p dir="auto">点一下会生成一个授权界面<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_5_1769002567766.png" alt="image" data-base62-sha1="rNZuD2LBvnNKH13mDJCfTIUKGxZ" width="404" height="500" srcset="https://linux.do/uploads/default/optimized/4X/c/2/e/c2e1602022dd729f67c7fba7162f052e6f3783b3_2_404x500.png, https://linux.do/uploads/default/optimized/4X/c/2/e/c2e1602022dd729f67c7fba7162f052e6f3783b3_2_606x750.png 1.5x, https://linux.do/uploads/default/original/4X/c/2/e/c2e1602022dd729f67c7fba7162f052e6f3783b3.png 2x" data-dominant-color="363F45" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_5_1769002567766.png" data-github-sha="b987d197d31cb1c026bed90d400f4d26050d8a43"><p></p>
+<p dir="auto">然后就直接在浏览器打开注册亚马逊即可</p>
+<p dir="auto">注册后会生成一个kiro-auth文件，自动关联即可</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_6_1769002570302.png" alt="image" data-base62-sha1="7F3oY2TyStqYliNe7PWtIJwkX7i" width="539" height="500" srcset="https://linux.do/uploads/default/optimized/4X/3/5/b/35b3469f888d1cbc3e7ee424f474dc897d136ff0_2_539x500.png, https://linux.do/uploads/default/optimized/4X/3/5/b/35b3469f888d1cbc3e7ee424f474dc897d136ff0_2_808x750.png 1.5x, https://linux.do/uploads/default/optimized/4X/3/5/b/35b3469f888d1cbc3e7ee424f474dc897d136ff0_2_1078x1000.png 2x" data-dominant-color="232D3B" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_6_1769002570302.png" data-github-sha="14e00e2a16113ad18058ebd4767cf0a09df5e87c"><p></p>
+<p dir="auto">3.接下来是接到cc中</p>
+<p dir="auto">在配置管理界面中有claude code的协议（也就是api地址），也就是：<a href="http://localhost:3000/claude-kiro-oauth" rel="noopener nofollow ugc" data-clicks="18" aria-label="http://localhost:3000/claude-kiro-oauth 链接已点击 18 次">http://localhost:3000/claude-kiro-oauth</a>  然后填入apikey即可（同样在配置管理界面修改）</p>
+<p dir="auto">接下来就可用啦</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_7_1769002572674.png" alt="image" data-base62-sha1="lFKPOjhwVIT02cpQ859KpKCgbRE" width="690" height="120" data-dominant-color="2B282F" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_7_1769002572674.png" data-github-sha="26a724b201e3f076787603d017a173f8b70cf077"><p></p>
+<p dir="auto">4.下面是如何获得无限qq邮箱的教学（实测下来qq的英文邮箱基本不会被封的）</p>
+<p dir="auto">首先点进qq邮箱，点击右上角的头像，然后点击账号和安全</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1769002553621-vb29rcs_img_8_1769002574369.png" alt="image" data-base62-sha1="v2B6RXVaPoajSDCX92Lu6AZichG" width="328" height="240" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1769002553621-vb29rcs_img_8_1769002574369.png" data-github-sha="1caf3c4be1a19d24d68de23c899aa82680ed49ed"><p></p>
+<p dir="auto">里面会有一个qq英文邮箱<br>
+用这个邮箱去注册kiro，注册后删除再创建即可<br>
+哦在亚马逊授权的时候记得先把上一个账号退出一下<br>
+好啦，接下来就可以畅快使用啦，实测下来速度还行，代码质量也还可以，各位如果公益站额度用光了可以用这个</p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
