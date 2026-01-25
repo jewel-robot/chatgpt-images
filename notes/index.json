@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1769340348901-rf858on",
+      "title": "人在什么情况下成长最快？ - 知乎",
+      "source": {
+        "type": "zhihu",
+        "url": "https://www.zhihu.com/question/490344475/answer/1947032530827077508",
+        "siteName": "zhihu",
+        "favicon": "https://static.zhihu.com/heifetz/favicon.ico"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "createdAt": 1769340348909,
+      "updatedAt": 1769340348909
+    },
+    {
       "id": "1769002553621-vb29rcs",
       "title": "闲来无事，写个kiro反代的教程吧（有写如何无限qq号）",
       "source": {
@@ -798,5 +814,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1769002579437
+  "updated": 1769340354758
 }
