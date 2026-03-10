@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>查看ROS1话题frame_id</title>
+  <meta name="created-at" content="1773113118024">
+  <meta name="updated-at" content="1773113118024">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69aa7ca7-0748-83a2-8aea-dd8ebc3a160f">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>查看ROS1话题frame_id</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">怎么查看ros1中话题的frame id</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="40">在 ROS1 里，<code data-start="9" data-end="19">frame_id</code> 一般在消息的 <code data-start="27" data-end="35">header</code> 里面看。</p>
+<p data-start="42" data-end="50">最直接的方法是：</p>
+<pre><code class="language-bash">rostopic echo /你的话题名/header</code></pre>
+<p data-start="93" data-end="96">比如：</p>
+<pre><code class="language-bash">rostopic echo /camera/depth/points/header</code></pre>
+<p data-start="153" data-end="159">会看到类似：</p>
+<pre><code class="language-yaml">seq: 123
+stamp:
+  secs: 1710000000
+  nsecs: 123456789
+frame_id: "camera_depth_optical_frame"</code></pre>
+<p data-start="267" data-end="281">如果只想看完整消息，也可以：</p>
+<pre><code class="language-bash">rostopic echo /你的话题名</code></pre>
+<p data-start="317" data-end="343">然后在输出里找 <code data-start="325" data-end="342">header.frame_id</code>。</p>
+<p data-start="345" data-end="361">如果消息刷得太快，可以只看一条：</p>
+<pre><code class="language-bash">rostopic echo -n 1 /你的话题名/header</code></pre>
+<p data-start="409" data-end="412">或者：</p>
+<pre><code class="language-bash">rostopic echo -n 1 /你的话题名 | grep frame_id</code></pre>
+<p data-start="469" data-end="608">补充一点：<br>
+不是所有 ROS 话题消息类型都有 <code data-start="493" data-end="501">header</code>。只有像 <code data-start="506" data-end="525">sensor_msgs/Image</code>、<code data-start="526" data-end="539">PointCloud2</code>、<code data-start="540" data-end="551">LaserScan</code>、<code data-start="552" data-end="562">Odometry</code> 这类带 <code data-start="567" data-end="584">std_msgs/Header</code> 的消息，才能直接这样看 <code data-start="597" data-end="607">frame_id</code>。</p>
+<p data-start="610" data-end="620">先查话题类型也可以：</p>
+<pre><code class="language-bash">rostopic type /你的话题名</code></pre>
+<p data-start="656" data-end="663">再看消息结构：</p>
+<pre><code class="language-bash">rosmsg show 消息类型</code></pre>
+<p data-start="695" data-end="698">比如：</p>
+<pre><code class="language-bash">rostopic type /scan
+rosmsg show sensor_msgs/LaserScan</code></pre>
+<p data-start="767" data-end="823" data-is-last-node="" data-is-only-node="">你如果愿意，我也可以顺手告诉你在 ROS1 里怎么查看某个 <code data-start="797" data-end="807">frame_id</code> 在 <code data-start="810" data-end="814">tf</code> 树里的父子关系。</p></div>
+        </div>
+</body>
+</html>
