@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ceres 优化器残差项</title>
+  <meta name="created-at" content="1773112639856">
+  <meta name="updated-at" content="1773112639856">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69ae8235-b998-83ab-b253-2598a7f44055">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Ceres 优化器残差项</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">先详细解释代码里面的各个参数</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="64" data-is-last-node="" data-is-only-node="">我先把“参数”分成四类讲：成员变量、ROS 参数、平面/直线结构体字段、优化里的局部变量。这样不会把配置参数和算法变量混在一起。</p>
+<p data-start="0" data-end="34">可以。这里我先把“代码里的各个参数”分成 4 类来讲，不然很容易混：</p>
+<ol data-start="36" data-end="169">
+<li data-section-id="19nko60" data-start="36" data-end="74">
+<p data-start="39" data-end="74"><strong data-start="39" data-end="52">ROS 可配置参数</strong>：你在 launch / yaml 里能设的</p>
+</li>
+<li data-section-id="lekipz" data-start="75" data-end="99">
+<p data-start="78" data-end="99"><strong data-start="78" data-end="87">类成员变量</strong>：节点内部长期保存的状态</p>
+</li>
+<li data-section-id="46vteg" data-start="100" data-end="140">
+<p data-start="103" data-end="140"><strong data-start="103" data-end="115">数据结构里的字段</strong>：<code data-start="116" data-end="128">PlaneParam</code>、<code data-start="129" data-end="140">LineParam</code></p>
+</li>
+<li data-section-id="62z21x" data-start="141" data-end="169">
+<p data-start="144" data-end="169"><strong data-start="144" data-end="154">优化相关参数</strong>：<code data-start="155" data-end="160">rpy</code>、权重、残差里的量</p>
+</li>
+</ol>
+<p data-start="171" data-end="449">这份代码的核心目标是：估计 <code data-start="185" data-end="199">camera_frame</code> 相对于 <code data-start="204" data-end="216">base_frame</code> 的旋转外参 <code data-start="223" data-end="239">roll/pitch/yaw</code>，平移不变。整体说明、辅助函数、结构体、构造参数和优化入口都在文件前半段和 <code data-start="277" data-end="295">runCalibration()</code> 里。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="451" data-end="454">
+<h1 data-section-id="1n8omp5" data-start="456" data-end="470">1. ROS 可配置参数</h1>
+<p data-start="472" data-end="576">这些参数是在构造函数里通过 <code data-start="486" data-end="503">pnh_.param(...)</code> 读进来的。也就是你最可能在 launch 或 yaml 里改的那一批。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<h2 data-section-id="1v15gak" data-start="578" data-end="593">1.1 话题和坐标系参数</h2>
+<h3 data-section-id="19dmfzq" data-start="595" data-end="613"><code data-start="599" data-end="613">cloud_topic_</code></h3>
+<p data-start="614" data-end="620">对应参数名：</p>
+<pre><code class="language-c++">cloud_topic</code></pre>
+<p data-start="644" data-end="648">默认值：</p>
+<pre><code class="language-c++">"/left_rgbd/depth/points"</code></pre>
+<p data-start="687" data-end="690">含义：</p>
+<ul data-start="691" data-end="705">
+<li data-section-id="7w65pt" data-start="691" data-end="705">
+<p data-start="693" data-end="705">订阅深度相机点云的话题。</p>
+</li>
+</ul>
+<p data-start="707" data-end="710">作用：</p>
+<ul data-start="711" data-end="815">
+<li data-section-id="9vyvg5" data-start="711" data-end="815">
+<p data-start="713" data-end="815"><code data-start="713" data-end="730">cloudCallback()</code> 从这个话题收点云。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="817" data-end="820">
+<h3 data-section-id="11tl54o" data-start="822" data-end="839"><code data-start="826" data-end="839">scan_topic_</code></h3>
+<p data-start="840" data-end="846">对应参数名：</p>
+<pre><code class="language-c++">scan_topic</code></pre>
+<p data-start="869" data-end="873">默认值：</p>
+<pre><code class="language-c++">"/2dlidar_scan_filtered"</code></pre>
+<p data-start="911" data-end="914">含义：</p>
+<ul data-start="915" data-end="933">
+<li data-section-id="k56jnt" data-start="915" data-end="933">
+<p data-start="917" data-end="933">订阅 2D 雷达扫描数据的话题。</p>
+</li>
+</ul>
+<p data-start="935" data-end="938">作用：</p>
+<ul data-start="939" data-end="1043">
+<li data-section-id="10p86mc" data-start="939" data-end="1043">
+<p data-start="941" data-end="1043"><code data-start="941" data-end="957">scanCallback()</code> 从这里拿到激光扫描。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="1045" data-end="1048">
+<h3 data-section-id="obil2m" data-start="1050" data-end="1067"><code data-start="1054" data-end="1067">base_frame_</code></h3>
+<p data-start="1068" data-end="1074">对应参数名：</p>
+<pre><code class="language-c++">base_frame</code></pre>
+<p data-start="1097" data-end="1101">默认值：</p>
+<pre><code class="language-c++">"base_link"</code></pre>
+<p data-start="1126" data-end="1129">含义：</p>
+<ul data-start="1130" data-end="1162">
+<li data-section-id="1onikcu" data-start="1130" data-end="1140">
+<p data-start="1132" data-end="1140">目标参考坐标系。</p>
+</li>
+<li data-section-id="1s0gzgd" data-start="1141" data-end="1162">
+<p data-start="1143" data-end="1162">所有几何约束最终都在这个坐标系下成立。</p>
+</li>
+</ul>
+<p data-start="1164" data-end="1167">作用：</p>
+<ul data-start="1168" data-end="1370">
+<li data-section-id="1aaaach" data-start="1168" data-end="1191">
+<p data-start="1170" data-end="1191">点云先被变换到 <code data-start="1178" data-end="1191">base_frame_</code></p>
+</li>
+<li data-section-id="1w8jkox" data-start="1192" data-end="1218">
+<p data-start="1194" data-end="1218">scan 也被变换到 <code data-start="1205" data-end="1218">base_frame_</code></p>
+</li>
+<li data-section-id="i9l03s" data-start="1219" data-end="1370">
+<p data-start="1221" data-end="1370">地面法向量目标是 <code data-start="1230" data-end="1239">[0,0,1]</code>，也是在这个坐标系下定义的。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="1372" data-end="1375">
+<h3 data-section-id="1m1zarm" data-start="1377" data-end="1396"><code data-start="1381" data-end="1396">camera_frame_</code></h3>
+<p data-start="1397" data-end="1403">对应参数名：</p>
+<pre><code class="language-c++">camera_frame</code></pre>
+<p data-start="1428" data-end="1432">默认值：</p>
+<pre><code class="language-c++">"left_rgbd_link"</code></pre>
+<p data-start="1462" data-end="1465">含义：</p>
+<ul data-start="1466" data-end="1485">
+<li data-section-id="j2x6qm" data-start="1466" data-end="1485">
+<p data-start="1468" data-end="1485">被标定的 RGBD 相机主坐标系。</p>
+</li>
+</ul>
+<p data-start="1487" data-end="1490">作用：</p>
+<ul data-start="1491" data-end="1733">
+<li data-section-id="1gmfbox" data-start="1491" data-end="1559">
+<p data-start="1493" data-end="1559">初始 TF 是通过 <code data-start="1503" data-end="1553">lookupTransform(base_frame_, camera_frame_, ...)</code> 读出来的。</p>
+</li>
+<li data-section-id="b03nv" data-start="1560" data-end="1733">
+<p data-start="1562" data-end="1733">优化变量 <code data-start="1567" data-end="1572">rpy</code> 代表的就是这个 <code data-start="1581" data-end="1609">camera_frame -&gt; base_frame</code> 的旋转。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="1735" data-end="1738">
+<h2 data-section-id="jp3942" data-start="1740" data-end="1754">1.2 采样与滤波参数</h2>
+<h3 data-section-id="1r43532" data-start="1756" data-end="1773"><code data-start="1760" data-end="1773">num_frames_</code></h3>
+<p data-start="1774" data-end="1780">对应参数名：</p>
+<pre><code class="language-c++">num_frames</code></pre>
+<p data-start="1803" data-end="1807">默认值：</p>
+<pre><code class="language-c++">30</code></pre>
+<p data-start="1823" data-end="1826">含义：</p>
+<ul data-start="1827" data-end="1851">
+<li data-section-id="11alvvw" data-start="1827" data-end="1851">
+<p data-start="1829" data-end="1851">需要累计多少帧点云和多少帧激光，才开始优化。</p>
+</li>
+</ul>
+<p data-start="1853" data-end="1856">作用：</p>
+<ul data-start="1857" data-end="2011">
+<li data-section-id="b6ks0x" data-start="1857" data-end="1888">
+<p data-start="1859" data-end="1888"><code data-start="1859" data-end="1888">cloud_count_ &gt;= num_frames_</code></p>
+</li>
+<li data-section-id="d0kpz8" data-start="1889" data-end="2011">
+<p data-start="1891" data-end="2011"><code data-start="1891" data-end="1919">scan_count_ &gt;= num_frames_</code><br>
+两者都满足时才开始标定。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="2013" data-end="2017">经验上：</p>
+<ul data-start="2018" data-end="2050">
+<li data-section-id="yfte41" data-start="2018" data-end="2025">
+<p data-start="2020" data-end="2025">大一点更稳</p>
+</li>
+<li data-section-id="12whaju" data-start="2026" data-end="2050">
+<p data-start="2028" data-end="2050">太大则采集时间更长，也可能把场景变化引入进来</p>
+</li>
+</ul>
+<hr data-start="2052" data-end="2055">
+<h3 data-section-id="137txls" data-start="2057" data-end="2074"><code data-start="2061" data-end="2074">voxel_leaf_</code></h3>
+<p data-start="2075" data-end="2081">对应参数名：</p>
+<pre><code class="language-c++">voxel_leaf</code></pre>
+<p data-start="2104" data-end="2108">默认值：</p>
+<pre><code class="language-c++">0.02</code></pre>
+<p data-start="2126" data-end="2129">单位：</p>
+<ul data-start="2130" data-end="2133">
+<li data-section-id="3745i3" data-start="2130" data-end="2133">
+<p data-start="2132" data-end="2133">米</p>
+</li>
+</ul>
+<p data-start="2135" data-end="2138">含义：</p>
+<ul data-start="2139" data-end="2154">
+<li data-section-id="1mhjb8d" data-start="2139" data-end="2154">
+<p data-start="2141" data-end="2154">点云体素降采样的体素边长。</p>
+</li>
+</ul>
+<p data-start="2156" data-end="2159">作用：</p>
+<ul data-start="2160" data-end="2274">
+<li data-section-id="1ebyi3h" data-start="2160" data-end="2274">
+<p data-start="2162" data-end="2274"><code data-start="2162" data-end="2173">VoxelGrid</code> 下采样时 x/y/z 三个方向都用这个值。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="2276" data-end="2281">直观理解：</p>
+<ul data-start="2282" data-end="2327">
+<li data-section-id="c662vt" data-start="2282" data-end="2306">
+<p data-start="2284" data-end="2306">越大，点更稀疏，计算更快，但平面精度可能下降</p>
+</li>
+<li data-section-id="i1t6ua" data-start="2307" data-end="2327">
+<p data-start="2309" data-end="2327">越小，细节更多，但噪声和计算量也更大</p>
+</li>
+</ul>
+<hr data-start="2329" data-end="2332">
+<h3 data-section-id="1i5iiac" data-start="2334" data-end="2356"><code data-start="2338" data-end="2346">z_min_</code>, <code data-start="2348" data-end="2356">z_max_</code></h3>
+<p data-start="2357" data-end="2363">对应参数名：</p>
+<pre><code class="language-c++">z_minz_max</code></pre>
+<p data-start="2387" data-end="2391">默认值：</p>
+<pre><code class="language-c++">0.15.0</code></pre>
+<p data-start="2412" data-end="2415">单位：</p>
+<ul data-start="2416" data-end="2419">
+<li data-section-id="3745i3" data-start="2416" data-end="2419">
+<p data-start="2418" data-end="2419">米</p>
+</li>
+</ul>
+<p data-start="2421" data-end="2598">注意：<br>
+虽然变量名叫 <code data-start="2432" data-end="2445">z_min/z_max</code>，但这里<strong data-start="2449" data-end="2464">实际不是按 z 轴裁剪</strong>，而是按“点到传感器原点的欧氏距离”做筛选。代码里是算 <code data-start="2492" data-end="2518">dist = sqrt(dx²+dy²+dz²)</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<p data-start="2600" data-end="2603">含义：</p>
+<ul data-start="2604" data-end="2642">
+<li data-section-id="1fj4b0d" data-start="2604" data-end="2642">
+<p data-start="2606" data-end="2642">只保留离传感器距离在 <code data-start="2617" data-end="2635">[z_min_, z_max_]</code> 范围内的点。</p>
+</li>
+</ul>
+<p data-start="2644" data-end="2647">作用：</p>
+<ul data-start="2648" data-end="2667">
+<li data-section-id="14ksg0x" data-start="2648" data-end="2667">
+<p data-start="2650" data-end="2667">去掉太近的噪声点和太远的不可靠点。</p>
+</li>
+</ul>
+<p data-start="2669" data-end="2685">这块变量名略有误导，严格说更像：</p>
+<ul data-start="2686" data-end="2713">
+<li data-section-id="ijaf4y" data-start="2686" data-end="2699">
+<p data-start="2688" data-end="2699"><code data-start="2688" data-end="2699">range_min</code></p>
+</li>
+<li data-section-id="ija9do" data-start="2700" data-end="2713">
+<p data-start="2702" data-end="2713"><code data-start="2702" data-end="2713">range_max</code></p>
+</li>
+</ul>
+<hr data-start="2715" data-end="2718">
+<h2 data-section-id="985hsp" data-start="2720" data-end="2738">1.3 平面 / 直线拟合参数</h2>
+<h3 data-section-id="1vbfltb" data-start="2740" data-end="2765"><code data-start="2744" data-end="2765">ransac_dist_thresh_</code></h3>
+<p data-start="2766" data-end="2772">对应参数名：</p>
+<pre><code class="language-c++">ransac_dist_thresh</code></pre>
+<p data-start="2803" data-end="2807">默认值：</p>
+<pre><code class="language-c++">0.02</code></pre>
+<p data-start="2825" data-end="2828">单位：</p>
+<ul data-start="2829" data-end="2832">
+<li data-section-id="3745i3" data-start="2829" data-end="2832">
+<p data-start="2831" data-end="2832">米</p>
+</li>
+</ul>
+<p data-start="2834" data-end="2837">含义：</p>
+<ul data-start="2838" data-end="2860">
+<li data-section-id="vmhfmh" data-start="2838" data-end="2860">
+<p data-start="2840" data-end="2860">平面 RANSAC 的点到平面距离阈值。</p>
+</li>
+</ul>
+<p data-start="2862" data-end="2865">作用：</p>
+<ul data-start="2866" data-end="2898">
+<li data-section-id="6jqc7n" data-start="2866" data-end="2898">
+<p data-start="2868" data-end="2898">在 <code data-start="2870" data-end="2893">fitConstrainedPlane()</code> 里传给：</p>
+</li>
+</ul>
+<pre><code class="language-c++">seg.setDistanceThreshold(ransac_dist_thresh_);</code></pre>
+<p data-start="2957" data-end="3051">用来决定一个点算不算平面内点。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<p data-start="3053" data-end="3058">直观理解：</p>
+<ul data-start="3059" data-end="3095">
+<li data-section-id="12euxjb" data-start="3059" data-end="3075">
+<p data-start="3061" data-end="3075">小：更严格，抗噪差时容易失败</p>
+</li>
+<li data-section-id="1c8tmis" data-start="3076" data-end="3095">
+<p data-start="3078" data-end="3095">大：更宽松，容易把非平面点也吃进去</p>
+</li>
+</ul>
+<hr data-start="3097" data-end="3100">
+<h3 data-section-id="y87wjl" data-start="3102" data-end="3124"><code data-start="3106" data-end="3124">perp_dot_thresh_</code></h3>
+<p data-start="3125" data-end="3131">对应参数名：</p>
+<pre><code class="language-c++">perp_dot_thresh</code></pre>
+<p data-start="3159" data-end="3163">默认值：</p>
+<pre><code class="language-c++">0.15</code></pre>
+<p data-start="3181" data-end="3184">含义：</p>
+<ul data-start="3185" data-end="3216">
+<li data-section-id="15z4oid" data-start="3185" data-end="3216">
+<p data-start="3187" data-end="3216">地面法向量和墙面法向量的垂直性容差，使用点积的绝对值判断。</p>
+</li>
+</ul>
+<p data-start="3218" data-end="3223">代码逻辑：</p>
+<pre><code class="language-c++">double dot = std::abs(wall.normal.dot(ground.normal));if (dot &gt; perp_dot_thresh_) skip;</code></pre>
+<p data-start="3324" data-end="3403"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<p data-start="3405" data-end="3410">直观理解：</p>
+<ul data-start="3411" data-end="3453">
+<li data-section-id="pnaa9n" data-start="3411" data-end="3425">
+<p data-start="3413" data-end="3425">理想垂直时点积应接近 0</p>
+</li>
+<li data-section-id="1gkfr1n" data-start="3426" data-end="3453">
+<p data-start="3428" data-end="3453"><code data-start="3428" data-end="3434">0.15</code> 大约对应夹角离 90° 还有一点容忍</p>
+</li>
+</ul>
+<p data-start="3455" data-end="3458">作用：</p>
+<ul data-start="3459" data-end="3487">
+<li data-section-id="9kidn3" data-start="3459" data-end="3476">
+<p data-start="3461" data-end="3476">防止“找到的墙”其实不是垂直墙</p>
+</li>
+<li data-section-id="12b63ci" data-start="3477" data-end="3487">
+<p data-start="3479" data-end="3487">属于数据质量门槛</p>
+</li>
+</ul>
+<hr data-start="3489" data-end="3492">
+<h3 data-section-id="xywci9" data-start="3494" data-end="3517"><code data-start="3498" data-end="3517">line_ransac_dist_</code></h3>
+<p data-start="3518" data-end="3524">对应参数名：</p>
+<pre><code class="language-c++">line_ransac_dist</code></pre>
+<p data-start="3553" data-end="3557">默认值：</p>
+<pre><code class="language-c++">0.03</code></pre>
+<p data-start="3575" data-end="3578">单位：</p>
+<ul data-start="3579" data-end="3582">
+<li data-section-id="3745i3" data-start="3579" data-end="3582">
+<p data-start="3581" data-end="3582">米</p>
+</li>
+</ul>
+<p data-start="3584" data-end="3587">含义：</p>
+<ul data-start="3588" data-end="3611">
+<li data-section-id="10p60c1" data-start="3588" data-end="3611">
+<p data-start="3590" data-end="3611">2D 直线 RANSAC 的内点距离阈值。</p>
+</li>
+</ul>
+<p data-start="3613" data-end="3616">作用：</p>
+<ul data-start="3617" data-end="3735">
+<li data-section-id="vcck7d" data-start="3617" data-end="3735">
+<p data-start="3619" data-end="3735"><code data-start="3619" data-end="3632">fitLine2D()</code> 里点到候选直线的距离若小于这个阈值，则算内点。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="3737" data-end="3742">直观理解：</p>
+<ul data-start="3743" data-end="3762">
+<li data-section-id="3yui0u" data-start="3743" data-end="3750">
+<p data-start="3745" data-end="3750">越小越严格</p>
+</li>
+<li data-section-id="hottie" data-start="3751" data-end="3762">
+<p data-start="3753" data-end="3762">越大越容易吃进杂点</p>
+</li>
+</ul>
+<hr data-start="3764" data-end="3767">
+<h3 data-section-id="1mf5cyj" data-start="3769" data-end="3792"><code data-start="3773" data-end="3792">min_line_inliers_</code></h3>
+<p data-start="3793" data-end="3799">对应参数名：</p>
+<pre><code class="language-c++">min_line_inliers</code></pre>
+<p data-start="3828" data-end="3832">默认值：</p>
+<pre><code class="language-c++">10</code></pre>
+<p data-start="3848" data-end="3851">含义：</p>
+<ul data-start="3852" data-end="3877">
+<li data-section-id="18ruy2s" data-start="3852" data-end="3877">
+<p data-start="3854" data-end="3877">2D 激光墙线拟合后，至少要有多少内点才接受。</p>
+</li>
+</ul>
+<p data-start="3879" data-end="3882">作用：</p>
+<ul data-start="3883" data-end="3992">
+<li data-section-id="15i8kqr" data-start="3883" data-end="3992">
+<p data-start="3885" data-end="3992">如果激光拟合出的墙线支持点太少，就丢弃这一帧 scan。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="3994" data-end="3997">
+<h2 data-section-id="5n0jbj" data-start="3999" data-end="4012">1.4 输入检查参数</h2>
+<h3 data-section-id="t64laj" data-start="4014" data-end="4041"><code data-start="4018" data-end="4041">expected_cloud_frame_</code></h3>
+<p data-start="4042" data-end="4048">对应参数名：</p>
+<pre><code class="language-c++">expected_cloud_frame</code></pre>
+<p data-start="4081" data-end="4085">默认值：</p>
+<pre><code class="language-c++">""</code></pre>
+<p data-start="4101" data-end="4104">含义：</p>
+<ul data-start="4105" data-end="4139">
+<li data-section-id="1wboe0a" data-start="4105" data-end="4126">
+<p data-start="4107" data-end="4126">期望点云消息的 <code data-start="4115" data-end="4125">frame_id</code>。</p>
+</li>
+<li data-section-id="18w597t" data-start="4127" data-end="4139">
+<p data-start="4129" data-end="4139">空字符串表示不检查。</p>
+</li>
+</ul>
+<p data-start="4141" data-end="4144">作用：</p>
+<ul data-start="4145" data-end="4267">
+<li data-section-id="zyl6j9" data-start="4145" data-end="4267">
+<p data-start="4147" data-end="4267">如果实际 <code data-start="4152" data-end="4174">msg-&gt;header.frame_id</code> 不等于这个值，就跳过该帧。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="4269" data-end="4272">用途：</p>
+<ul data-start="4273" data-end="4304">
+<li data-section-id="1x7hdlu" data-start="4273" data-end="4304">
+<p data-start="4275" data-end="4304">防止你订到了错误的话题，或者点云 frame 在运行时变掉</p>
+</li>
+</ul>
+<hr data-start="4306" data-end="4309">
+<h3 data-section-id="innrmt" data-start="4311" data-end="4337"><code data-start="4315" data-end="4337">expected_scan_frame_</code></h3>
+<p data-start="4338" data-end="4344">对应参数名：</p>
+<pre><code class="language-c++">expected_scan_frame</code></pre>
+<p data-start="4376" data-end="4380">默认值：</p>
+<pre><code class="language-c++">""</code></pre>
+<p data-start="4396" data-end="4500">含义和作用同上，只不过针对 laser scan。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="4502" data-end="4505">
+<h2 data-section-id="1edwj25" data-start="4507" data-end="4520">1.5 优化权重参数</h2>
+<h3 data-section-id="bvudur" data-start="4522" data-end="4542"><code data-start="4526" data-end="4542">weight_ground_</code></h3>
+<p data-start="4543" data-end="4549">对应参数名：</p>
+<pre><code class="language-c++">weight_ground</code></pre>
+<p data-start="4575" data-end="4579">默认值：</p>
+<pre><code class="language-c++">10.0</code></pre>
+<p data-start="4597" data-end="4600">含义：</p>
+<ul data-start="4601" data-end="4614">
+<li data-section-id="1qda3ng" data-start="4601" data-end="4614">
+<p data-start="4603" data-end="4614">地面法向量残差的权重。</p>
+</li>
+</ul>
+<p data-start="4616" data-end="4619">作用：</p>
+<ul data-start="4620" data-end="4729">
+<li data-section-id="1cbrgi5" data-start="4620" data-end="4729">
+<p data-start="4622" data-end="4729">在 Ceres 里通过 <code data-start="4634" data-end="4646">ScaledLoss</code> 加权。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="4731" data-end="4734">影响：</p>
+<ul data-start="4735" data-end="4773">
+<li data-section-id="1jdzxij" data-start="4735" data-end="4753">
+<p data-start="4737" data-end="4753">越大，优化越优先满足“地面朝上”</p>
+</li>
+<li data-section-id="r37lui" data-start="4754" data-end="4773">
+<p data-start="4756" data-end="4773">主要影响 roll / pitch</p>
+</li>
+</ul>
+<hr data-start="4775" data-end="4778">
+<h3 data-section-id="y11wd0" data-start="4780" data-end="4801"><code data-start="4784" data-end="4801">weight_wall_az_</code></h3>
+<p data-start="4802" data-end="4808">对应参数名：</p>
+<pre><code class="language-c++">weight_wall_az</code></pre>
+<p data-start="4835" data-end="4839">默认值：</p>
+<pre><code class="language-c++">5.0</code></pre>
+<p data-start="4856" data-end="4859">含义：</p>
+<ul data-start="4860" data-end="4880">
+<li data-section-id="67uhbl" data-start="4860" data-end="4880">
+<p data-start="4862" data-end="4880">墙面方位角与激光方位角匹配项的权重。</p>
+</li>
+</ul>
+<p data-start="4882" data-end="4885">作用：</p>
+<ul data-start="4886" data-end="4980">
+<li data-section-id="fbh0f6" data-start="4886" data-end="4980">
+<p data-start="4888" data-end="4980">控制 yaw 约束的强弱。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="4982" data-end="4985">
+<h3 data-section-id="16gap2y" data-start="4987" data-end="5010"><code data-start="4991" data-end="5010">weight_wall_vert_</code></h3>
+<p data-start="5011" data-end="5017">对应参数名：</p>
+<pre><code class="language-c++">weight_wall_vert</code></pre>
+<p data-start="5046" data-end="5050">默认值：</p>
+<pre><code class="language-c++">2.0</code></pre>
+<p data-start="5067" data-end="5070">含义：</p>
+<ul data-start="5071" data-end="5084">
+<li data-section-id="1fz5e6f" data-start="5071" data-end="5084">
+<p data-start="5073" data-end="5084">墙面竖直性约束的权重。</p>
+</li>
+</ul>
+<p data-start="5086" data-end="5089">作用：</p>
+<ul data-start="5090" data-end="5192">
+<li data-section-id="m7dqmk" data-start="5090" data-end="5192">
+<p data-start="5092" data-end="5192">辅助限制墙法向量旋转后 z 分量接近 0。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="5194" data-end="5197">
+<h1 data-section-id="1wb0i0u" data-start="5199" data-end="5209">2. 类成员变量</h1>
+<p data-start="5211" data-end="5297">这些不是 launch 参数，而是节点内部一直维护的状态。定义在 <code data-start="5244" data-end="5254">private:</code> 区域。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<h2 data-section-id="14why9x" data-start="5299" data-end="5314">2.1 ROS 相关成员</h2>
+<h3 data-section-id="7wp08q" data-start="5316" data-end="5333"><code data-start="5320" data-end="5325">nh_</code>, <code data-start="5327" data-end="5333">pnh_</code></h3>
+<ul data-start="5334" data-end="5368">
+<li data-section-id="1vtatkw" data-start="5334" data-end="5350">
+<p data-start="5336" data-end="5350"><code data-start="5336" data-end="5341">nh_</code>：普通命名空间句柄</p>
+</li>
+<li data-section-id="1n40d7w" data-start="5351" data-end="5368">
+<p data-start="5353" data-end="5368"><code data-start="5353" data-end="5359">pnh_</code>：私有命名空间句柄</p>
+</li>
+</ul>
+<p data-start="5370" data-end="5373">作用：</p>
+<ul data-start="5374" data-end="5406">
+<li data-section-id="1wjygcm" data-start="5374" data-end="5389">
+<p data-start="5376" data-end="5389"><code data-start="5376" data-end="5381">nh_</code> 用来订阅/发布</p>
+</li>
+<li data-section-id="1j6i0gd" data-start="5390" data-end="5406">
+<p data-start="5392" data-end="5406"><code data-start="5392" data-end="5398">pnh_</code> 用来读私有参数</p>
+</li>
+</ul>
+<hr data-start="5408" data-end="5411">
+<h3 data-section-id="1w15ez8" data-start="5413" data-end="5445"><code data-start="5417" data-end="5429">tf_buffer_</code>, <code data-start="5431" data-end="5445">tf_listener_</code></h3>
+<p data-start="5446" data-end="5449">作用：</p>
+<ul data-start="5450" data-end="5541">
+<li data-section-id="loq2i" data-start="5450" data-end="5463">
+<p data-start="5452" data-end="5463">从 TF 树查询变换。</p>
+</li>
+<li data-section-id="dld64v" data-start="5464" data-end="5541">
+<p data-start="5466" data-end="5469">比如：</p>
+<ul data-start="5472" data-end="5541">
+<li data-section-id="1sk2dnm" data-start="5472" data-end="5493">
+<p data-start="5474" data-end="5493">cloud frame -&gt; base</p>
+</li>
+<li data-section-id="1u7qh0s" data-start="5496" data-end="5516">
+<p data-start="5498" data-end="5516">scan frame -&gt; base</p>
+</li>
+<li data-section-id="1lxtj6y" data-start="5519" data-end="5541">
+<p data-start="5521" data-end="5541">camera frame -&gt; base</p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="5543" data-end="5582"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="5584" data-end="5587">
+<h3 data-section-id="q2mmn8" data-start="5589" data-end="5618"><code data-start="5593" data-end="5605">cloud_sub_</code>, <code data-start="5607" data-end="5618">scan_sub_</code></h3>
+<p data-start="5619" data-end="5622">作用：</p>
+<ul data-start="5623" data-end="5674">
+<li data-section-id="lp9p3s" data-start="5623" data-end="5674">
+<p data-start="5625" data-end="5674">订阅点云和激光话题。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="5676" data-end="5679">
+<h2 data-section-id="1lccxur" data-start="5681" data-end="5694">2.2 数据采集状态</h2>
+<h3 data-section-id="12nsrvc" data-start="5696" data-end="5706"><code data-start="5700" data-end="5706">mtx_</code></h3>
+<p data-start="5707" data-end="5710">作用：</p>
+<ul data-start="5711" data-end="5767">
+<li data-section-id="1pqoqs" data-start="5711" data-end="5767">
+<p data-start="5713" data-end="5767">互斥锁，保护回调中的共享数据。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="5769" data-end="5772">
+<h3 data-section-id="nz7fes" data-start="5774" data-end="5807"><code data-start="5778" data-end="5792">cloud_count_</code>, <code data-start="5794" data-end="5807">scan_count_</code></h3>
+<p data-start="5808" data-end="5811">含义：</p>
+<ul data-start="5812" data-end="5876">
+<li data-section-id="1kqfvni" data-start="5812" data-end="5876">
+<p data-start="5814" data-end="5876">已经收集到多少帧有效点云 / 有效 scan。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="5878" data-end="5881">
+<h3 data-section-id="wmv2ek" data-start="5883" data-end="5906"><code data-start="5887" data-end="5906">calibration_done_</code></h3>
+<p data-start="5907" data-end="5910">含义：</p>
+<ul data-start="5911" data-end="5961">
+<li data-section-id="12vfu2q" data-start="5911" data-end="5961">
+<p data-start="5913" data-end="5961">标定是否已经完成。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="5963" data-end="5966">作用：</p>
+<ul data-start="5967" data-end="6061">
+<li data-section-id="1owqe1e" data-start="5967" data-end="6061">
+<p data-start="5969" data-end="6061">完成后停止继续收集新数据。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6063" data-end="6066">
+<h2 data-section-id="2xo742" data-start="6068" data-end="6080">2.3 累计观测量</h2>
+<h3 data-section-id="ze4wzq" data-start="6082" data-end="6102"><code data-start="6086" data-end="6102">ground_planes_</code></h3>
+<p data-start="6103" data-end="6106">类型：</p>
+<pre><code class="language-c++">std::vector&lt;PlaneParam&gt;</code></pre>
+<p data-start="6143" data-end="6146">含义：</p>
+<ul data-start="6147" data-end="6315">
+<li data-section-id="16ok88f" data-start="6147" data-end="6162">
+<p data-start="6149" data-end="6162">每帧拟合到的地面参数集合。</p>
+</li>
+<li data-section-id="1ahroco" data-start="6163" data-end="6315">
+<p data-start="6165" data-end="6315">注意其中法向量已经被转成了 <strong data-start="6179" data-end="6195">camera frame</strong>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6317" data-end="6320">
+<h3 data-section-id="ntu1lh" data-start="6322" data-end="6340"><code data-start="6326" data-end="6340">wall_planes_</code></h3>
+<p data-start="6341" data-end="6344">含义：</p>
+<ul data-start="6345" data-end="6472">
+<li data-section-id="1tmz16u" data-start="6345" data-end="6360">
+<p data-start="6347" data-end="6360">每帧拟合到的墙面参数集合。</p>
+</li>
+<li data-section-id="tkj9cv" data-start="6361" data-end="6472">
+<p data-start="6363" data-end="6472">同样保存的是 <strong data-start="6370" data-end="6386">camera frame</strong> 下的法向量。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6474" data-end="6477">
+<h3 data-section-id="vutlv5" data-start="6479" data-end="6500"><code data-start="6483" data-end="6500">lidar_azimuths_</code></h3>
+<p data-start="6501" data-end="6504">类型：</p>
+<pre><code class="language-c++">std::vector&lt;double&gt;</code></pre>
+<p data-start="6537" data-end="6540">含义：</p>
+<ul data-start="6541" data-end="6674">
+<li data-section-id="xic5nd" data-start="6541" data-end="6558">
+<p data-start="6543" data-end="6558">每帧激光拟合出的墙法向方位角。</p>
+</li>
+<li data-section-id="1b0poud" data-start="6559" data-end="6674">
+<p data-start="6561" data-end="6674">这个角是在 <strong data-start="6567" data-end="6589">base_link 的 x-y 平面</strong> 中定义的。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6676" data-end="6679">
+<h2 data-section-id="1duaf3l" data-start="6681" data-end="6703">2.4 用于跨帧消除符号二义性的参考量</h2>
+<h3 data-section-id="1nlz3pf" data-start="6705" data-end="6734"><code data-start="6709" data-end="6734">have_first_wall_normal_</code></h3>
+<p data-start="6735" data-end="6738">含义：</p>
+<ul data-start="6739" data-end="6794">
+<li data-section-id="1bw5ji7" data-start="6739" data-end="6794">
+<p data-start="6741" data-end="6794">是否已经记录第一帧墙法向量。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6796" data-end="6799">
+<h3 data-section-id="1x4pw7q" data-start="6801" data-end="6829"><code data-start="6805" data-end="6829">first_wall_normal_cam_</code></h3>
+<p data-start="6830" data-end="6833">含义：</p>
+<ul data-start="6834" data-end="6958">
+<li data-section-id="t501a0" data-start="6834" data-end="6860">
+<p data-start="6836" data-end="6860">第一帧墙法向量，位于 camera frame。</p>
+</li>
+<li data-section-id="j8etrq" data-start="6861" data-end="6958">
+<p data-start="6863" data-end="6958">后续帧拿它来统一墙法向量的方向。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="6960" data-end="6963">
+<h3 data-section-id="hl7w8y" data-start="6965" data-end="6996"><code data-start="6969" data-end="6996">have_first_lidar_azimuth_</code></h3>
+<h3 data-section-id="ox4m93" data-start="6997" data-end="7023"><code data-start="7001" data-end="7023">first_lidar_azimuth_</code></h3>
+<p data-start="7024" data-end="7027">含义：</p>
+<ul data-start="7028" data-end="7152">
+<li data-section-id="3gc06p" data-start="7028" data-end="7051">
+<p data-start="7030" data-end="7051">第一帧 lidar 墙法向角及其有效标志。</p>
+</li>
+<li data-section-id="183ixnr" data-start="7052" data-end="7152">
+<p data-start="7054" data-end="7152">用来避免后续帧的法向角突然跳 <code data-start="7069" data-end="7072">π</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="7154" data-end="7157">
+<h2 data-section-id="1pi6f1n" data-start="7159" data-end="7176">2.5 初始 TF 相关成员</h2>
+<h3 data-section-id="cy21nt" data-start="7178" data-end="7199"><code data-start="7182" data-end="7199">got_initial_tf_</code></h3>
+<p data-start="7200" data-end="7203">含义：</p>
+<ul data-start="7204" data-end="7257">
+<li data-section-id="o71zy" data-start="7204" data-end="7257">
+<p data-start="7206" data-end="7257">是否成功读到初始 TF。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="7259" data-end="7262">
+<h3 data-section-id="4b8qj7" data-start="7264" data-end="7290"><code data-start="7268" data-end="7290">initial_translation_</code></h3>
+<p data-start="7291" data-end="7294">含义：</p>
+<ul data-start="7295" data-end="7401">
+<li data-section-id="psdyfg" data-start="7295" data-end="7401">
+<p data-start="7297" data-end="7401">初始 TF 的平移 <code data-start="7307" data-end="7321">(tx, ty, tz)</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="7403" data-end="7406">注意：</p>
+<ul data-start="7407" data-end="7477">
+<li data-section-id="138iq11" data-start="7407" data-end="7422">
+<p data-start="7409" data-end="7422">这份代码<strong data-start="7413" data-end="7422">不优化平移</strong></p>
+</li>
+<li data-section-id="ik9b9t" data-start="7423" data-end="7477">
+<p data-start="7425" data-end="7477">最终结果里平移直接沿用它。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="7479" data-end="7482">
+<h3 data-section-id="nu2epk" data-start="7484" data-end="7509"><code data-start="7488" data-end="7509">initial_quaternion_</code></h3>
+<p data-start="7510" data-end="7513">含义：</p>
+<ul data-start="7514" data-end="7568">
+<li data-section-id="id0m54" data-start="7514" data-end="7568">
+<p data-start="7516" data-end="7568">初始 TF 的四元数旋转。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="7570" data-end="7573">作用：</p>
+<ul data-start="7574" data-end="7730">
+<li data-section-id="1gkfeg7" data-start="7574" data-end="7595">
+<p data-start="7576" data-end="7595">用来得到 <code data-start="7581" data-end="7595">initial_rpy_</code></p>
+</li>
+<li data-section-id="u3inmt" data-start="7596" data-end="7622">
+<p data-start="7598" data-end="7622">用来把平面法向量从 base 转回 camera</p>
+</li>
+<li data-section-id="j472fl" data-start="7623" data-end="7730">
+<p data-start="7625" data-end="7730">也是最终比较“优化前 / 优化后”时的原始姿态参考。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="7732" data-end="7735">
+<h3 data-section-id="509q1v" data-start="7737" data-end="7755"><code data-start="7741" data-end="7755">initial_rpy_</code></h3>
+<p data-start="7756" data-end="7759">含义：</p>
+<ul data-start="7760" data-end="7876">
+<li data-section-id="1jfaxcb" data-start="7760" data-end="7876">
+<p data-start="7762" data-end="7876">从初始 TF 提取的欧拉角 <code data-start="7776" data-end="7796">(roll, pitch, yaw)</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="7878" data-end="7881">作用：</p>
+<ul data-start="7882" data-end="7936">
+<li data-section-id="1l3mjfa" data-start="7882" data-end="7936">
+<p data-start="7884" data-end="7936">作为 Ceres 的初值。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="7938" data-end="7941">
+<h3 data-section-id="7g3f64" data-start="7943" data-end="7964"><code data-start="7947" data-end="7964">initial_tf_msg_</code></h3>
+<p data-start="7965" data-end="7968">含义：</p>
+<ul data-start="7969" data-end="8057">
+<li data-section-id="e7w4r7" data-start="7969" data-end="8057">
+<p data-start="7971" data-end="8057">原始的 <code data-start="7975" data-end="8008">geometry_msgs::TransformStamped</code> 形式的初始 TF。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8059" data-end="8062">
+<h2 data-section-id="t2whv7" data-start="8064" data-end="8078">2.6 可视化相关成员</h2>
+<h3 data-section-id="1ahq4bi" data-start="8080" data-end="8098"><code data-start="8084" data-end="8098">visualizing_</code></h3>
+<p data-start="8099" data-end="8102">含义：</p>
+<ul data-start="8103" data-end="8165">
+<li data-section-id="unswv7" data-start="8103" data-end="8165">
+<p data-start="8105" data-end="8165">是否已进入标定后的 RViz 可视化模式。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8167" data-end="8170">
+<h3 data-section-id="1wxd6c1" data-start="8172" data-end="8191"><code data-start="8176" data-end="8191">T_calibrated_</code></h3>
+<p data-start="8192" data-end="8195">含义：</p>
+<ul data-start="8196" data-end="8278">
+<li data-section-id="rj7sbo" data-start="8196" data-end="8278">
+<p data-start="8198" data-end="8278">标定后的变换，注释写的是 <code data-start="8211" data-end="8238">base_link -&gt; camera_frame</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="8280" data-end="8442">不过要注意：<br>
+从构造方式看，它存的是“平移 + 优化后旋转”的仿射变换，并被直接拿来做 <code data-start="8324" data-end="8338">T_total * pt</code>。所以你在理解时要始终以“代码实际乘法方向”为准。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="8444" data-end="8447">
+<h3 data-section-id="1kq1zfv" data-start="8449" data-end="8466"><code data-start="8453" data-end="8466">T_original_</code></h3>
+<p data-start="8467" data-end="8470">含义：</p>
+<ul data-start="8471" data-end="8526">
+<li data-section-id="vwk68p" data-start="8471" data-end="8526">
+<p data-start="8473" data-end="8526">原始 TF 对应的仿射变换。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8528" data-end="8531">
+<h3 data-section-id="c2wdmc" data-start="8533" data-end="8558"><code data-start="8537" data-end="8558">cloud_native_frame_</code></h3>
+<p data-start="8559" data-end="8562">含义：</p>
+<ul data-start="8563" data-end="8677">
+<li data-section-id="8jcw3v" data-start="8563" data-end="8677">
+<p data-start="8565" data-end="8677">记住原始点云消息最初的 <code data-start="8577" data-end="8587">frame_id</code>，方便可视化链路使用。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8679" data-end="8682">
+<h3 data-section-id="1vpjz8" data-start="8684" data-end="8721"><code data-start="8688" data-end="8704">viz_cloud_sub_</code>, <code data-start="8706" data-end="8721">viz_scan_sub_</code></h3>
+<ul data-start="8722" data-end="8779">
+<li data-section-id="1tz4taj" data-start="8722" data-end="8779">
+<p data-start="8724" data-end="8779">标定后重新订阅用于显示前后效果。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8781" data-end="8784">
+<h3 data-section-id="a0u0g0" data-start="8786" data-end="8849"><code data-start="8790" data-end="8809">pub_cloud_before_</code>, <code data-start="8811" data-end="8829">pub_cloud_after_</code>, <code data-start="8831" data-end="8849">pub_lidar_cloud_</code></h3>
+<p data-start="8850" data-end="8853">含义：</p>
+<ul data-start="8854" data-end="8920">
+<li data-section-id="j2nrhj" data-start="8854" data-end="8920">
+<p data-start="8856" data-end="8920">发布“优化前点云”“优化后点云”“激光参考点云”。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="8922" data-end="8925">
+<h3 data-section-id="sjpfq3" data-start="8927" data-end="8955"><code data-start="8931" data-end="8955">static_tf_broadcaster_</code></h3>
+<p data-start="8956" data-end="8959">作用：</p>
+<ul data-start="8960" data-end="9082">
+<li data-section-id="1ww4nq2" data-start="8960" data-end="9082">
+<p data-start="8962" data-end="9082">发布 <code data-start="8965" data-end="8995">camera_frame + "_calibrated"</code> 的静态 TF。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="9084" data-end="9087">
+<h3 data-section-id="15ijl4j" data-start="9089" data-end="9105"><code data-start="9093" data-end="9105">debug_log_</code></h3>
+<p data-start="9106" data-end="9109">含义：</p>
+<ul data-start="9110" data-end="9167">
+<li data-section-id="nde76a" data-start="9110" data-end="9167">
+<p data-start="9112" data-end="9167">保存完整调试日志，最后一起输出。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="9169" data-end="9172">
+<h1 data-section-id="upf33s" data-start="9174" data-end="9187">3. 数据结构里的字段</h1>
+<h2 data-section-id="11noqxc" data-start="9189" data-end="9208">3.1 <code data-start="9196" data-end="9208">PlaneParam</code></h2>
+<p data-start="9210" data-end="9213">定义：</p>
+<pre><code class="language-c++">struct PlaneParam {    Eigen::Vector3d normal;    double d;    int inlier_count;};</code></pre>
+<p data-start="9312" data-end="9351"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<h3 data-section-id="5l0owl" data-start="9353" data-end="9365"><code data-start="9357" data-end="9365">normal</code></h3>
+<p data-start="9366" data-end="9369">含义：</p>
+<ul data-start="9370" data-end="9400">
+<li data-section-id="1nphasc" data-start="9370" data-end="9400">
+<p data-start="9372" data-end="9400">平面法向量 <code data-start="9378" data-end="9392">(nx, ny, nz)</code>，通常已归一化。</p>
+</li>
+</ul>
+<p data-start="9402" data-end="9407">平面方程：</p>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><msub><mi>n</mi><mi>x</mi></msub><mi>x</mi><mo>+</mo><msub><mi>n</mi><mi>y</mi></msub><mi>y</mi><mo>+</mo><msub><mi>n</mi><mi>z</mi></msub><mi>z</mi><mo>+</mo><mi>d</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">n_x x + n_y y + n_z z + d = 0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.7333em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.8694em; vertical-align: -0.2861em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right: 0.03588em;">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.2861em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right: 0.03588em;">y</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.7333em; vertical-align: -0.15em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right: 0.04398em;">z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span></span></span></span></span></span></span><span class="mord mathnormal" style="margin-right: 0.04398em;">z</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.6944em;"></span><span class="mord mathnormal">d</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 0.6444em;"></span><span class="mord">0</span></span></span></span></span>
+<hr data-start="9445" data-end="9448">
+<h3 data-section-id="1xxg2n6" data-start="9450" data-end="9457"><code data-start="9454" data-end="9457">d</code></h3>
+<p data-start="9458" data-end="9461">含义：</p>
+<ul data-start="9462" data-end="9474">
+<li data-section-id="ap9tsh" data-start="9462" data-end="9474">
+<p data-start="9464" data-end="9474">平面方程中的常数项。</p>
+</li>
+</ul>
+<p data-start="9476" data-end="9479">注意：</p>
+<ul data-start="9480" data-end="9628">
+<li data-section-id="q0wern" data-start="9480" data-end="9628">
+<p data-start="9482" data-end="9498">这个量会随着法向量翻转一起翻转：</p>
+<ul data-start="9501" data-end="9628">
+<li data-section-id="1x0j32u" data-start="9501" data-end="9522">
+<p data-start="9503" data-end="9522"><code data-start="9503" data-end="9522">normal -&gt; -normal</code></p>
+</li>
+<li data-section-id="1a4f8he" data-start="9525" data-end="9628">
+<p data-start="9527" data-end="9628"><code data-start="9527" data-end="9536">d -&gt; -d</code><br data-start="9536" data-end="9539">
+代码里确实这样做了。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="9630" data-end="9633">
+<h3 data-section-id="10f0u6n" data-start="9635" data-end="9653"><code data-start="9639" data-end="9653">inlier_count</code></h3>
+<p data-start="9654" data-end="9657">含义：</p>
+<ul data-start="9658" data-end="9672">
+<li data-section-id="1jfi9bs" data-start="9658" data-end="9672">
+<p data-start="9660" data-end="9672">拟合这个平面的内点数量。</p>
+</li>
+</ul>
+<p data-start="9674" data-end="9677">作用：</p>
+<ul data-start="9678" data-end="9733">
+<li data-section-id="104zu62" data-start="9678" data-end="9733">
+<p data-start="9680" data-end="9733">后面平均法向量时拿它做权重。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="9735" data-end="9738">
+<h2 data-section-id="16mkwy3" data-start="9740" data-end="9758">3.2 <code data-start="9747" data-end="9758">LineParam</code></h2>
+<p data-start="9760" data-end="9763">定义：</p>
+<pre><code class="language-c++">struct LineParam {    Eigen::Vector2d direction;    double normal_azimuth;    int inlier_count;};</code></pre>
+<p data-start="9877" data-end="9916"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<h3 data-section-id="nrebvn" data-start="9918" data-end="9933"><code data-start="9922" data-end="9933">direction</code></h3>
+<p data-start="9934" data-end="9937">含义：</p>
+<ul data-start="9938" data-end="9955">
+<li data-section-id="1lkxnpn" data-start="9938" data-end="9955">
+<p data-start="9940" data-end="9955">2D 直线方向向量，单位向量。</p>
+</li>
+</ul>
+<hr data-start="9957" data-end="9960">
+<h3 data-section-id="1isoli4" data-start="9962" data-end="9982"><code data-start="9966" data-end="9982">normal_azimuth</code></h3>
+<p data-start="9983" data-end="9986">含义：</p>
+<ul data-start="9987" data-end="10008">
+<li data-section-id="l7w4w0" data-start="9987" data-end="10008">
+<p data-start="9989" data-end="10008">直线法向量在 x-y 平面内的方位角：</p>
+</li>
+</ul>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>a</mi><mi>t</mi><mi>a</mi><mi>n</mi><mn>2</mn><mo stretchy="false">(</mo><msub><mi>n</mi><mi>y</mi></msub><mo separator="true">,</mo><msub><mi>n</mi><mi>x</mi></msub><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">atan2(n_y, n_x)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1.0361em; vertical-align: -0.2861em;"></span><span class="mord mathnormal">a</span><span class="mord mathnormal">t</span><span class="mord mathnormal">an</span><span class="mord">2</span><span class="mopen">(</span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right: 0.03588em;">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.2861em;"><span></span></span></span></span></span></span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span></span></span></span></span></span></span><span class="mclose">)</span></span></span></span></span>
+<p data-start="10032" data-end="10035">作用：</p>
+<ul data-start="10036" data-end="10103">
+<li data-section-id="w5uzhk" data-start="10036" data-end="10103">
+<p data-start="10038" data-end="10103">这是 wall azimuth cost 的目标量。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="10105" data-end="10108">
+<h3 data-section-id="10f0u6n" data-start="10110" data-end="10128"><code data-start="10114" data-end="10128">inlier_count</code></h3>
+<p data-start="10129" data-end="10132">含义：</p>
+<ul data-start="10133" data-end="10148">
+<li data-section-id="gc2k1" data-start="10133" data-end="10148">
+<p data-start="10135" data-end="10148">拟合出这条线时的内点数量。</p>
+</li>
+</ul>
+<p data-start="10150" data-end="10153">作用：</p>
+<ul data-start="10154" data-end="10208">
+<li data-section-id="iahxx6" data-start="10154" data-end="10208">
+<p data-start="10156" data-end="10208">作为 scan 质量门槛。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="10210" data-end="10213">
+<h1 data-section-id="1parb6z" data-start="10215" data-end="10226">4. 优化相关参数</h1>
+<p data-start="10228" data-end="10236">这一部分最关键。</p>
+<h2 data-section-id="1ka08wl" data-start="10238" data-end="10250">4.1 <code data-start="10245" data-end="10250">rpy</code></h2>
+<p data-start="10251" data-end="10274">在 <code data-start="10253" data-end="10271">runCalibration()</code> 里：</p>
+<pre><code class="language-c++">double rpy[3] = { initial_rpy_.x(), initial_rpy_.y(), initial_rpy_.z() };</code></pre>
+<p data-start="10361" data-end="10400"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<p data-start="10402" data-end="10405">含义：</p>
+<ul data-start="10406" data-end="10478">
+<li data-section-id="1gh0jkd" data-start="10406" data-end="10478">
+<p data-start="10408" data-end="10418">优化变量，长度 3：</p>
+<ul data-start="10421" data-end="10478">
+<li data-section-id="133o2md" data-start="10421" data-end="10438">
+<p data-start="10423" data-end="10438"><code data-start="10423" data-end="10431">rpy[0]</code> = roll</p>
+</li>
+<li data-section-id="1kklmtb" data-start="10441" data-end="10459">
+<p data-start="10443" data-end="10459"><code data-start="10443" data-end="10451">rpy[1]</code> = pitch</p>
+</li>
+<li data-section-id="guciad" data-start="10462" data-end="10478">
+<p data-start="10464" data-end="10478"><code data-start="10464" data-end="10472">rpy[2]</code> = yaw</p>
+</li>
+</ul>
+</li>
+</ul>
+<p data-start="10480" data-end="10486">它表示的是：</p>
+<ul data-start="10487" data-end="10527">
+<li data-section-id="xf3eo8" data-start="10487" data-end="10527">
+<p data-start="10489" data-end="10527">最终待估计的 <code data-start="10496" data-end="10524">camera_frame -&gt; base_frame</code> 旋转</p>
+</li>
+</ul>
+<p data-start="10529" data-end="10594">不是增量，而是最终旋转本身。代码注释也直接这么写了。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="10596" data-end="10599">
+<h2 data-section-id="h2272s" data-start="10601" data-end="10627">4.2 <code data-start="10608" data-end="10627">ground_normal_cam</code></h2>
+<pre><code class="language-c++">Eigen::Vector3d ground_normal_cam = averageNormals(ground_planes_, "ground");</code></pre>
+<p data-start="10718" data-end="10721">含义：</p>
+<ul data-start="10722" data-end="10791">
+<li data-section-id="1y341mu" data-start="10722" data-end="10791">
+<p data-start="10724" data-end="10791">多帧平均后的地面法向量，位于 camera frame。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="10793" data-end="10796">作用：</p>
+<ul data-start="10797" data-end="10820">
+<li data-section-id="whrm91" data-start="10797" data-end="10820">
+<p data-start="10799" data-end="10820">GroundNormalCost 的输入。</p>
+</li>
+</ul>
+<hr data-start="10822" data-end="10825">
+<h2 data-section-id="isqy3q" data-start="10827" data-end="10851">4.3 <code data-start="10834" data-end="10851">wall_normal_cam</code></h2>
+<p data-start="10852" data-end="10855">含义：</p>
+<ul data-start="10856" data-end="10924">
+<li data-section-id="i9idzh" data-start="10856" data-end="10924">
+<p data-start="10858" data-end="10924">多帧平均后的墙法向量，位于 camera frame。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="10926" data-end="10929">作用：</p>
+<ul data-start="10930" data-end="10974">
+<li data-section-id="gv6hh0" data-start="10930" data-end="10974">
+<p data-start="10932" data-end="10974">WallAzimuthCost 和 WallVerticalityCost 的输入。</p>
+</li>
+</ul>
+<hr data-start="10976" data-end="10979">
+<h2 data-section-id="isimop" data-start="10981" data-end="11008">4.4 <code data-start="10988" data-end="11008">lidar_wall_azimuth</code></h2>
+<p data-start="11009" data-end="11012">含义：</p>
+<ul data-start="11013" data-end="11091">
+<li data-section-id="19ub1ve" data-start="11013" data-end="11091">
+<p data-start="11015" data-end="11091">多帧平均后的激光墙法向方位角，位于 base_link 的 x-y 平面。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="11093" data-end="11096">作用：</p>
+<ul data-start="11097" data-end="11120">
+<li data-section-id="1jwilqo" data-start="11097" data-end="11120">
+<p data-start="11099" data-end="11120">WallAzimuthCost 的目标值。</p>
+</li>
+</ul>
+<hr data-start="11122" data-end="11125">
+<h2 data-section-id="16gz8tm" data-start="11127" data-end="11168">4.5 <code data-start="11134" data-end="11144">roll_opt</code>, <code data-start="11146" data-end="11157">pitch_opt</code>, <code data-start="11159" data-end="11168">yaw_opt</code></h2>
+<p data-start="11169" data-end="11172">含义：</p>
+<ul data-start="11173" data-end="11226">
+<li data-section-id="e8zs94" data-start="11173" data-end="11226">
+<p data-start="11175" data-end="11226">优化后的最终欧拉角结果。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="11228" data-end="11261">它们会再转回旋转矩阵 <code data-start="11239" data-end="11246">R_opt</code>，以及四元数 <code data-start="11253" data-end="11260">q_opt</code>。</p>
+<hr data-start="11263" data-end="11266">
+<h2 data-section-id="1w25bin" data-start="11268" data-end="11282">4.6 <code data-start="11275" data-end="11282">R_opt</code></h2>
+<p data-start="11283" data-end="11286">含义：</p>
+<ul data-start="11287" data-end="11369">
+<li data-section-id="bxtxb9" data-start="11287" data-end="11369">
+<p data-start="11289" data-end="11369">由最终 <code data-start="11293" data-end="11321">roll_opt/pitch_opt/yaw_opt</code> 组成的旋转矩阵。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="11371" data-end="11374">作用：</p>
+<ul data-start="11375" data-end="11435">
+<li data-section-id="c42tme" data-start="11375" data-end="11435">
+<p data-start="11377" data-end="11382">用来验证：</p>
+<ul data-start="11385" data-end="11435">
+<li data-section-id="1bxpgqx" data-start="11385" data-end="11399">
+<p data-start="11387" data-end="11399">地面是否被转正到 z 轴</p>
+</li>
+<li data-section-id="cppvro" data-start="11402" data-end="11414">
+<p data-start="11404" data-end="11414">墙面是否水平法向正确</p>
+</li>
+<li data-section-id="1bby7q" data-start="11417" data-end="11435">
+<p data-start="11419" data-end="11435">墙方位角是否与 lidar 一致</p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="11437" data-end="11440">
+<h1 data-section-id="1jcsrkf" data-start="11442" data-end="11459">5. 三个 cost 里的参数</h1>
+<h2 data-section-id="u6p61e" data-start="11461" data-end="11486">5.1 <code data-start="11468" data-end="11486">GroundNormalCost</code></h2>
+<p data-start="11488" data-end="11498">定义里只有一个成员：</p>
+<h3 data-section-id="c4h5qa" data-start="11500" data-end="11518"><code data-start="11504" data-end="11518">n_ground_cam</code></h3>
+<p data-start="11519" data-end="11522">含义：</p>
+<ul data-start="11523" data-end="11586">
+<li data-section-id="maqkp1" data-start="11523" data-end="11586">
+<p data-start="11525" data-end="11586">地面法向量，位于 camera frame。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="11588" data-end="11607"><code data-start="11588" data-end="11600">operator()</code> 里的局部量：</p>
+<h3 data-section-id="1fnri6y" data-start="11609" data-end="11621"><code data-start="11613" data-end="11621">cr, sr</code></h3>
+<ul data-start="11622" data-end="11648">
+<li data-section-id="117890v" data-start="11622" data-end="11648">
+<p data-start="11624" data-end="11648"><code data-start="11624" data-end="11635">cos(roll)</code>, <code data-start="11637" data-end="11648">sin(roll)</code></p>
+</li>
+</ul>
+<h3 data-section-id="1ed8yxm" data-start="11650" data-end="11662"><code data-start="11654" data-end="11662">cp, sp</code></h3>
+<ul data-start="11663" data-end="11691">
+<li data-section-id="gbu90v" data-start="11663" data-end="11691">
+<p data-start="11665" data-end="11691"><code data-start="11665" data-end="11677">cos(pitch)</code>, <code data-start="11679" data-end="11691">sin(pitch)</code></p>
+</li>
+</ul>
+<h3 data-section-id="1jua5ne" data-start="11693" data-end="11705"><code data-start="11697" data-end="11705">cy, sy</code></h3>
+<ul data-start="11706" data-end="11730">
+<li data-section-id="i2va0f" data-start="11706" data-end="11730">
+<p data-start="11708" data-end="11730"><code data-start="11708" data-end="11718">cos(yaw)</code>, <code data-start="11720" data-end="11730">sin(yaw)</code></p>
+</li>
+</ul>
+<h3 data-section-id="1kt8eew" data-start="11732" data-end="11747"><code data-start="11736" data-end="11747">R00 ~ R22</code></h3>
+<ul data-start="11748" data-end="11764">
+<li data-section-id="1t5aeb" data-start="11748" data-end="11764">
+<p data-start="11750" data-end="11764">手动展开的旋转矩阵元素，对应</p>
+</li>
+</ul>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>R</mi><mo>=</mo><msub><mi>R</mi><mi>z</mi></msub><mo stretchy="false">(</mo><mi>y</mi><mi>a</mi><mi>w</mi><mo stretchy="false">)</mo><msub><mi>R</mi><mi>y</mi></msub><mo stretchy="false">(</mo><mi>p</mi><mi>i</mi><mi>t</mi><mi>c</mi><mi>h</mi><mo stretchy="false">)</mo><msub><mi>R</mi><mi>x</mi></msub><mo stretchy="false">(</mo><mi>r</mi><mi>o</mi><mi>l</mi><mi>l</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">R = R_z(yaw)R_y(pitch)R_x(roll)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6833em;"></span><span class="mord mathnormal" style="margin-right: 0.00773em;">R</span><span class="mspace" style="margin-right: 0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right: 0.2778em;"></span></span><span class="base"><span class="strut" style="height: 1.0361em; vertical-align: -0.2861em;"></span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: -0.0077em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right: 0.04398em;">z</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.03588em;">y</span><span class="mord mathnormal">a</span><span class="mord mathnormal" style="margin-right: 0.02691em;">w</span><span class="mclose">)</span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: -0.0077em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right: 0.03588em;">y</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.2861em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">p</span><span class="mord mathnormal">i</span><span class="mord mathnormal">t</span><span class="mord mathnormal">c</span><span class="mord mathnormal">h</span><span class="mclose">)</span><span class="mord"><span class="mord mathnormal" style="margin-right: 0.00773em;">R</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.1514em;"><span style="top: -2.55em; margin-left: -0.0077em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">x</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.15em;"><span></span></span></span></span></span></span><span class="mopen">(</span><span class="mord mathnormal">ro</span><span class="mord mathnormal" style="margin-right: 0.01968em;">ll</span><span class="mclose">)</span></span></span></span></span>
+<p data-start="11803" data-end="11842"><span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<h3 data-section-id="ltnzoz" data-start="11844" data-end="11860"><code data-start="11848" data-end="11860">nx, ny, nz</code></h3>
+<ul data-start="11861" data-end="11873">
+<li data-section-id="1uugj0b" data-start="11861" data-end="11873">
+<p data-start="11863" data-end="11873">输入法向量的三个分量</p>
+</li>
+</ul>
+<h3 data-section-id="1l64fan" data-start="11875" data-end="11891"><code data-start="11879" data-end="11891">rx, ry, rz</code></h3>
+<ul data-start="11892" data-end="11905">
+<li data-section-id="3cq8o" data-start="11892" data-end="11905">
+<p data-start="11894" data-end="11905">旋转后的法向量分量，即</p>
+</li>
+</ul>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>R</mi><mo>⋅</mo><msub><mi>n</mi><mrow><mi>g</mi><mi>r</mi><mi>o</mi><mi>u</mi><mi>n</mi><mi>d</mi><mi mathvariant="normal">_</mi><mi>c</mi><mi>a</mi><mi>m</mi></mrow></msub></mrow><annotation encoding="application/x-tex">R \cdot n_{ground\_cam}</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 0.6833em;"></span><span class="mord mathnormal" style="margin-right: 0.00773em;">R</span><span class="mspace" style="margin-right: 0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right: 0.2222em;"></span></span><span class="base"><span class="strut" style="height: 0.7976em; vertical-align: -0.367em;"></span><span class="mord"><span class="mord mathnormal">n</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height: 0.3361em;"><span style="top: -2.55em; margin-left: 0em; margin-right: 0.05em;"><span class="pstrut" style="height: 2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight"><span class="mord mathnormal mtight" style="margin-right: 0.03588em;">g</span><span class="mord mathnormal mtight">ro</span><span class="mord mathnormal mtight">u</span><span class="mord mathnormal mtight">n</span><span class="mord mathnormal mtight">d</span><span class="mord mtight" style="margin-right: 0.02778em;">_</span><span class="mord mathnormal mtight">c</span><span class="mord mathnormal mtight">am</span></span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height: 0.367em;"><span></span></span></span></span></span></span></span></span></span></span>
+<h3 data-section-id="1bdp9ya" data-start="11937" data-end="11980"><code data-start="11941" data-end="11980">residual[0], residual[1], residual[2]</code></h3>
+<ul data-start="11981" data-end="12049">
+<li data-section-id="2stdhk" data-start="11981" data-end="12049">
+<p data-start="11983" data-end="12049">残差，目标是让旋转后的法向量变成 <code data-start="12000" data-end="12009">[0,0,1]</code>。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="12051" data-end="12054">
+<h2 data-section-id="1s7qn1j" data-start="12056" data-end="12080">5.2 <code data-start="12063" data-end="12080">WallAzimuthCost</code></h2>
+<h3 data-section-id="1cnjvm9" data-start="12082" data-end="12098"><code data-start="12086" data-end="12098">n_wall_cam</code></h3>
+<ul data-start="12099" data-end="12149">
+<li data-section-id="1keteif" data-start="12099" data-end="12149">
+<p data-start="12101" data-end="12149">相机系下墙法向量。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<h3 data-section-id="1mzrfct" data-start="12151" data-end="12170"><code data-start="12155" data-end="12170">lidar_azimuth</code></h3>
+<ul data-start="12171" data-end="12231">
+<li data-section-id="fjebai" data-start="12171" data-end="12231">
+<p data-start="12173" data-end="12231">激光测得的墙法向角，单位 rad。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="12233" data-end="12238">局部量里：</p>
+<h3 data-section-id="15ylxnx" data-start="12240" data-end="12252"><code data-start="12244" data-end="12252">cam_az</code></h3>
+<ul data-start="12253" data-end="12285">
+<li data-section-id="xmepx0" data-start="12253" data-end="12285">
+<p data-start="12255" data-end="12285">旋转后墙法向量在 base_link x-y 平面的方位角：</p>
+</li>
+</ul>
+<span class="katex-display"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML" display="block"><semantics><mrow><mi>a</mi><mi>t</mi><mi>a</mi><mi>n</mi><mn>2</mn><mo stretchy="false">(</mo><mi>r</mi><mi>y</mi><mo separator="true">,</mo><mi>r</mi><mi>x</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">atan2(ry, rx)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height: 1em; vertical-align: -0.25em;"></span><span class="mord mathnormal">a</span><span class="mord mathnormal">t</span><span class="mord mathnormal">an</span><span class="mord">2</span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right: 0.03588em;">ry</span><span class="mpunct">,</span><span class="mspace" style="margin-right: 0.1667em;"></span><span class="mord mathnormal" style="margin-right: 0.02778em;">r</span><span class="mord mathnormal">x</span><span class="mclose">)</span></span></span></span></span>
+<h3 data-section-id="12ijv8r" data-start="12307" data-end="12317"><code data-start="12311" data-end="12317">diff</code></h3>
+<ul data-start="12318" data-end="12339">
+<li data-section-id="1a7z2s8" data-start="12318" data-end="12339">
+<p data-start="12320" data-end="12339">相机推导出的墙方位角，与激光方位角的差</p>
+</li>
+</ul>
+<h3 data-section-id="yg5cw4" data-start="12341" data-end="12370"><code data-start="12345" data-end="12370">residual[0] = sin(diff)</code></h3>
+<ul data-start="12371" data-end="12447">
+<li data-section-id="12bdw4t" data-start="12371" data-end="12447">
+<p data-start="12373" data-end="12447">用 <code data-start="12375" data-end="12380">sin</code> 而不是直接 <code data-start="12387" data-end="12393">diff</code>，是为了处理角度绕回问题。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="12449" data-end="12452">
+<h2 data-section-id="1fpv1mu" data-start="12454" data-end="12482">5.3 <code data-start="12461" data-end="12482">WallVerticalityCost</code></h2>
+<h3 data-section-id="1cnjvm9" data-start="12484" data-end="12500"><code data-start="12488" data-end="12500">n_wall_cam</code></h3>
+<ul data-start="12501" data-end="12553">
+<li data-section-id="qoivuf" data-start="12501" data-end="12553">
+<p data-start="12503" data-end="12553">相机系下墙法向量。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<p data-start="12555" data-end="12560">局部量里：</p>
+<h3 data-section-id="jyrtat" data-start="12562" data-end="12581"><code data-start="12566" data-end="12581">R20, R21, R22</code></h3>
+<ul data-start="12582" data-end="12592">
+<li data-section-id="ir1bz2" data-start="12582" data-end="12592">
+<p data-start="12584" data-end="12592">旋转矩阵的第三行</p>
+</li>
+</ul>
+<h3 data-section-id="yo4zny" data-start="12594" data-end="12602"><code data-start="12598" data-end="12602">rz</code></h3>
+<ul data-start="12603" data-end="12618">
+<li data-section-id="19p244k" data-start="12603" data-end="12618">
+<p data-start="12605" data-end="12618">旋转后墙法向量的 z 分量</p>
+</li>
+</ul>
+<h3 data-section-id="x2h8fo" data-start="12620" data-end="12642"><code data-start="12624" data-end="12642">residual[0] = rz</code></h3>
+<ul data-start="12643" data-end="12712">
+<li data-section-id="1mdhpv1" data-start="12643" data-end="12712">
+<p data-start="12645" data-end="12712">希望墙法向量 z 分量接近 0，也就是墙是竖直平面。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="12714" data-end="12717">
+<h1 data-section-id="19d3g0p" data-start="12719" data-end="12733">6. 容易混淆的几个参数</h1>
+<p data-start="12735" data-end="12751">这里我专门指出几个最容易误解的。</p>
+<h2 data-section-id="1b5u69g" data-start="12753" data-end="12773"><code data-start="12756" data-end="12773">z_min_ / z_max_</code></h2>
+<p data-start="12774" data-end="12846">名字像按 z 轴裁剪，实际上是按<strong data-start="12790" data-end="12802">点到传感器的距离</strong>筛选。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="12848" data-end="12851">
+<h2 data-section-id="10y62mp" data-start="12853" data-end="12892"><code data-start="12856" data-end="12892">initial_quaternion_ / initial_rpy_</code></h2>
+<p data-start="12893" data-end="12905">它们不是优化结果，而是：</p>
+<ul data-start="12906" data-end="12990">
+<li data-section-id="18arhw1" data-start="12906" data-end="12930">
+<p data-start="12908" data-end="12930">从现有 TF 树中读出的<strong data-start="12920" data-end="12930">初始外参旋转</strong></p>
+</li>
+<li data-section-id="16pqlr2" data-start="12931" data-end="12990">
+<p data-start="12933" data-end="12990">给优化提供初值和法向量回转参考。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+</li>
+</ul>
+<hr data-start="12992" data-end="12995">
+<h2 data-section-id="c075pq" data-start="12997" data-end="13054"><code data-start="13000" data-end="13054">weight_ground_ / weight_wall_az_ / weight_wall_vert_</code></h2>
+<p data-start="13055" data-end="13141">它们不是直接乘残差，而是通过 <code data-start="13070" data-end="13082">ScaledLoss</code> 加进去，控制三类约束的相对重要性。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="13143" data-end="13146">
+<h2 data-section-id="1qqyczd" data-start="13148" data-end="13182"><code data-start="13151" data-end="13182">ground_planes_ / wall_planes_</code></h2>
+<p data-start="13183" data-end="13377">虽然平面是一开始在 <code data-start="13193" data-end="13204">base_link</code> 下拟合出来的，但真正存进去用于优化的法向量，已经被转回 <strong data-start="13233" data-end="13249">camera frame</strong> 了。<span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span> <span class="" data-state="closed"><span class="relative inline-flex items-center"></span></span></p>
+<hr data-start="13379" data-end="13382">
+<h1 data-section-id="128u05j" data-start="13384" data-end="13403">7. 一张“参数作用表”的简化理解</h1>
+<p data-start="13405" data-end="13412">你可以这样记：</p>
+<ul data-start="13414" data-end="13904">
+<li data-section-id="jy28ic" data-start="13414" data-end="13490">
+<p data-start="13416" data-end="13424"><strong data-start="13416" data-end="13424">输入配置</strong></p>
+<ul data-start="13427" data-end="13490">
+<li data-section-id="392n7q" data-start="13427" data-end="13490">
+<p data-start="13429" data-end="13490"><code data-start="13429" data-end="13443">cloud_topic_</code>, <code data-start="13445" data-end="13458">scan_topic_</code>, <code data-start="13460" data-end="13473">base_frame_</code>, <code data-start="13475" data-end="13490">camera_frame_</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="139slld" data-start="13491" data-end="13554">
+<p data-start="13493" data-end="13501"><strong data-start="13493" data-end="13501">采集策略</strong></p>
+<ul data-start="13504" data-end="13554">
+<li data-section-id="s3la1w" data-start="13504" data-end="13554">
+<p data-start="13506" data-end="13554"><code data-start="13506" data-end="13519">num_frames_</code>, <code data-start="13521" data-end="13529">z_min_</code>, <code data-start="13531" data-end="13539">z_max_</code>, <code data-start="13541" data-end="13554">voxel_leaf_</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="muf4j5" data-start="13555" data-end="13655">
+<p data-start="13557" data-end="13567"><strong data-start="13557" data-end="13567">几何拟合阈值</strong></p>
+<ul data-start="13570" data-end="13655">
+<li data-section-id="qqefi8" data-start="13570" data-end="13655">
+<p data-start="13572" data-end="13655"><code data-start="13572" data-end="13593">ransac_dist_thresh_</code>, <code data-start="13595" data-end="13614">line_ransac_dist_</code>, <code data-start="13616" data-end="13634">perp_dot_thresh_</code>, <code data-start="13636" data-end="13655">min_line_inliers_</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="1b7vc2s" data-start="13656" data-end="13727">
+<p data-start="13658" data-end="13666"><strong data-start="13658" data-end="13666">优化权重</strong></p>
+<ul data-start="13669" data-end="13727">
+<li data-section-id="mazdpf" data-start="13669" data-end="13727">
+<p data-start="13671" data-end="13727"><code data-start="13671" data-end="13687">weight_ground_</code>, <code data-start="13689" data-end="13706">weight_wall_az_</code>, <code data-start="13708" data-end="13727">weight_wall_vert_</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="15qtb1f" data-start="13728" data-end="13804">
+<p data-start="13730" data-end="13738"><strong data-start="13730" data-end="13738">初始外参</strong></p>
+<ul data-start="13741" data-end="13804">
+<li data-section-id="bp9hty" data-start="13741" data-end="13804">
+<p data-start="13743" data-end="13804"><code data-start="13743" data-end="13765">initial_translation_</code>, <code data-start="13767" data-end="13788">initial_quaternion_</code>, <code data-start="13790" data-end="13804">initial_rpy_</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="15jg3rv" data-start="13805" data-end="13829">
+<p data-start="13807" data-end="13816"><strong data-start="13807" data-end="13816">核心优化量</strong></p>
+<ul data-start="13819" data-end="13829">
+<li data-section-id="178e9ly" data-start="13819" data-end="13829">
+<p data-start="13821" data-end="13829"><code data-start="13821" data-end="13829">rpy[3]</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="ev3bbc" data-start="13830" data-end="13904">
+<p data-start="13832" data-end="13839"><strong data-start="13832" data-end="13839">观测量</strong></p>
+<ul data-start="13842" data-end="13904">
+<li data-section-id="tbua15" data-start="13842" data-end="13904">
+<p data-start="13844" data-end="13904"><code data-start="13844" data-end="13863">ground_normal_cam</code>, <code data-start="13865" data-end="13882">wall_normal_cam</code>, <code data-start="13884" data-end="13904">lidar_wall_azimuth</code></p>
+</li>
+</ul>
+</li>
+</ul>
+<hr data-start="13906" data-end="13909">
+<p data-start="13911" data-end="13976" data-is-last-node="" data-is-only-node="">如果你愿意，下一步我可以继续按你的代码顺序，<strong data-start="13933" data-end="13975">从 <code data-start="13937" data-end="13954">cloudCallback()</code> 开始，把里面每一个局部变量也逐个解释</strong>。</p></div>
+        </div>
+</body>
+</html>
