@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>APT 镜像源问题</title>
+  <meta name="created-at" content="1773801206821">
+  <meta name="updated-at" content="1773801206821">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69b90977-ef58-83a9-aa17-4e2c360f1dc8">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>APT 镜像源问题</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">详细告诉我所有步骤</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="54" data-is-last-node="" data-is-only-node="">我给你整理成一套从“排查现状”到“最终安装成功”的完整流程，尽量按你当前这个网络环境来写，避免走会卡死的路。</p>
+<p data-start="0" data-end="39">可以。我按你<strong data-start="6" data-end="21">当前这台机器的真实情况</strong>，给你一套从头到尾能执行的完整步骤。</p>
+<p data-start="41" data-end="51">你现在的实际约束是：</p>
+<ul data-start="53" data-end="414">
+<li data-section-id="5yp1r5" data-start="53" data-end="81">
+<p data-start="55" data-end="81">系统是 <strong data-start="59" data-end="81">Ubuntu 20.04 focal</strong></p>
+</li>
+<li data-section-id="3elxt5" data-start="82" data-end="97">
+<p data-start="84" data-end="97">架构是 <strong data-start="88" data-end="97">arm64</strong></p>
+</li>
+<li data-section-id="1rv4s36" data-start="98" data-end="149">
+<p data-start="100" data-end="149">Ubuntu 基础源 <code data-start="111" data-end="146">repo.huaweicloud.com/ubuntu-ports</code> 可用</p>
+</li>
+<li data-section-id="g5nk6g" data-start="150" data-end="176">
+<p data-start="152" data-end="176">直连 <code data-start="155" data-end="173">packages.ros.org</code> 不通</p>
+</li>
+<li data-section-id="1n3k0x9" data-start="177" data-end="212">
+<p data-start="179" data-end="212">直连 <code data-start="182" data-end="209">raw.githubusercontent.com</code> 不通</p>
+</li>
+<li data-section-id="1h97wd2" data-start="213" data-end="414">
+<p data-start="215" data-end="414">华为云 ROS 镜像可连上，但因为缺少/失效的 ROS 公钥，APT 报 <code data-start="252" data-end="280">NO_PUBKEY F42ED6FBAB17C654</code> 或 <code data-start="283" data-end="311">EXPKEYSIG F42ED6FBAB17C654</code>，并禁用了该仓库；APT 对未验证签名的仓库会默认禁用。ROS 官方安装文档的核心流程也确实是“导入 GPG key + 配置源”。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 73px;"><a href="https://wiki.ros.org/Installation/Ubuntu?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://wiki.ros.org/Installation/Ubuntu?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]! select-none" style="max-width: 73px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between absolute" style="opacity: 0; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">GitHub</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+3</span></span><span class="flex h-4 w-full items-center justify-between" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">ROS Wiki</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+3</span></span><span class="flex h-4 w-full items-center justify-between absolute" style="opacity: 0; transform: translateX(10%);"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">ROS Documentation</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+3</span></span></span></a></span></span></p>
+</li>
+</ul>
+<p data-start="416" data-end="440">所以<strong data-start="418" data-end="427">最稳的方案</strong>不是继续硬连官方站，而是：</p>
+<p data-start="442" data-end="508"><strong data-start="442" data-end="508">用别的能联网的机器下载 <code data-start="456" data-end="465">ros.key</code> → 拷到当前机器 → 在当前机器导入 key → 使用华为云 ROS 镜像安装。</strong></p>
+<hr data-start="510" data-end="513">
+<h1 data-section-id="1wj9vk2" data-start="515" data-end="531">一、先理解你现在为什么装不上</h1>
+<p data-start="533" data-end="538">你看到的：</p>
+<pre><code class="language-bash">W: GPG error: https://repo.huaweicloud.com/ros/ubuntu focal InRelease: ...
+NO_PUBKEY F42ED6FBAB17C654
+E: The repository 'https://repo.huaweicloud.com/ros/ubuntu focal InRelease' is not signed.</code></pre>
+<p data-start="746" data-end="765">这不表示华为云仓库一定坏了，而是表示：</p>
+<ol data-start="767" data-end="966">
+<li data-section-id="15pl0gd" data-start="767" data-end="793">
+<p data-start="770" data-end="793">APT 已经拿到了这个 ROS 仓库的元数据。</p>
+</li>
+<li data-section-id="cjiepl" data-start="794" data-end="812">
+<p data-start="797" data-end="812">但它没有可用的公钥去验证签名。</p>
+</li>
+<li data-section-id="9e2mhe" data-start="813" data-end="843">
+<p data-start="816" data-end="843">因为无法验证签名，APT 按安全策略拒绝使用这个仓库。</p>
+</li>
+<li data-section-id="i93irz" data-start="844" data-end="966">
+<p data-start="847" data-end="966">仓库被禁用以后，<code data-start="855" data-end="896">apt install ros-noetic-rosbridge-server</code> 就只能报 <code data-start="902" data-end="928">Unable to locate package</code>。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 64px;"><a href="https://github.com/ros2/ros2_documentation/issues/2810?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://github.com/ros2/ros2_documentation/issues/2810?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]! select-none" style="max-width: 64px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">GitHub</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+1</span></span></span></a></span></span></p>
+</li>
+</ol>
+<p data-start="968" data-end="995">所以你不是卡在“安装阶段”，而是卡在“仓库认证阶段”。</p>
+<hr data-start="997" data-end="1000">
+<h1 data-section-id="1f5lm7l" data-start="1002" data-end="1010">二、总体思路</h1>
+<p data-start="1012" data-end="1023">我们分成 4 段来做：</p>
+<ol data-start="1025" data-end="1117">
+<li data-section-id="1pcj0ha" data-start="1025" data-end="1047">
+<p data-start="1028" data-end="1047">清理旧的 ROS 源配置和残留 key</p>
+</li>
+<li data-section-id="1rfx9ns" data-start="1048" data-end="1073">
+<p data-start="1051" data-end="1073">在另一台能联网的机器下载 <code data-start="1064" data-end="1073">ros.key</code></p>
+</li>
+<li data-section-id="kdcml2" data-start="1074" data-end="1098">
+<p data-start="1077" data-end="1098">把 <code data-start="1079" data-end="1088">ros.key</code> 传到当前机器并导入</p>
+</li>
+<li data-section-id="1si85aw" data-start="1099" data-end="1117">
+<p data-start="1102" data-end="1117">配置华为云 ROS 源并安装包</p>
+</li>
+</ol>
+<hr data-start="1119" data-end="1122">
+<h1 data-section-id="1ldpepd" data-start="1124" data-end="1138">三、在当前机器上先做清理</h1>
+<p data-start="1140" data-end="1155">先打开终端，执行下面这些命令。</p>
+<h2 data-section-id="1v917h" data-start="1157" data-end="1171">1）查看有没有挂起任务</h2>
+<p data-start="1172" data-end="1202">你前面有过 <code data-start="1178" data-end="1190">curl | gpg</code> 被挂起的情况，先清掉：</p>
+<pre><code class="language-bash">jobs</code></pre>
+<p data-start="1222" data-end="1229">如果看到类似：</p>
+<pre><code class="language-bash">[1]+  Stopped ...</code></pre>
+<p data-start="1262" data-end="1270">就杀掉它，比如：</p>
+<pre><code class="language-bash">kill %1</code></pre>
+<p data-start="1293" data-end="1321">如果不是 <code data-start="1298" data-end="1302">%1</code>，就按 <code data-start="1306" data-end="1312">jobs</code> 里显示的编号改。</p>
+<hr data-start="1323" data-end="1326">
+<h2 data-section-id="1cg7r4i" data-start="1328" data-end="1344">2）删除旧 ROS 源文件</h2>
+<p data-start="1345" data-end="1376">先把可能混乱的 ROS 源删掉，只保留 Ubuntu 基础源：</p>
+<pre><code class="language-bash">sudo rm -f /etc/apt/sources.list.d/ros*.list</code></pre>
+<p data-start="1436" data-end="1443">然后确认一下：</p>
+<pre><code class="language-bash">ls /etc/apt/sources.list.d</code></pre>
+<p data-start="1485" data-end="1535">这里应该看不到 <code data-start="1493" data-end="1504">ros1.list</code>、<code data-start="1505" data-end="1522">ros-latest.list</code> 之类的 ROS 源文件。</p>
+<hr data-start="1537" data-end="1540">
+<h2 data-section-id="1n5n7ns" data-start="1542" data-end="1561">3）删除旧 keyring 文件</h2>
+<p data-start="1562" data-end="1591">把之前失败或过期的 keyring 也删掉，避免后面混用：</p>
+<pre><code class="language-bash">sudo rm -f /usr/share/keyrings/ros-archive-keyring.gpg</code></pre>
+<p data-start="1661" data-end="1665">再确认：</p>
+<pre><code class="language-bash">ls -l /usr/share/keyrings/ros-archive-keyring.gpg</code></pre>
+<p data-start="1730" data-end="1741">正常会提示文件不存在。</p>
+<hr data-start="1743" data-end="1746">
+<h2 data-section-id="yby7mj" data-start="1748" data-end="1766">4）更新 Ubuntu 基础源</h2>
+<p data-start="1767" data-end="1782">这一步只是确认系统本身没问题：</p>
+<pre><code class="language-bash">sudo apt clean
+sudo rm -rf /var/lib/apt/lists/*
+sudo apt update</code></pre>
+<p data-start="1861" data-end="1898">如果这里只剩 Ubuntu 源的输出，没有 ROS 报错，说明清理成功了。</p>
+<hr data-start="1900" data-end="1903">
+<h1 data-section-id="1229i5j" data-start="1905" data-end="1932">四、在另一台能联网的机器上下载 <code data-start="1923" data-end="1932">ros.key</code></h1>
+<p data-start="1934" data-end="1944">因为你当前机器访问：</p>
+<ul data-start="1946" data-end="1996">
+<li data-section-id="w5ejjk" data-start="1946" data-end="1975">
+<p data-start="1948" data-end="1975"><code data-start="1948" data-end="1975">raw.githubusercontent.com</code></p>
+</li>
+<li data-section-id="qz45at" data-start="1976" data-end="1996">
+<p data-start="1978" data-end="1996"><code data-start="1978" data-end="1996">packages.ros.org</code></p>
+</li>
+</ul>
+<p data-start="1998" data-end="2024">都失败，所以这一步要在<strong data-start="2009" data-end="2021">别的能联网的电脑</strong>上做。</p>
+<p data-start="2026" data-end="2061">在另一台机器上下载 <code data-start="2036" data-end="2045">ros.key</code>。拿到这个文件即可，文件名就叫：</p>
+<pre><code class="language-bash">ros.key</code></pre>
+<p data-start="2084" data-end="2184">下载来源按 ROS 官方文档，通常就是 ROS 仓库 key 文件。官方安装流程要求先获取这个 key，再配置 apt 仓库。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 112px;"><a href="https://docs.ros.org/en/dashing/Installation/Ubuntu-Development-Setup.html?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://docs.ros.org/en/dashing/Installation/Ubuntu-Development-Setup.html?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]! select-none" style="max-width: 112px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">ROS Documentation</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+1</span></span></span></a></span></span></p>
+<p data-start="2186" data-end="2221">下载完以后，把这个文件传到你当前这台机器。放到哪里都可以，我建议放到：</p>
+<pre><code class="language-bash">/tmp/ros.key</code></pre>
+<p data-start="2249" data-end="2297">你可以用 <code data-start="2254" data-end="2259">scp</code>、U 盘、共享目录、宿主机挂载、VSCode Remote、SFTP 都行。</p>
+<hr data-start="2299" data-end="2302">
+<h1 data-section-id="1ncydw3" data-start="2304" data-end="2326">五、在当前机器上导入 <code data-start="2317" data-end="2326">ros.key</code></h1>
+<p data-start="2328" data-end="2340">假设你已经把文件传到了：</p>
+<pre><code class="language-bash">/tmp/ros.key</code></pre>
+<p data-start="2368" data-end="2376">先确认文件存在：</p>
+<pre><code class="language-bash">ls -l /tmp/ros.key</code></pre>
+<p data-start="2410" data-end="2453">应该能看到文件大小，不应再是 <code data-start="2425" data-end="2452">No such file or directory</code>。</p>
+<hr data-start="2455" data-end="2458">
+<h2 data-section-id="1jyo5a2" data-start="2460" data-end="2483">1）先查看这个 key 文件内容是否有效</h2>
+<p data-start="2484" data-end="2487">执行：</p>
+<pre><code class="language-bash">gpg --show-keys /tmp/ros.key</code></pre>
+<p data-start="2531" data-end="2560">正常情况下，这条命令会显示这个 key 的信息，而不是报：</p>
+<pre><code class="language-bash">no valid OpenPGP data found</code></pre>
+<p data-start="2603" data-end="2642">如果这里就报错，说明你传过来的 <code data-start="2619" data-end="2628">ros.key</code> 文件本身不对，得重新下载。</p>
+<hr data-start="2644" data-end="2647">
+<h2 data-section-id="x0o0qq" data-start="2649" data-end="2683">2）把 ASCII key 转成 apt 用的 keyring</h2>
+<p data-start="2684" data-end="2687">执行：</p>
+<pre><code class="language-bash">sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg /tmp/ros.key</code></pre>
+<p data-start="2781" data-end="2790">然后确认生成成功：</p>
+<pre><code class="language-bash">ls -l /usr/share/keyrings/ros-archive-keyring.gpg</code></pre>
+<p data-start="2855" data-end="2870">你应该能看到这个文件已经存在。</p>
+<hr data-start="2872" data-end="2875">
+<h1 data-section-id="q0wlu" data-start="2877" data-end="2892">六、配置华为云 ROS 源</h1>
+<p data-start="2894" data-end="2961">因为你的机器能访问华为云 Ubuntu 源，也能访问华为云 ROS 镜像地址，只是之前缺 key，所以这里优先用华为云 ROS 镜像。</p>
+<p data-start="2963" data-end="2969">创建源文件：</p>
+<pre><code class="language-bash">echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://repo.huaweicloud.com/ros/ubuntu focal main" \
+| sudo tee /etc/apt/sources.list.d/ros1.list &gt; /dev/null</code></pre>
+<p data-start="3172" data-end="3179">检查文件内容：</p>
+<pre><code class="language-bash">cat /etc/apt/sources.list.d/ros1.list</code></pre>
+<p data-start="3232" data-end="3238">正常应输出：</p>
+<pre><code class="language-bash">deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://repo.huaweicloud.com/ros/ubuntu focal main</code></pre>
+<p data-start="3375" data-end="3386">这里有几个点不能写错：</p>
+<ul data-start="3388" data-end="3479">
+<li data-section-id="1j9g3ht" data-start="3388" data-end="3402">
+<p data-start="3390" data-end="3402"><code data-start="3390" data-end="3402">arch=arm64</code></p>
+</li>
+<li data-section-id="hg2hjd" data-start="3403" data-end="3460">
+<p data-start="3405" data-end="3460"><code data-start="3405" data-end="3460">signed-by=/usr/share/keyrings/ros-archive-keyring.gpg</code></p>
+</li>
+<li data-section-id="19amfe7" data-start="3461" data-end="3470">
+<p data-start="3463" data-end="3470"><code data-start="3463" data-end="3470">focal</code></p>
+</li>
+<li data-section-id="18ag83n" data-start="3471" data-end="3479">
+<p data-start="3473" data-end="3479"><code data-start="3473" data-end="3479">main</code></p>
+</li>
+</ul>
+<hr data-start="3481" data-end="3484">
+<h1 data-section-id="1xfa87f" data-start="3486" data-end="3512">七、更新 APT，并检查 ROS 包是否已经可见</h1>
+<p data-start="3514" data-end="3517">执行：</p>
+<pre><code class="language-bash">sudo apt clean
+sudo rm -rf /var/lib/apt/lists/*
+sudo apt update</code></pre>
+<p data-start="3596" data-end="3604">这一步的目标是：</p>
+<ul data-start="3606" data-end="3758">
+<li data-section-id="1t4pww5" data-start="3606" data-end="3722">
+<p data-start="3608" data-end="3617"><strong data-start="3608" data-end="3617">不要再出现</strong></p>
+<ul data-start="3620" data-end="3722">
+<li data-section-id="v19kec" data-start="3620" data-end="3650">
+<p data-start="3622" data-end="3650"><code data-start="3622" data-end="3650">NO_PUBKEY F42ED6FBAB17C654</code></p>
+</li>
+<li data-section-id="17lrygd" data-start="3653" data-end="3683">
+<p data-start="3655" data-end="3683"><code data-start="3655" data-end="3683">EXPKEYSIG F42ED6FBAB17C654</code></p>
+</li>
+<li data-section-id="erc3i8" data-start="3686" data-end="3722">
+<p data-start="3688" data-end="3722"><code data-start="3688" data-end="3722">The repository ... is not signed</code></p>
+</li>
+</ul>
+</li>
+<li data-section-id="fsefu2" data-start="3723" data-end="3758">
+<p data-start="3725" data-end="3758">并且不要再出现 ROS 源 <code data-start="3739" data-end="3758">Connection failed</code></p>
+</li>
+</ul>
+<p data-start="3760" data-end="3786">如果这一步成功，再检查包是否已经能被 APT 看到：</p>
+<pre><code class="language-bash">apt-cache policy ros-noetic-rosbridge-server
+apt-cache policy ros-noetic-web-video-server</code></pre>
+<p data-start="3891" data-end="3904">正常情况下，你会看到类似：</p>
+<pre><code class="language-bash">Candidate: 0.x.x-...
+Version table:
+...</code></pre>
+<p data-start="3959" data-end="3994">只要出现 <code data-start="3964" data-end="3976">Candidate:</code>，就说明 ROS 仓库已经恢复可用。</p>
+<hr data-start="3996" data-end="3999">
+<h1 data-section-id="owf2zk" data-start="4001" data-end="4011">八、安装你要的包</h1>
+<p data-start="4013" data-end="4019">现在再安装：</p>
+<pre><code class="language-bash">sudo apt install -y ros-noetic-rosbridge-server ros-noetic-web-video-server</code></pre>
+<p data-start="4110" data-end="4134">如果依赖都正常，它就会开始下载和安装，不会再报：</p>
+<pre><code class="language-bash">Unable to locate package</code></pre>
+<hr data-start="4174" data-end="4177">
+<h1 data-section-id="1utfqd5" data-start="4179" data-end="4192">九、安装后做最基本验证</h1>
+<p data-start="4194" data-end="4210">安装完成后，先确认包确实装上了：</p>
+<pre><code class="language-bash">dpkg -l | grep ros-noetic-rosbridge-server
+dpkg -l | grep ros-noetic-web-video-server</code></pre>
+<p data-start="4311" data-end="4323">然后确认 ROS 环境：</p>
+<pre><code class="language-bash">source /opt/ros/noetic/setup.bash
+echo $ROS_DISTRO</code></pre>
+<p data-start="4389" data-end="4395">正常会输出：</p>
+<pre><code class="language-bash">noetic</code></pre>
+<p data-start="4417" data-end="4430">还可以试一下命令是否存在：</p>
+<pre><code class="language-bash">roscore</code></pre>
+<p data-start="4453" data-end="4460">另开一个终端：</p>
+<pre><code class="language-bash">source /opt/ros/noetic/setup.bash
+roslaunch rosbridge_server rosbridge_websocket.launch</code></pre>
+<p data-start="4563" data-end="4597">如果 <code data-start="4566" data-end="4584">rosbridge_server</code> 能起起来，说明安装成功。</p>
+<p data-start="4599" data-end="4630"><code data-start="4599" data-end="4617">web_video_server</code> 的常见启动方式也可以试：</p>
+<pre><code class="language-bash">source /opt/ros/noetic/setup.bash
+rosrun web_video_server web_video_server</code></pre>
+<hr data-start="4720" data-end="4723">
+<h1 data-section-id="1dnnmzp" data-start="4725" data-end="4750">十、建议把 ROS 环境写进 shell 配置</h1>
+<p data-start="4752" data-end="4806">如果你每次都要手动 <code data-start="4762" data-end="4770">source</code>，比较麻烦。可以加到 <code data-start="4781" data-end="4792">~/.bashrc</code> 或 <code data-start="4795" data-end="4805">~/.zshrc</code>。</p>
+<p data-start="4808" data-end="4821">如果你现在用的是 zsh：</p>
+<pre><code class="language-bash">echo "source /opt/ros/noetic/setup.zsh" &gt;&gt; ~/.zshrc
+source ~/.zshrc</code></pre>
+<p data-start="4904" data-end="4914">如果你用 bash：</p>
+<pre><code class="language-bash">echo "source /opt/ros/noetic/setup.bash" &gt;&gt; ~/.bashrc
+source ~/.bashrc</code></pre>
+<hr data-start="5000" data-end="5003">
+<h1 data-section-id="1p3k40c" data-start="5005" data-end="5025">十一、如果中途某一步失败，分别怎么看</h1>
+<h2 data-section-id="sk49z2" data-start="5027" data-end="5068">情况 A：<code data-start="5035" data-end="5065">gpg --show-keys /tmp/ros.key</code> 失败</h2>
+<p data-start="5069" data-end="5129">说明 <code data-start="5072" data-end="5086">/tmp/ros.key</code> 文件不对，不是有效的 PGP key。<br data-start="5106" data-end="5109">
+处理办法：重新在另一台机器下载并传过来。</p>
+<h2 data-section-id="10hujhl" data-start="5131" data-end="5167">情况 B：<code data-start="5139" data-end="5151">apt update</code> 仍然报 <code data-start="5156" data-end="5167">NO_PUBKEY</code></h2>
+<p data-start="5168" data-end="5171">说明：</p>
+<ul data-start="5173" data-end="5292">
+<li data-section-id="1a7etje" data-start="5173" data-end="5184">
+<p data-start="5175" data-end="5184">key 没正确导入</p>
+</li>
+<li data-section-id="t92ypj" data-start="5185" data-end="5221">
+<p data-start="5187" data-end="5221">或 <code data-start="5189" data-end="5200">ros1.list</code> 里的 <code data-start="5204" data-end="5216">signed-by=</code> 路径写错</p>
+</li>
+<li data-section-id="1hl5qe8" data-start="5222" data-end="5292">
+<p data-start="5224" data-end="5292">或 <code data-start="5226" data-end="5271">/usr/share/keyrings/ros-archive-keyring.gpg</code> 不是由正确的 <code data-start="5279" data-end="5288">ros.key</code> 生成的</p>
+</li>
+</ul>
+<p data-start="5294" data-end="5301">这时重点检查：</p>
+<pre><code class="language-bash">ls -l /usr/share/keyrings/ros-archive-keyring.gpg
+cat /etc/apt/sources.list.d/ros1.list</code></pre>
+<h2 data-section-id="hn5iyj" data-start="5404" data-end="5432">情况 C：<code data-start="5412" data-end="5424">apt update</code> 改成报连接失败</h2>
+<p data-start="5433" data-end="5474">说明华为云 ROS 镜像当时网络不可达，那就不是 key 问题，而是镜像网络问题。</p>
+<h2 data-section-id="dsp7g2" data-start="5476" data-end="5517">情况 D：<code data-start="5484" data-end="5502">apt-cache policy</code> 没有 <code data-start="5506" data-end="5517">Candidate</code></h2>
+<p data-start="5518" data-end="5572">说明 APT 仍然没有成功读取 ROS 仓库索引，要回看 <code data-start="5547" data-end="5559">apt update</code> 的 ROS 那一段报错。</p>
+<hr data-start="5574" data-end="5577">
+<h1 data-section-id="7heu6i" data-start="5579" data-end="5593">十二、给你一套最短执行版</h1>
+<p data-start="5595" data-end="5646">下面这套可以直接保存照着跑。前提是你已经把 <code data-start="5617" data-end="5626">ros.key</code> 传到了 <code data-start="5631" data-end="5645">/tmp/ros.key</code>。</p>
+<pre><code class="language-bash"># 1. 清理旧配置
+sudo rm -f /etc/apt/sources.list.d/ros*.list
+sudo rm -f /usr/share/keyrings/ros-archive-keyring.gpg
+
+# 2. 检查 ros.key 是否存在且有效
+ls -l /tmp/ros.key
+gpg --show-keys /tmp/ros.key
+
+# 3. 导入 key
+sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg /tmp/ros.key
+ls -l /usr/share/keyrings/ros-archive-keyring.gpg
+
+# 4. 配置华为云 ROS 源
+echo "deb [arch=arm64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] https://repo.huaweicloud.com/ros/ubuntu focal main" \
+| sudo tee /etc/apt/sources.list.d/ros1.list &gt; /dev/null
+
+cat /etc/apt/sources.list.d/ros1.list
+
+# 5. 更新索引
+sudo apt clean
+sudo rm -rf /var/lib/apt/lists/*
+sudo apt update
+
+# 6. 检查包是否可见
+apt-cache policy ros-noetic-rosbridge-server
+apt-cache policy ros-noetic-web-video-server
+
+# 7. 安装
+sudo apt install -y ros-noetic-rosbridge-server ros-noetic-web-video-server
+
+# 8. 验证
+source /opt/ros/noetic/setup.bash
+echo $ROS_DISTRO
+dpkg -l | grep ros-noetic-rosbridge-server
+dpkg -l | grep ros-noetic-web-video-server</code></pre>
+<hr data-start="6642" data-end="6645">
+<h1 data-section-id="mafgkr" data-start="6647" data-end="6661">十三、你现在最关键的一步</h1>
+<p data-start="6663" data-end="6674">你现在其实只差一件事：</p>
+<p data-start="6676" data-end="6720"><strong data-start="6676" data-end="6720">把有效的 <code data-start="6683" data-end="6692">ros.key</code> 文件弄到当前机器的 <code data-start="6703" data-end="6717">/tmp/ros.key</code>。</strong></p>
+<p data-start="6722" data-end="6753">一旦这个文件到位，后面的步骤就都是标准 APT 配置，不再绕。</p>
+<p data-start="6755" data-end="6784">你现在可以直接开始做；等你做到下面这一步时，把输出贴给我：</p>
+<pre><code class="language-bash">ls -l /tmp/ros.key
+gpg --show-keys /tmp/ros.key</code></pre>
+<p data-start="6847" data-end="6880">我就继续帮你判断这个 key 是否有效，以及下一步该不该直接安装。</p></div>
+        </div>
+<div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">怎么下载ros.key</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="37" data-is-last-node="" data-is-only-node="">我先帮你确认一个<strong data-start="8" data-end="19">最靠谱、最标准</strong>的下载来源，避免你又下到不对的文件。</p>
+<p data-start="0" data-end="19">下载 <code data-start="3" data-end="12">ros.key</code> 有两种方式。</p>
+<h3 data-section-id="urm6mk" data-start="21" data-end="45">方式 1：在能正常联网的另一台机器上下载</h3>
+<p data-start="46" data-end="210">这是你现在最适合的方式，因为你当前机器连 <code data-start="67" data-end="94">raw.githubusercontent.com</code> 和 <code data-start="97" data-end="115">packages.ros.org</code> 都有问题，而 ROS 官方安装文档使用的 key 来源就是 <code data-start="146" data-end="157">rosdistro</code> 仓库里的 <code data-start="163" data-end="172">ros.key</code>。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 112px;"><a href="https://docs.ros.org/en/dashing/Installation/Ubuntu-Install-Binary.html?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://docs.ros.org/en/dashing/Installation/Ubuntu-Install-Binary.html?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]! select-none" style="max-width: 112px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">ROS Documentation</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+2</span></span><span class="flex h-4 w-full items-center justify-between absolute" style="opacity: 0; transform: translateX(10%);"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">ROS Documentation</span><span class="-me-1 flex h-full items-center rounded-full px-1 text-[#8F8F8F]">+2</span></span></span></a></span></span></p>
+<p data-start="212" data-end="225">在那台能联网的机器上执行：</p>
+<pre><code class="language-bash">curl -L https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o ros.key</code></pre>
+<p data-start="322" data-end="335">下载完后检查文件是否存在：</p>
+<pre><code class="language-bash">ls -l ros.key
+gpg --show-keys ros.key</code></pre>
+<p data-start="388" data-end="456">如果 <code data-start="391" data-end="416">gpg --show-keys ros.key</code> 能显示 key 信息，说明下对了。然后把这个文件拷到你当前这台机器，比如放到：</p>
+<pre><code class="language-bash">/tmp/ros.key</code></pre>
+<hr data-start="484" data-end="487">
+<h3 data-section-id="kjzorc" data-start="489" data-end="506">方式 2：用浏览器直接下载</h3>
+<p data-start="507" data-end="631">在能打开网页的设备上，打开 <code data-start="521" data-end="536">ros/rosdistro</code> 仓库，然后找到 <code data-start="545" data-end="554">ros.key</code> 文件并保存下来。<code data-start="563" data-end="574">rosdistro</code> 是 ROS 官方维护发行元数据的仓库。<span class="" data-state="closed"><span class="ms-1 inline-flex max-w-full items-center select-none relative top-[-0.094rem] animate-[show_150ms_ease-in]" data-testid="webpage-citation-pill" style="width: 48px;"><a href="https://github.com/ros/rosdistro?utm_source=chatgpt.com" target="_blank" rel="noopener" alt="https://github.com/ros/rosdistro?utm_source=chatgpt.com" class="flex h-4.5 overflow-hidden rounded-xl px-2 text-[9px] font-medium transition-colors duration-150 ease-in-out text-token-text-secondary! bg-[#F4F4F4]! dark:bg-[#303030]! select-none" style="max-width: 48px;"><span class="relative start-0 bottom-0 flex h-full w-full items-center"><span class="flex h-4 w-full items-center justify-between overflow-hidden" style="opacity: 1; transform: none;"><span class="max-w-[15ch] grow truncate overflow-hidden text-center">GitHub</span></span></span></a></span></span></p>
+<hr data-start="633" data-end="636">
+<h3 data-section-id="14i71ik" data-start="638" data-end="653">下载到当前机器后怎么用</h3>
+<p data-start="654" data-end="666">在你当前这台机器上执行：</p>
+<pre><code class="language-bash">ls -l /tmp/ros.key
+gpg --show-keys /tmp/ros.key
+sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg /tmp/ros.key</code></pre>
+<p data-start="808" data-end="867">如果第二条不报 <code data-start="816" data-end="845">no valid OpenPGP data found</code>，就说明这个 <code data-start="852" data-end="861">ros.key</code> 是有效的。</p>
+<hr data-start="869" data-end="872">
+<h3 data-section-id="1c459zi" data-start="874" data-end="889">你当前最推荐的实际操作</h3>
+<p data-start="890" data-end="909">因为你这台机器对外网不通，最省事的是：</p>
+<ol data-start="911" data-end="997">
+<li data-section-id="uc36y6" data-start="911" data-end="946">
+<p data-start="914" data-end="946">用手机、Windows 主机、另一台电脑下载 <code data-start="937" data-end="946">ros.key</code></p>
+</li>
+<li data-section-id="lu69pu" data-start="947" data-end="980">
+<p data-start="950" data-end="980">传到当前 Ubuntu 机器的 <code data-start="966" data-end="980">/tmp/ros.key</code></p>
+</li>
+<li data-section-id="xrj7ik" data-start="981" data-end="997">
+<p data-start="984" data-end="997">再执行我上面那三条导入命令</p>
+</li>
+</ol>
+<p data-start="999" data-end="1074">你把 <code data-start="1002" data-end="1022">ls -l /tmp/ros.key</code> 和 <code data-start="1025" data-end="1055">gpg --show-keys /tmp/ros.key</code> 的输出贴给我，我就继续带你做下一步。</p></div>
+        </div>
+</body>
+</html>
