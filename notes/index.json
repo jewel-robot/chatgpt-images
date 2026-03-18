@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1773801206810-1re3nnn",
+      "title": "APT 镜像源问题",
+      "source": {
+        "type": "chatgpt",
+        "url": "https://chatgpt.com/c/69b90977-ef58-83a9-aa17-4e2c360f1dc8",
+        "siteName": "chatgpt",
+        "favicon": "https://chatgpt.com/favicon.ico"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "createdAt": 1773801206821,
+      "updatedAt": 1773801206821
+    },
+    {
       "id": "1773633763754-9n9ts6q",
       "title": "单目相机外参标定",
       "updatedAt": 1773633763803
@@ -844,5 +860,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1773633769732
+  "updated": 1773801210836
 }
