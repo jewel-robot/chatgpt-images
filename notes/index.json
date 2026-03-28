@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1774669448660-623ixs9",
+      "title": "关于谷歌0元购卡bug开gpt plus/pro的讨论",
+      "source": {
+        "type": "linuxdo",
+        "url": "https://linux.do/t/topic/1838717",
+        "siteName": "linuxdo",
+        "favicon": "https://cdn3.linux.do/optimized/4X/c/c/d/ccd8c210609d498cbeb3d5201d4c259348447562_2_32x32.png"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "createdAt": 1774669463461,
+      "updatedAt": 1774669463461
+    },
+    {
       "id": "1773801206810-1re3nnn",
       "title": "APT 镜像源问题",
       "source": {
@@ -860,5 +876,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1773801210836
+  "updated": 1774669466171
 }
