@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1774804557859-90bms5y",
+      "title": "你看好超级个体，一人公司（OPC）吗？为什么？ - 知乎",
+      "source": {
+        "type": "zhihu",
+        "url": "https://www.zhihu.com/question/2004938442837092198/answer/2020922823166698416",
+        "siteName": "zhihu",
+        "favicon": "https://static.zhihu.com/heifetz/favicon.ico"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "createdAt": 1774804567204,
+      "updatedAt": 1774804567204
+    },
+    {
       "id": "1774669448660-623ixs9",
       "title": "关于谷歌0元购卡bug开gpt plus/pro的讨论",
       "source": {
@@ -876,5 +892,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1774669466171
+  "updated": 1774804569494
 }
