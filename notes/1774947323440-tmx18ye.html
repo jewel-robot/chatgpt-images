@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>零基础新手注册机实践记录 Resin+freemail+gpt-register+CLIProxyAPI</title>
+  <meta name="created-at" content="1774947342577">
+  <meta name="updated-at" content="1774947342577">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/1854931">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>零基础新手注册机实践记录 Resin+freemail+gpt-register+CLIProxyAPI</h1>
+  <div class="message-block role-user">
+          <div class="message-role">Ryze Steven #1</div>
+          <div class="message-content"><p dir="auto">还有佬友刚进来对着一堆注册机资源只能像我一样说看不懂吗，由于昨天openai大手发力，导致各大公益站一版飘红，突然发现自己离了AI简直不会做科研了，于是痛定思痛，决定要搭一个注册机 <img src="https://cdn.linux.do/images/emoji/twemoji/grinning_face.png?v=15" title=":grinning_face:" class="emoji" alt=":grinning_face:" loading="lazy" width="20" height="20" style="aspect-ratio: 20 / 20;">，当然注册机也是通过AI辅助搭起来的，现在搭建出来跑了一会，注册很快，使用也没有露头秒，还没封，应该是大手有点放松了，简单写一个新手记录，唯一需要动手的是要点cloudflare的一键搭建过程，剩下可以用codex把文档和程序发他让他来建，包括中间的各配置都让他配好，最后相关密钥的可以自己改。</p>
+<p dir="auto">在许多回答下看到，个人配置的小批量注册机结合cliproxyapi就算被封还是能用的过来，今天早上看到很多优秀的佬友争相在搞新注册机，<strong>自己能力不够，只能给一些像我一样想满足一下自用又稍微有一点点点动手能力的非专业佬写一个布署记录</strong>。具体用到下面四个佬友帖子里或开源的工具：</p>
+<p dir="auto"><strong>一. <a href="https://linux.do/t/topic/1849249" data-clicks="106" aria-label="03/30日 感谢佬友前人栽树，新版修复版GPT-FREE全自动循环补号CPA号池注册机 链接已点击 106 次">03/30日 感谢佬友前人栽树，新版修复版GPT-FREE全自动循环补号CPA号池注册机</a></strong></p>
+<p dir="auto">在佬友的代码上改了一下cfmail实现形式为freemail，直接提取出来了docker</p>
+<p dir="auto"><a class="attachment" href="/uploads/short-url/sgAKTIKqIidjh1grVhJgYjzYr5X.gz">gpt-register-oss-shareable-20260331.tar.gz</a> (93.7 KB)</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_0_1774947324118.png" alt="image" data-base62-sha1="iaKQ2RsATwuNoD39KMAbdXW38tI" width="659" height="500" srcset="https://cdn3.linux.do/optimized/4X/7/f/5/7f5e6061f422b1be264fe56b39faf9dd6e51923a_2_659x500.jpeg, https://cdn3.linux.do/optimized/4X/7/f/5/7f5e6061f422b1be264fe56b39faf9dd6e51923a_2_988x750.jpeg 1.5x, https://cdn3.linux.do/optimized/4X/7/f/5/7f5e6061f422b1be264fe56b39faf9dd6e51923a_2_1318x1000.jpeg 2x" data-dominant-color="BFC3C9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_0_1774947324118.png" data-github-sha="3fabeded28b42879cb0318594eb4bd43539bec9b"><p></p>
+<p dir="auto"><strong>二. 一键搭建cloudflare域名临时邮箱,可以直接白嫖第二个链接中3个eu.cc域名</strong></p><aside class="onebox githubrepo" data-onebox-src="https://github.com/idinging/freemail" dir="auto">
+  <header class="source">
+
+      <a href="https://github.com/idinging/freemail" target="_blank" rel="noopener nofollow ugc" class="normal-external-link-icon">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_1_1774947329619.png" class="thumbnail" data-dominant-color="EFEEED" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_1_1774947329619.png" data-github-sha="bf01ec23fea5007fd901c9b4b68ec4ba855e1e43" alt="图片">
+
+  <h3><a href="https://github.com/idinging/freemail" target="_blank" rel="noopener nofollow ugc" data-clicks="54" aria-label="GitHub - idinging/freemail: Cloudflare 域名邮箱系统 临时邮箱系统 domain mail tempmail 链接已点击 54 次" class="normal-external-link-icon">GitHub - idinging/freemail: Cloudflare 域名邮箱系统 临时邮箱系统 domain mail tempmail</a></h3>
+
+    <p><span class="github-repo-description">Cloudflare 域名邮箱系统 临时邮箱系统 domain mail tempmail</span></p>
+</div>
+
+  </article>
+
+  
+
+  <div style="clear: both"></div>
+</aside>
+<aside class="onebox allowlistedgeneric" data-onebox-src="https://www.gname.com/tld-eu-cc.html" dir="auto">
+  <header class="source">
+      <img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_2_1774947331497.png" class="site-icon" alt="图片" data-dominant-color="598DFD" width="32" height="32" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_2_1774947331497.png" data-github-sha="0ed245e79fb23ce2e7039dcc8b3549076f384810">
+
+      <a href="https://www.gname.com/tld-eu-cc.html" target="_blank" rel="noopener nofollow ugc" class="normal-external-link-icon">gname.com</a>
+  </header>
+
+  <article class="onebox-body">
+    
+
+<h3><a href="https://www.gname.com/tld-eu-cc.html" target="_blank" rel="noopener nofollow ugc" data-clicks="55" aria-label="eu.cc域名0元注册，快速开通属于你的在线身份 | GNAME官方免费活动_域名注册购买,云服务器,云产品,企业邮箱,网站安全 链接已点击 55 次" class="normal-external-link-icon">eu.cc域名0元注册，快速开通属于你的在线身份 | GNAME官方免费活动_域名注册购买,云服务器,云产品,企业邮箱,网站安全</a></h3>
+
+  <p>注册eu.cc域名，体验与顶级域名相同的管理权限与功能！所有用户均可享受3个永久免费注册名额，升级为高级经销商更可获得最多20个名额。GNAME为用户提供免费的eu.cc域名注册名额，助力您的品牌建设。</p>
+
+
+  </article>
+
+  
+
+  <div style="clear: both"></div>
+</aside>
+<p dir="auto">
+域名托管到cloudflare可以看这个站内教程前半部分，下面流程默认这里域名邮箱已经建好<br>
+<a href="https://linux.do/t/topic/1666961" data-clicks="1" aria-label="【教程】2026版 小白也能看懂的自建Cloudflare临时邮箱教程（域名邮箱） 链接已点击 1 次">【教程】2026版 小白也能看懂的自建Cloudflare临时邮箱教程（域名邮箱）</a></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_3_1774947333274.png" alt="image" data-base62-sha1="aSNJAjJlGOlyaqv0YkoAsCaUkzK" width="688" height="499" srcset="https://cdn3.linux.do/optimized/4X/4/c/4/4c479f00730cb80c789b72e786232a8fe5820418_2_688x499.jpeg, https://cdn3.linux.do/optimized/4X/4/c/4/4c479f00730cb80c789b72e786232a8fe5820418_2_1032x748.jpeg 1.5x, https://cdn3.linux.do/optimized/4X/4/c/4/4c479f00730cb80c789b72e786232a8fe5820418_2_1376x998.jpeg 2x" data-dominant-color="EDEDF7" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_3_1774947333274.png" data-github-sha="211c74da13c6cb0b87e71cc713d005a10de37143"><p></p>
+<p dir="auto"><strong>三. <a href="https://linux.do/t/topic/1673444" data-clicks="82" aria-label="【开源】dropletResin：把你的代理订阅变成专业、高性能的代理池 | 粘性路由 · 智能调度 · 十万级节点接管 · 极简部署 链接已点击 82 次">【开源】dropletResin：把你的代理订阅变成专业、高性能的代理池 | 粘性路由 · 智能调度 · 十万级节点接管 · 极简部署</a></strong></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_4_1774947335322.png" alt="image" data-base62-sha1="tnNhNM6lKNORGORVrsMQoCx2nZB" width="690" height="330" srcset="https://cdn3.linux.do/optimized/4X/c/d/e/cdefa15ff1e1f82102a22fdeec0c2dee72c6f387_2_690x330.jpeg, https://cdn3.linux.do/optimized/4X/c/d/e/cdefa15ff1e1f82102a22fdeec0c2dee72c6f387_2_1035x495.jpeg 1.5x, https://cdn3.linux.do/optimized/4X/c/d/e/cdefa15ff1e1f82102a22fdeec0c2dee72c6f387_2_1380x660.jpeg 2x" data-dominant-color="F2F6F9" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_4_1774947335322.png" data-github-sha="f2ffb687958513147fe50bf5056f88bff352d25d"><p></p>
+<p dir="auto"><strong>四. cliproxyapi，管理gpt，配置出口api</strong></p><aside class="onebox githubrepo" data-onebox-src="https://github.com/router-for-me/CLIProxyAPI" dir="auto">
+  <header class="source">
+
+      <a href="https://github.com/router-for-me/CLIProxyAPI" target="_blank" rel="noopener nofollow ugc" class="normal-external-link-icon">github.com</a>
+  </header>
+
+  <article class="onebox-body">
+    <div class="github-row" data-github-private-repo="false">
+  <img width="690" height="344" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_5_1774947337129.png" class="thumbnail" data-dominant-color="EEF0EE" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_5_1774947337129.png" data-github-sha="9132a565f87980480f89e86017a2618612bb63bb" alt="图片">
+
+  <h3><a href="https://github.com/router-for-me/CLIProxyAPI" target="_blank" rel="noopener nofollow ugc" data-clicks="7" aria-label="GitHub - router-for-me/CLIProxyAPI: Wrap Gemini CLI, Antigravity, ChatGPT Codex,... 链接已点击 7 次" class="normal-external-link-icon">GitHub - router-for-me/CLIProxyAPI: Wrap Gemini CLI, Antigravity, ChatGPT Codex,...</a></h3>
+
+    <p><span class="github-repo-description">Wrap Gemini CLI, Antigravity, ChatGPT Codex, Claude Code, Qwen Code, iFlow as an OpenAI/Gemini/Claude/Codex compatible API service, allowing you to enjoy the free Gemini 2.5 Pro, GPT 5, Claude, Qwen model through API</span></p>
+</div>
+
+  </article>
+
+  
+
+  <div style="clear: both"></div>
+</aside>
+
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_6_1774947339074.png" alt="image" data-base62-sha1="mS7XWXdJ4AzFnaNiaim4y1RuTdO" width="690" height="405" srcset="https://cdn3.linux.do/optimized/4X/a/0/4/a04e36a8c39ec32f0c48b2e789819bfbb8a6c5f4_2_690x405.jpeg, https://cdn3.linux.do/optimized/4X/a/0/4/a04e36a8c39ec32f0c48b2e789819bfbb8a6c5f4_2_1035x607.jpeg 1.5x, https://cdn3.linux.do/optimized/4X/a/0/4/a04e36a8c39ec32f0c48b2e789819bfbb8a6c5f4_2_1380x810.jpeg 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_6_1774947339074.png" data-github-sha="56c52e195fc16728e241a26c805ff2f1fe6f3bad"><p></p>
+<p dir="auto"><strong>Resin 负责注册ip，freemail 负责邮箱验证码，gpt-register 负责自动注册和拿 token，CLIProxyAPI 负责存账号池并对外提供 /v1 API。</strong></p>
+<p dir="auto">VPS 上搭建 Resin + 代理 + CLIProxyAPI + gpt-register 的基本流程如下：</p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li>部署 Resin，给注册/OAuth 链路提供ip</li>
+<li>部署 CLIProxyAPI,管理账号池，并提供 OpenAI 兼容的 /v1 接口</li>
+<li>部署 gpt-register,自动注册账号、收验证码、跑 OAuth、产出 token</li>
+<li>把 cfmail 改成适配 freemail,让 gpt-register 能用自己的临时邮箱接口收验证码</li>
+<li>让 gpt-register 能访问 Resin</li>
+<li>让 gpt-register 能访问 CLIProxyAPI</li>
+<li>最后通过 CLIProxyAPI 的 /v1 API 使用账号池</li>
+</ol>
+<h2 dir="auto"><a name="p-15905429-resin-1" class="anchor" href="#p-15905429-resin-1" aria-label="标题链接"></a>第一步：先部署 Resin</h2>
+<p dir="auto">后面 register 在跑注册/OAuth 时加上订阅会依赖它的多出口ip，不直接用vps的单出口，要不可能访问不到chatgpt或者不稳定。</p>
+<p dir="auto">我这里<strong>直接用的平时买的机场订阅</strong>，加进来用的美国ip，大概30多个节点，没有用家宽。</p>
+<h2 dir="auto"><a name="p-15905429-cliproxyapi-2" class="anchor" href="#p-15905429-cliproxyapi-2" aria-label="标题链接"></a>第二步：部署 CLIProxyAPI</h2>
+<p dir="auto">1）管理账号池</p>
+<p dir="auto">存放和管理 auth-files，也就是账号 token 文件。</p>
+<p dir="auto">2）提供 /v1 API</p>
+<p dir="auto">把账号池包装成 OpenAI 风格接口</p>
+<h2 dir="auto"><a name="p-15905429-gpt-register-3" class="anchor" href="#p-15905429-gpt-register-3" aria-label="标题链接"></a>第三步：部署 gpt-register</h2>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li>创建临时邮箱</li>
+<li>注册账号</li>
+<li>接验证码</li>
+<li>跑 OAuth</li>
+<li>生成 token</li>
+<li>上传到 CLIProxyAPI</li>
+</ol>
+<h2 dir="auto"><a name="p-15905429-cfmail-freemail-4" class="anchor" href="#p-15905429-cfmail-freemail-4" aria-label="标题链接"></a>第四步：把 cfmail 适配成 freemail</h2>
+<p dir="auto">里面给了好几种其他的邮箱，但我实在有点手残，看站里的小白教程都没有耐心</p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1774947323440-tmx18ye_img_7_1774947340823.png" alt="image" data-base62-sha1="vMw3wuIsmCZvmdx4xY0FGaneToq" width="448" height="310" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1774947323440-tmx18ye_img_7_1774947340823.png" data-github-sha="f3ad940f8495f68d29b8022312f77a1c431a7d74"><p></p>
+<p dir="auto">所以直接让AI改了一下源码，把原来的 CfmailProvider 改成了一个 freemail 适配层,改为调用 freemail 的 /api/domains、/api/generate、/api/emails、/api/email/{id}，把返回结果映射成系统原本使用的 Mailbox 和验证码轮询流程，让它支持 freemail 这类流程：</p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li>获取可用域名列表</li>
+<li>按域名生成邮箱</li>
+<li>拉取邮箱里的邮件列表</li>
+<li>根据邮件 ID 拉详情</li>
+<li>从正文里提取验证码</li>
+</ol>
+<h2 dir="auto"><a name="p-15905429-resin-gpt-register-5" class="anchor" href="#p-15905429-resin-gpt-register-5" aria-label="标题链接"></a>第五步：把 Resin 接进 gpt-register</h2>
+<p dir="auto">要让 gpt-register backend 在运行时能访问 Resin。</p>
+<ol dir="auto" style="list-style-type: decimal; padding-left: 1.5em;">
+<li>让 backend 和 Resin 在同一台 VPS 上可互通</li>
+<li>如果是 Docker 部署，就让 backend 所在容器能访问 Resin 容器</li>
+</ol>
+<h2 dir="auto"><a name="p-15905429-cliproxyapi-gpt-register-6" class="anchor" href="#p-15905429-cliproxyapi-gpt-register-6" aria-label="标题链接"></a>第六步：把 CLIProxyAPI 接进 gpt-register</h2>
+<p dir="auto">让 gpt-register 和账号池真正连起来。</p>
+<p dir="auto">在 gpt-register 配置里填上 CLIProxyAPI 的管理信息,这样 gpt-register 就能做：</p>
+<p dir="auto">1）维护现有池子<br>
+• 列出已有账号<br>
+• 清理失效账号<br>
+• 禁用/启用账号</p>
+<p dir="auto">2）上传新账号<br>
+• 注册成功后，把 token 生成 auth-file<br>
+• 上传到 CLIProxyAPI<br>
+• 让 /v1 API 立刻可用</p>
+<h2 dir="auto"><a name="p-15905429-v1-api-7" class="anchor" href="#p-15905429-v1-api-7" aria-label="标题链接"></a>第七步：怎么使用 /v1 API</h2>
+<p dir="auto">当前面都打通后，CLIProxyAPI 就能像普通 OpenAI 接口一样使用了。</p>
+<p dir="auto">把它当成一个 OpenAI 兼容服务即可：</p>
+<p dir="auto">• 基础地址：</p>
+<p dir="auto"><a href="http://127.0.0.1" rel="noopener nofollow ugc">http://127.0.0.1</a>:(端口)/v1</p>
+<p dir="auto">也可以反代出来给其他客户端用，key在CLIProxyAPI中可以看，至此结束。</p>
+<h2 dir="auto"><a name="p-15905429-star_struck-8" class="anchor" href="#p-15905429-star_struck-8" aria-label="标题链接"></a>最后，感谢站里所有的技术佬，公益佬，作为一个普通学生非常感谢你们的付出 <img src="https://cdn.linux.do/images/emoji/twemoji/star_struck.png?v=15" title=":star_struck:" class="emoji" alt=":star_struck:" loading="lazy" width="20" height="20" style="aspect-ratio: 20 / 20;"></h2><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
