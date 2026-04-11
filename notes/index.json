@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1775881174575-wg6l2yp",
+      "title": "tg看到的英区谷歌零元购原理，不知道真假",
+      "source": {
+        "type": "linuxdo",
+        "url": "https://linux.do/t/topic/1912987",
+        "siteName": "linuxdo",
+        "favicon": "https://cdn3.linux.do/optimized/4X/c/c/d/ccd8c210609d498cbeb3d5201d4c259348447562_2_32x32.png"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": false,
+      "createdAt": 1775881174633,
+      "updatedAt": 1775881174633
+    },
+    {
       "id": "1775212794630-oy9dz48",
       "title": "手把手教你chatgpt plus 如何薅羊毛.简易版.",
       "source": {
@@ -924,5 +940,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1775212817647
+  "updated": 1775881182066
 }
