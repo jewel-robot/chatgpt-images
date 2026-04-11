@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sub2API介绍与部署</title>
+  <meta name="created-at" content="1775881854220">
+  <meta name="updated-at" content="1775881854220">
+  <meta name="source-type" content="chatgpt">
+  <meta name="source-url" content="https://chatgpt.com/c/69d93010-3c6c-832f-8e39-e14f0ba6c71a">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sub2API介绍与部署</h1>
+  <div class="message-block role-user">
+          <div class="message-role">You</div>
+          <div class="message-content">那就给出“国内服务器 -&gt; 连你家里的 WireGuard / VPN -&gt; GPT”这个方案</div>
+        </div>
+<div class="message-block role-ai">
+          <div class="message-role">AI</div>
+          <div class="message-content"><p data-start="0" data-end="89" data-is-last-node="" data-is-only-node="">我先把这套方案收敛成一个能落地的最小版本：家里路由器做 WireGuard 服务端，国内服务器做客户端，只把“访问 GPT 的流量”走这条隧道，其余流量照常走国内服务器本地出口。</p></div>
+        </div>
+</body>
+</html>
