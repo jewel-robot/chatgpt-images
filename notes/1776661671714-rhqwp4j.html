@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChatGPT Plus/Pro 低价订阅技术分析调研</title>
+  <meta name="created-at" content="1776661676324">
+  <meta name="updated-at" content="1776661676324">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/2008574">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>ChatGPT Plus/Pro 低价订阅技术分析调研</h1>
+  <div class="message-block role-user">
+          <div class="message-role">liuos #1</div>
+          <div class="message-content"><p dir="auto">首先需要一个谷歌账号,任意区不需要英区谷歌账号<br>
+我这里用的美区谷歌<br>
+1.美区谷歌账号x1<br>
+2.任意美卡x1<br>
+3.任意的安卓设备（需要root进行mit证书安装）模拟器也行</p>
+<p dir="auto">原理是要插入一串特殊的优惠码 使其强行在订阅的时候显示出来<br>
+这些优惠码有<br>
+单月0刀试用<br>
+3天免费试用<br>
+10刀半价优惠<br>
+3月免费试用<br>
+6月免费试用<br>
+12月免费试用<br>
+pro挽回试用免费一个月优惠<br>
+优惠分两种<br>
+一种是插入优惠码 一种是有特定资格的账号（最稳定）</p>
+<p dir="auto">| 3-day-free-trial<br>
+| plus-1-month-free-trial<br>
+| 1-month-10-dollars</p>
+<p dir="auto">这里是3天，半价，一个月免费试用的优惠码-----优惠码是固定的每次都可以使用，这就是为什么外面的卡网可以一直生产低价plus的原因</p>
+<p dir="auto">安装好mit证书，安卓安装好chatGpt的软件<code>预先格式化的文本</code>之后，我们打开抓包（此方法为ssl paanning）</p>
+<p dir="auto"><a href="https://android.chat.openai.com/backend-api/accounts/check/v4-2023-04-27" class="onebox normal-external-link-icon" target="_blank" rel="noopener nofollow ugc" data-clicks="7" aria-label="https://android.chat.openai.com/backend-api/accounts/check/v4-2023-04-27 链接已点击 7 次">https://android.chat.openai.com/backend-api/accounts/check/v4-2023-04-27</a></p>
+<p dir="auto">我们可以找到这么一个接口，这个是chatGpt获取当前登录用户信息的接口<br>
+其中在"eligible_promo_campaigns"的参数字段里面，我们可以修改响应值强行塞入一串优惠代码，这边给一个一个月的优惠案例</p>
+<blockquote dir="auto">
+<p>“eligible_promo_campaigns”: {<br>
+“plus”: {<br>
+“id”: “plus-1-month-free”,<br>
+“metadata”: {<br>
+“plan_name”: “chatgptplusplan”,<br>
+“title”: “<a href="http://linux.do">linux.do</a>”,<br>
+“summary”: “你已获得 1 个月的 Plus 套餐优惠促销代码。”,<br>
+“discount”: {<br>
+“percentage”: 100<br>
+},<br>
+“credit_grant”: null,<br>
+“duration”: {<br>
+“num_periods”: 1,<br>
+“period”: “month”<br>
+},<br>
+“schedule”: null,<br>
+“price_period”: “recurring”,<br>
+“promotion_type”: “discount”,<br>
+“promotion_type_label”: “1-month free trial”,<br>
+“no_auto_renewal_at_discount_end”: true,<br>
+“plan_type_change”: null<br>
+}<br>
+}<br>
+},</p>
+</blockquote>
+<p dir="auto">写好规则替换后，我们重新打开软件点击升级，这时候我们就能看到一个月免费试用的界面了<br>
+</p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776661671714-rhqwp4j_img_0_1776661672499.png" alt="image" data-base62-sha1="9M7DaFihufU2CinpG3n8FTIgzFE" width="348" height="500" srcset="https://cdn3.linux.do/optimized/4X/4/4/8/44842a6eaf210d8795cfee5cbc4e0c6059136642_2_348x500.png, https://cdn3.linux.do/original/4X/4/4/8/44842a6eaf210d8795cfee5cbc4e0c6059136642.png 1.5x, https://cdn3.linux.do/original/4X/4/4/8/44842a6eaf210d8795cfee5cbc4e0c6059136642.png 2x" data-dominant-color="F4F4F4" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776661671714-rhqwp4j_img_0_1776661672499.png" data-github-sha="21b2656018d52153872d393dfb775ee251336ba7"><p></p>
+<p dir="auto">之后我们就可以点击订阅了（事先给账号绑卡）由于是0刀的原因，谷歌的风控会特别低<br>
+只需要过一个验卡环节即可订阅成功</p>
+<p dir="auto">这时候我们只需要拦截这个接口（可以随意重定向一个无效域名，这样就不会使其生效）<br>
+<a href="https://api.revenuecat.com/v1/receipts" class="onebox normal-external-link-icon" target="_blank" rel="noopener nofollow ugc" data-clicks="9" aria-label="https://api.revenuecat.com/v1/receipts 链接已点击 9 次">https://api.revenuecat.com/v1/receipts</a><br>
+把请求响应的<br>
+“fetch_token”: “xxxx”,<br>
+token取出，就可以保存我们需要的凭证了</p>
+<p dir="auto">之后我们要给其他账号开的时候，只需要去网页的session里面取出account字段下的id<br>
+再加上这个订阅凭证即可给任意账号开通权益，pro同理</p>
+<p dir="auto">目前先说之前的公益bot用的是什么方案来进行大规模开pro账号</p>
+<p dir="auto">ChatGPT的安卓应用是采用第三方的<a href="https://api.revenuecat.com/v1/receipts" rel="noopener nofollow ugc" data-clicks="9" aria-label="https://api.revenuecat.com/v1/receipts 链接已点击 9 次" class="normal-external-link-icon">https://api.revenuecat.com/v1/receipts</a><br>
+订阅管理平台，会这个地址来进行校验凭证，谷歌付款显示是单独的<br>
+然后前一阵子的无限复制ChatGPT pro就是<br>
+需要先正价开一个ChatGPT Pro然后在ChatGPT的软件里面点击降级为plus这时候软件就会向这个接口请求一个新的fetch_token 而这个token就是我们需要用来给其他账号开的订阅凭证，这个凭证每次都是全新的只要没有用过都会生成一个，我们只需要把这个凭证给需要开的账号就可以完成一次Pro的账号订阅</p>
+<p dir="auto">这个是ChatGPT自身的回调漏洞，属于没有与第三方管理好订阅接口导致的</p>
+<p dir="auto">这也是为什么那个公益bot可以无限生产Pro的权益账号，并且需要排队等待的原因，主要还是因为和第三方订阅管理机制没有鉴权好的问题 不存在一个凭证可以无限使用（该方案已修复）<code>预先格式化的文本</code></p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
