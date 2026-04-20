@@ -1,6 +1,22 @@
 {
   "notes": [
     {
+      "id": "1776661671714-rhqwp4j",
+      "title": "ChatGPT Plus/Pro 低价订阅技术分析调研",
+      "source": {
+        "type": "linuxdo",
+        "url": "https://linux.do/t/topic/2008574",
+        "siteName": "linuxdo",
+        "favicon": "https://cdn3.linux.do/optimized/4X/c/c/d/ccd8c210609d498cbeb3d5201d4c259348447562_2_32x32.png"
+      },
+      "tags": [],
+      "status": "inbox",
+      "starred": false,
+      "hasImages": true,
+      "createdAt": 1776661676324,
+      "updatedAt": 1776661676324
+    },
+    {
       "id": "1775881854216-hdh7uki",
       "title": "Sub2API介绍与部署",
       "source": {
@@ -956,5 +972,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1775881858843
+  "updated": 1776661678862
 }
