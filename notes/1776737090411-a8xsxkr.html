@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>关于plus，我再补一刀：免root 免frida 0元订阅gpt</title>
+  <meta name="created-at" content="1776737104432">
+  <meta name="updated-at" content="1776737104432">
+  <meta name="source-type" content="linuxdo">
+  <meta name="source-url" content="https://linux.do/t/topic/2016620">
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+      color: #333;
+    }
+    h1 {
+      color: #333;
+      border-bottom: 2px solid #10a37f;
+      padding-bottom: 10px;
+    }
+    .message-block {
+      margin: 20px 0;
+      padding: 16px;
+      border-radius: 12px;
+    }
+    .role-user {
+      background: #e8f4fd;
+      border-left: 4px solid #3b82f6;
+    }
+    .role-ai {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+    }
+    .message-role {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .role-user .message-role { color: #2563eb; }
+    .role-ai .message-role { color: #059669; }
+    .message-content {
+      line-height: 1.6;
+    }
+    pre {
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    code {
+      font-family: 'Consolas', 'Monaco', monospace;
+    }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>关于plus，我再补一刀：免root 免frida 0元订阅gpt</h1>
+  <div class="message-block role-user">
+          <div class="message-role">rust #1</div>
+          <div class="message-content"><p dir="auto">感谢各位佬发的思路，得知消息后立刻开始尝试</p>
+<p dir="auto">顺手做了一个Reqable脚本，优点是不用hook也不用root<br>
+脚本主要功能</p>
+<pre dir="auto" class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 0px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="hljs language-markdown" data-highlighted="yes"><span class="hljs-bullet">1.</span> 生成0元试用
+<span class="hljs-bullet">2.</span> 修改fetch<span class="hljs-emphasis">_token参数
+</span></code></pre>
+<p dir="auto">实测可用，不过需要一点动手能力，相比较frida可能更简单？</p>
+<details id="post-cooked-html__details-2016620-1-0" open="" dir="auto">
+<summary>
+Reqable脚本</summary>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_0_1776737091333.png" alt="image" data-base62-sha1="hANBSKgAuDs8Ym1lcKuWG4txmkZ" width="690" height="45" srcset="https://cdn3.linux.do/optimized/4X/7/b/4/7b4de445064ef19679d31a3dd439841589f5c235_2_690x45.png, https://cdn3.linux.do/optimized/4X/7/b/4/7b4de445064ef19679d31a3dd439841589f5c235_2_1035x67.png 1.5x, https://cdn3.linux.do/optimized/4X/7/b/4/7b4de445064ef19679d31a3dd439841589f5c235_2_1380x90.png 2x" data-dominant-color="F3F2F0" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_0_1776737091333.png" data-github-sha="4b9c4852b0f9cc5641d540169fc549401588304c"><br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_1_1776737095852.png" alt="image" data-base62-sha1="kva1YBC1V7r9YHxWfrwsxS02l70" width="690" height="247" srcset="https://cdn3.linux.do/optimized/4X/8/f/b/8fb13fabd04f36e87390f910503804d2b23e0476_2_690x247.png, https://cdn3.linux.do/optimized/4X/8/f/b/8fb13fabd04f36e87390f910503804d2b23e0476_2_1035x370.png 1.5x, https://cdn3.linux.do/original/4X/8/f/b/8fb13fabd04f36e87390f910503804d2b23e0476.png 2x" data-dominant-color="FCFCFC" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_1_1776737095852.png" data-github-sha="0aa0faea796966558bb1fd20f3884fcfd642b571"><p></p>
+<pre class="codeblock-buttons"><div class="codeblock-button-wrapper" style="right: 15px;"><button class="btn nohighlight copy-cmd btn-flat" aria-label="将代码复制到剪贴板"><svg class="fa d-icon d-icon-copy svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#copy"></use></svg></button><button class="btn nohighlight fullscreen-cmd btn-flat" aria-label="全屏显示代码"><svg class="fa d-icon d-icon-discourse-expand svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#discourse-expand"></use></svg></button></div><code class="lang-auto">from reqable import *
+
+# --- 配置区 ---
+# OpenAI 相关
+OAI_HOST = "android.chat.openai.com"
+OAI_RESPONSE_PATHS = ["/backend-api/accounts/check/", "/backend-api/payments/rc/android/verify/"]
+OAI_TRACKING_PATH = "/ces/v1/b"
+
+# RevenueCat 相关
+Modify_Token = False    # 默认不修改fetch_token
+RC_HOST = "api.revenuecat.com"
+RC_RECEIPTS_PATH = "/v1/receipts"
+NEW_FETCH_TOKEN = "AdummIvzNOk965s/0UOf08hi8zE1QBQA0qHs28TasLNjkP+H9peebMqSzAJF85XTHZsGLhCLb8sUqKa79ScsbZ1UI8MnOiU9VvkCLLFXKQHE1K9KRT9pYVT2qZz0SC9N9IEs3jhI+hkaTkvc/Vc="
+
+# OpenAI 优惠券 Payload
+PROMO_CAMPAIGN = {
+    "plus": {
+        "id": "plus-1-month-free",
+        "metadata": {
+            "plan_name": "chatgptplusplan",
+            "title": "linux.do",
+            "summary": "你已获得 1 个月的 Plus 套餐优惠促销代码。",
+            "discount": {"percentage": 100},
+            "credit_grant": None,
+            "duration": {"num_periods": 1, "period": "month"},
+            "schedule": None,
+            "price_period": "recurring",
+            "promotion_type": "discount",
+            "promotion_type_label": "1-month free trial",
+            "no_auto_renewal_at_discount_end": True,
+            "plan_type_change": None
+        }
+    }
+}
+
+def onRequest(context, request):
+    # 1. 处理 OpenAI 埋点请求
+    if OAI_HOST in context.host and OAI_TRACKING_PATH in request.path:
+        try:
+            request.body.jsonify()
+            payload = request.body.payload
+            if "batch" in payload:
+                for item in payload["batch"]:
+                    if "properties" in item and "offer_ids" in item["properties"]:
+                        item["properties"]["offer_ids"] = "oai-chatgpt-plus-1m-1999:plus-1-month-free-trial"
+                context.highlight = Highlight.yellow
+                context.comment = "OAI: offer_ids modified"
+        except:
+            pass
+            
+    return request
+
+def onResponse(context, response):
+    # 获取请求路径用于匹配
+    req_path = response.request.path
+
+    # 1. 处理 OpenAI 账号/支付校验
+    if OAI_HOST in context.host:
+        if any(path in req_path for path in OAI_RESPONSE_PATHS):
+            try:
+                response.body.jsonify()
+                data = response.body.payload
+                # 遍历修改所有账号信息
+                accounts = data.get("accounts", {})
+                for acc_id in accounts:
+                    modify_account_info(accounts[acc_id])
+                if "default" in data:
+                    modify_account_info(data["default"])
+                
+                context.highlight = Highlight.green
+                context.comment = "OAI: Plus Patched"
+            except:
+                pass
+
+    # 2. 处理 RevenueCat 收据校验
+    elif Modify_Token and RC_HOST in context.host and RC_RECEIPTS_PATH in req_path:
+        try:
+            response.body.jsonify()
+            data = response.body.payload
+            # 替换 fetch_token (通常在根目录或 subscriber 字段中)
+            if "fetch_token" in data:
+                data["fetch_token"] = NEW_FETCH_TOKEN
+            
+            # 如果 RevenueCat 返回的数据里包含 subscriber，顺便确保权益激活
+            if "subscriber" in data:
+                sub = data["subscriber"]
+                if "fetch_token" in sub:
+                    sub["fetch_token"] = NEW_FETCH_TOKEN
+            
+            context.highlight = Highlight.blue
+            context.comment = "RC: fetch_token replaced"
+        except:
+            pass
+
+    return response
+
+def modify_account_info(acc_obj):
+    """修改 OpenAI 账号对象"""
+    acc_obj["eligible_promo_campaigns"] = PROMO_CAMPAIGN
+</code></pre>
+</details>
+<p dir="auto">Ref:</p><aside class="quote quote-modified" data-post="1" data-topic="2010624" role="none" data-expanded="false">
+    
+  <div class="title" data-has-quote-controls="" data-can-toggle-quote="">
+    
+    <img alt="图片" width="24" height="24" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_2_1776737097399.png" class="avatar" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_2_1776737097399.png" data-github-sha="de453f3e43e9e91ba7beb0a2eef4becf2414ec3d">
+    <div class="quote-title__text-content">
+      <a href="https://linux.do/t/topic/2010624">【GPT】免费试用frida - token | 0成本 | 1m、6m、1y全部token</a> <a class="badge-category__wrapper " href="/c/develop/develop-lv2/31"><span data-category-id="31" style="--category-badge-color: #874EFE; --category-badge-text-color: #FFFFFF; --parent-category-badge-color: #32c3c3;" data-parent-category-id="4" data-drop-close="true" class="badge-category --style-icon --has-parent" title="此处为 2级用户 可见空间。"><svg class="fa d-icon svg-icon svg-node" aria-hidden="true"><svg id="code" viewBox="0 0 640 512">
+  <path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z"></path>
+</svg></svg>
+<span class="badge-category__name">开发调优, Lv2</span></span></a>
+    </div>
+  <div class="quote-controls"><button class="btn no-text btn-flat quote-toggle" aria-controls="quote-id-2010624-1-0" aria-expanded="false" title="展开" aria-label="展开" type="button">
+<!----><!---->
+<svg class="fa d-icon d-icon-chevron-down svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#chevron-down"></use></svg>
+
+<!----></button><!----></div></div>
+  <blockquote id="quote-id-2010624-1-0"><div class="post__contents-cooked-quote">
+    使用Frida、安卓模拟器x86_64、hook CHATGPTapp端，替换offer-token，即可免费试用GPT 
+<a name="p-16968844-openai-chatgpt-hook-frida-offerid-1" class="anchor" href="#p-16968844-openai-chatgpt-hook-frida-offerid-1" aria-label="标题链接"></a><img width="20" height="20" src="https://cdn.linux.do/images/emoji/twemoji/rocket.png?v=15" title="rocket" alt="rocket" class="emoji" loading="lazy" style="aspect-ratio: 20 / 20;"> OpenAI ChatGPT 订阅方案完整hook-frida清单 (含 OfferId)
+
+<a name="p-16968844-chatgpt-plus-oaichatgptplus-2" class="anchor" href="#p-16968844-chatgpt-plus-oaichatgptplus-2" aria-label="标题链接"></a><img width="20" height="20" src="https://cdn.linux.do/images/emoji/twemoji/gem_stone.png?v=15" title="gem_stone" alt="gem_stone" class="emoji" loading="lazy" style="aspect-ratio: 20 / 20;"> ChatGPT Plus 系列 (oai.chatgpt.plus)
+
+包含最受欢迎的 1 年及 6 个月免费优惠方案。 
+
+
+
+
+
+编号
+核…
+  </div><!----></blockquote>
+</aside>
+<aside class="quote quote-modified" data-post="1" data-topic="2008574" role="none" data-expanded="false">
+    
+  <div class="title" data-has-quote-controls="" data-can-toggle-quote="">
+    
+    <img alt="图片" width="24" height="24" src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_3_1776737098738.png" class="avatar" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_3_1776737098738.png" data-github-sha="26f0b4b4a939a845a4f916bc4ff3f3fde66aefeb">
+    <div class="quote-title__text-content">
+      <a href="https://linux.do/t/topic/2008574">ChatGPT Plus/Pro 低价订阅技术分析调研 [方法依旧可用]</a> <a class="badge-category__wrapper " href="/c/develop/develop-lv2/31"><span data-category-id="31" style="--category-badge-color: #874EFE; --category-badge-text-color: #FFFFFF; --parent-category-badge-color: #32c3c3;" data-parent-category-id="4" data-drop-close="true" class="badge-category --style-icon --has-parent" title="此处为 2级用户 可见空间。"><svg class="fa d-icon svg-icon svg-node" aria-hidden="true"><svg id="code" viewBox="0 0 640 512">
+  <path d="M392.8 1.2c-17-4.9-34.7 5-39.6 22l-128 448c-4.9 17 5 34.7 22 39.6s34.7-5 39.6-22l128-448c4.9-17-5-34.7-22-39.6zm80.6 120.1c-12.5 12.5-12.5 32.8 0 45.3L562.7 256l-89.4 89.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0l112-112c12.5-12.5 12.5-32.8 0-45.3l-112-112c-12.5-12.5-32.8-12.5-45.3 0zm-306.7 0c-12.5-12.5-32.8-12.5-45.3 0l-112 112c-12.5 12.5-12.5 32.8 0 45.3l112 112c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256l89.4-89.4c12.5-12.5 12.5-32.8 0-45.3z"></path>
+</svg></svg>
+<span class="badge-category__name">开发调优, Lv2</span></span></a>
+    </div>
+  <div class="quote-controls"><button class="btn no-text btn-flat quote-toggle" aria-controls="quote-id-2008574-1-1" aria-expanded="false" title="展开" aria-label="展开" type="button">
+<!----><!---->
+<svg class="fa d-icon d-icon-chevron-down svg-icon fa-width-auto svg-string" width="1em" height="1em" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><use href="#chevron-down"></use></svg>
+
+<!----></button><!----></div></div>
+  <blockquote id="quote-id-2008574-1-1"><div class="post__contents-cooked-quote">
+    首先需要一个谷歌账号,任意区不需要英区谷歌账号 
+我这里用的美区谷歌 
+1.美区谷歌账号x1 
+2.任意美卡x1 
+3.任意的安卓设备（需要root进行mit证书安装）模拟器也行 
+原理是要插入一串特殊的优惠码 使其强行在订阅的时候显示出来 
+这些优惠码有 
+单月0刀试用 
+3天免费试用 
+10刀半价优惠 
+3月免费试用 
+6月免费试用 
+12月免费试用 
+pro挽回试用免费一个月优惠 
+优惠分两…
+  </div><!----></blockquote>
+</aside>
+<p dir="auto"><a href="https://linux.do/t/topic/2012941" data-clicks="15" aria-label="https://linux.do/t/topic/2012941 链接已点击 15 次">https://linux.do/t/topic/2012941</a></p>
+<hr>
+<p dir="auto">已知限制</p>
+<ul dir="auto" style="list-style-type: disc; padding-left: 1.5em;">
+<li>似乎只有1M plus可用，一个fetch_token只能开一个号，多了报错<br>
+<code>{"code":7102,"message":"There is already another active subscriber using the same receipt."} </code></li>
+</ul>
+<p dir="auto">根据 <a href="https://linux.do/t/topic/2010624" class="inline-onebox" data-clicks="23" aria-label="【GPT】免费试用frida - token | 0成本 | 1m、6m、1y全部token 链接已点击 23 次">【GPT】免费试用frida - token | 0成本 | 1m、6m、1y全部token</a> 通过协议请求报错<br>
+<code>{"code":7231,"message":"Google Play Error: "}</code></p>
+<p dir="auto">没搞懂offer-token是什么，是否==fetch_token，有没有大佬解释下<br>
+<img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_4_1776737100335.png" alt="image" data-base62-sha1="5J3BxKT6CsdoiR7ZMhnFBAULcwi" width="690" height="20" data-dominant-color="E2E2E2" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_4_1776737100335.png" data-github-sha="65c08801bc3790921fc8f7f3f091dbe4027c5278"></p>
+<p></p><img src="https://raw.githubusercontent.com/jewel-robot/chatgpt-images/main/images/note_1776737090411-a8xsxkr_img_5_1776737102481.png" alt="image" data-base62-sha1="xOzhoukZk5IVorXzWTPBhv0zA2V" width="536" height="500" data-dominant-color="EFEFEF" loading="lazy" style="max-width: 100%; height: auto; display: block; margin: 8px 0px; border-radius: 8px;" data-github-path="images/note_1776737090411-a8xsxkr_img_5_1776737102481.png" data-github-sha="39505571b18c78e49c96583d2ec1c7175e7558e9"><p></p>
+<p dir="auto">最后欢迎点赞、交流</p><div class="cooked-selection-barrier" aria-hidden="true"><br></div></div>
+        </div>
+</body>
+</html>
