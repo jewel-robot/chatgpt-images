@@ -693,24 +693,6 @@
       "noteSha": "6979e125685ae073b6a6ae5c59c8822b3d78e107"
     },
     {
-      "id": "1764152402510",
-      "title": "使用Flow2API在Chatbox",
-      "tags": [],
-      "status": "inbox",
-      "starred": false,
-      "hasImages": false,
-      "imageInfos": [],
-      "source": {
-        "type": "chatgpt",
-        "url": "https://chatgpt.com/",
-        "siteName": "chatgpt",
-        "favicon": "https://chatgpt.com/favicon.ico"
-      },
-      "createdAt": 1764152402510,
-      "updatedAt": 1764152402510,
-      "noteSha": "1df0a09215269774b221ac4549e095f5cc094ca9"
-    },
-    {
       "id": "1763351209594",
       "title": "防火墙规则优化",
       "tags": [],
@@ -999,5 +981,5 @@
       "noteSha": "794d62a25d7c9123d1f47b6836415551b86c7977"
     }
   ],
-  "updated": 1779178740117
+  "updated": 1779179216618
 }
